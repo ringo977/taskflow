@@ -1,17 +1,21 @@
--- List users who signed up for an org but haven't confirmed their email yet.
--- Uses auth.users (requires SECURITY DEFINER to bypass RLS).
+-- List users who signed up but haven't confirmed their email yet.
+-- Shows users whose signup_org matches OR who have no signup_org set (legacy signups).
 CREATE OR REPLACE FUNCTION public.get_pending_signups(p_org_id text)
-RETURNS TABLE(user_id uuid, email text, display_name text, created_at timestamptz)
+RETURNS TABLE(user_id uuid, email text, display_name text, created_at timestamptz, signup_org text)
 LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE
 AS $$
   SELECT
     u.id,
     u.email,
     COALESCE(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)) AS display_name,
-    u.created_at
+    u.created_at,
+    u.raw_user_meta_data->>'signup_org' AS signup_org
   FROM auth.users u
   WHERE u.email_confirmed_at IS NULL
-    AND u.raw_user_meta_data->>'signup_org' = p_org_id
+    AND (
+      u.raw_user_meta_data->>'signup_org' = p_org_id
+      OR u.raw_user_meta_data->>'signup_org' IS NULL
+    )
   ORDER BY u.created_at DESC;
 $$;
 GRANT EXECUTE ON FUNCTION public.get_pending_signups(text) TO authenticated;

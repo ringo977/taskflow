@@ -264,8 +264,9 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
                     <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{s.email}</span>
-                    <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                      {t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', gap: 8 }}>
+                      <span>{t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      {!s.signup_org && <span style={{ color: 'var(--c-warning)' }}>{t.noOrgSelected ?? 'no org selected'}</span>}
                     </div>
                   </div>
                   <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
