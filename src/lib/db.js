@@ -431,14 +431,29 @@ export async function removeOrgMember(orgId, userId) {
   const { error } = await supabase.rpc('remove_org_member', {
     p_org_id: orgId, p_user_id: userId,
   })
-  if (error) throw error
+  if (error) {
+    // Fallback: direct delete if RPC doesn't exist yet
+    if (error.code === '42883' || error.message?.includes('not exist')) {
+      const { error: e2 } = await supabase.from('org_members').delete().eq('org_id', orgId).eq('user_id', userId)
+      if (e2) throw e2
+      return
+    }
+    throw error
+  }
 }
 
 export async function updateOrgMemberRole(orgId, userId, role) {
   const { error } = await supabase.rpc('update_org_member_role', {
     p_org_id: orgId, p_user_id: userId, p_role: role,
   })
-  if (error) throw error
+  if (error) {
+    if (error.code === '42883' || error.message?.includes('not exist')) {
+      const { error: e2 } = await supabase.from('org_members').update({ role }).eq('org_id', orgId).eq('user_id', userId)
+      if (e2) throw e2
+      return
+    }
+    throw error
+  }
 }
 
 // ── Join requests ──────────────────────────────────────────────

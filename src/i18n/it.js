@@ -163,6 +163,7 @@ const it = {
   showArchived: 'Mostra archiviati',
   hideArchived: 'Nascondi archiviati',
   archived: 'Archiviato',
+  actions: 'Azioni',
   msgDeleted: name => `"${name}" eliminato`,
   msgArchived: name => `"${name}" archiviato`,
   msgUnarchived: name => `"${name}" ripristinato`,

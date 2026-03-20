@@ -100,7 +100,10 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       await removeOrgMember(activeOrgId, u.id)
       flash(t.removeSuccess(u.name))
       refreshUsers()
-    } catch { flash(t.removeError, 'err') }
+    } catch (e) {
+      console.error('removeOrgMember failed:', e)
+      flash(t.removeError + (e?.message ? ` (${e.message})` : ''), 'err')
+    }
     finally { setBusy(false) }
   }
 

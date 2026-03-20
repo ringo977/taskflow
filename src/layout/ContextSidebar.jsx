@@ -69,7 +69,7 @@ export default function ContextSidebar({
       {project.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
       {canManageProject(project.id) && (
         <button onClick={e => openContextMenu(e, 'project', project)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, flexShrink: 0, opacity: 0.4 }}>
+          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>
           ⋯
         </button>
       )}
@@ -110,7 +110,7 @@ export default function ContextSidebar({
                       {po.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
                       {isAdmin && (
                         <button onClick={e => openContextMenu(e, 'portfolio', po)}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, opacity: 0.4 }}>
+                          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1 }}>
                           ⋯
                         </button>
                       )}

@@ -7,6 +7,7 @@ import { fetchProjectMembers, addProjectMember, removeProjectMember } from '@/li
 import { getInitials } from '@/utils/initials'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
+import ConfirmModal from '@/components/ConfirmModal'
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
@@ -14,7 +15,7 @@ const STATUS_CFG = {
   off_track: { label: 'off_track', color: 'var(--c-danger)', bg: 'color-mix(in srgb, var(--c-danger) 10%, transparent)' },
 }
 
-export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {} }) {
+export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const me = USERS.find(u => u.email === currentUser?.email)
@@ -23,6 +24,8 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
   const [addRes, setAddRes] = useState(false)
   const [resTitle, setResTitle] = useState('')
   const [resUrl, setResUrl]   = useState('')
+  const [confirmDel, setConfirmDel] = useState(false)
+  const canManage = isAdmin || (isManager && myProjectRoles[project?.id] === 'owner')
 
   const proj = project
   if (!proj) return null
@@ -153,6 +156,34 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
         {/* Custom fields config */}
         <CustomFieldsConfig proj={proj} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} t={t} />
 
+        {/* Project actions (admin/owner only) */}
+        {canManage && (
+          <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.actions ?? 'Actions'}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {onArchiveProject && (
+                <button onClick={() => onArchiveProject(proj.id)}
+                  style={{ fontSize: 12, padding: '7px 12px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer', textAlign: 'left' }}>
+                  {proj.status === 'archived' ? t.unarchive : t.archive}
+                </button>
+              )}
+              {onDeleteProject && (
+                <button onClick={() => setConfirmDel(true)}
+                  style={{ fontSize: 12, padding: '7px 12px', borderRadius: 'var(--r1)', border: '1px solid var(--c-danger)', background: 'transparent', color: 'var(--c-danger)', cursor: 'pointer', textAlign: 'left' }}>
+                  {t.deleteProject}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {confirmDel && (
+          <ConfirmModal
+            message={t.confirmDeleteProject(proj.name)}
+            onConfirm={() => { setConfirmDel(false); onDeleteProject(proj.id) }}
+            onCancel={() => setConfirmDel(false)}
+          />
+        )}
       </div>
     </div>
   )

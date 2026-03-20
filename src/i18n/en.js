@@ -163,6 +163,7 @@ const en = {
   showArchived: 'Show archived',
   hideArchived: 'Hide archived',
   archived: 'Archived',
+  actions: 'Actions',
   msgDeleted: name => `"${name}" deleted`,
   msgArchived: name => `"${name}" archived`,
   msgUnarchived: name => `"${name}" unarchived`,
