@@ -418,7 +418,9 @@ function App() {
           if (session?.user) {
             const u = session.user
             const userObj = { id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' }
+            // Always ensure org membership on first sign-in (before MFA gate)
             if (event === 'SIGNED_IN') {
+              try { await ensureOrgMembership(u.id) } catch (e) { console.error('ensureOrgMembership:', e) }
               try {
                 const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
                 const hasVerifiedFactor = factors.some(f => f.status === 'verified')
@@ -430,7 +432,7 @@ function App() {
               } catch (e) { console.warn('MFA check:', e) }
             }
             setUser(userObj)
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
               try {
                 const memberships = await ensureOrgMembership(u.id)
                 const memberOrgIds = memberships.map(m => m.org_id)
