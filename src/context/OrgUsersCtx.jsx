@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getUsersForOrg } from '@/data/users'
 import { fetchOrgDirectory } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 const OrgUsersCtx = createContext(null)
 const RefreshCtx = createContext(() => {})
@@ -12,16 +13,19 @@ export function OrgUsersProvider({ orgId, children }) {
   const refresh = useCallback(() => setTick(n => n + 1), [])
 
   useEffect(() => {
-    setUsers(getUsersForOrg(orgId))
     let cancelled = false
     fetchOrgDirectory(orgId)
       .then(rows => {
         if (cancelled) return
-        if (rows?.length) setUsers(rows)
+        if (rows?.length) {
+          setUsers(rows)
+        } else {
+          injectCurrentUser(orgId).then(fallback => !cancelled && setUsers(fallback))
+        }
       })
       .catch(() => {
         if (cancelled) return
-        setUsers(getUsersForOrg(orgId))
+        injectCurrentUser(orgId).then(fallback => !cancelled && setUsers(fallback))
       })
     return () => { cancelled = true }
   }, [orgId, tick])
@@ -31,6 +35,34 @@ export function OrgUsersProvider({ orgId, children }) {
       <OrgUsersCtx.Provider value={users}>{children}</OrgUsersCtx.Provider>
     </RefreshCtx.Provider>
   )
+}
+
+async function injectCurrentUser(orgId) {
+  const fallback = getUsersForOrg(orgId)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return fallback
+    const { data: membership } = await supabase
+      .from('org_members')
+      .select('role')
+      .eq('org_id', orgId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const me = {
+      id: user.id,
+      name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User',
+      email: user.email ?? '',
+      role: membership?.role ?? 'member',
+      color: '#378ADD',
+    }
+    const existing = fallback.find(u => u.email === me.email)
+    if (existing) {
+      return fallback.map(u => u.email === me.email ? { ...u, id: me.id, role: me.role } : u)
+    }
+    return [me, ...fallback]
+  } catch {
+    return fallback
+  }
 }
 
 export function useOrgUsers() {
