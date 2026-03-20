@@ -11,7 +11,7 @@ import {
   fetchOrgData, fetchSectionRows,
   upsertTask, updateTaskField, moveTaskToSection, updateTaskDeps,
   upsertProject, upsertPortfolio, upsertSections,
-  updateTaskPositions, ensureOrgMembership, addProjectMember,
+  updateTaskPositions, ensureOrgMembership, fetchUserOrgIds, addProjectMember,
   deleteTask as dbDeleteTask, deleteProject as dbDeleteProject, deletePortfolio as dbDeletePortfolio,
   seedOrg,
 } from '@/lib/db'
@@ -393,6 +393,33 @@ function App() {
     setOrgLoading(false)
   }, [])
 
+  // ── Org initialization (shared by auth listener + MFA completion) ──
+  const initOrgs = useCallback(async (userId) => {
+    let memberships = []
+    try { memberships = await ensureOrgMembership(userId) } catch {}
+    if (!memberships.length) {
+      try { memberships = await fetchUserOrgIds() } catch {}
+    }
+    if (!memberships.length) {
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser()
+        const so = u?.user_metadata?.signup_org
+        if (so) memberships = [{ org_id: so, role: 'member' }]
+      } catch {}
+    }
+    const memberOrgIds = memberships.map(m => m.org_id)
+    const allOrgs = storage.get('orgs', INITIAL_ORGS)
+    const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
+    if (visibleOrgs.length) {
+      setOrgs(visibleOrgs)
+      if (!memberOrgIds.includes(activeOrgIdRef.current)) {
+        setActiveOrgId(visibleOrgs[0].id)
+        activeOrgIdRef.current = visibleOrgs[0].id
+      }
+    }
+    await loadOrgData(activeOrgIdRef.current)
+  }, [loadOrgData])
+
   // ── Auth listener ────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
@@ -405,21 +432,6 @@ function App() {
         clearTimeout(safetyTimer)
         setAppLoading(false)
       }
-    }
-
-    const initOrgs = async (userId) => {
-      const memberships = await ensureOrgMembership(userId)
-      const memberOrgIds = memberships.map(m => m.org_id)
-      const allOrgs = storage.get('orgs', INITIAL_ORGS)
-      const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
-      if (visibleOrgs.length) {
-        setOrgs(visibleOrgs)
-        if (!memberOrgIds.includes(activeOrgIdRef.current)) {
-          setActiveOrgId(visibleOrgs[0].id)
-          activeOrgIdRef.current = visibleOrgs[0].id
-        }
-      }
-      await loadOrgData(activeOrgIdRef.current)
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -466,7 +478,7 @@ function App() {
       clearTimeout(safetyTimer)
       subscription.unsubscribe()
     }
-  }, [loadOrgData])
+  }, [initOrgs])
 
   // ── Realtime sync ──────────────────────────────────────────
   const realtimeReload = useCallback(() => {
@@ -732,20 +744,7 @@ function App() {
   if (appLoading) return <LangCtx.Provider value={lang}><LoadingScreen message={tr.loadingMsg} /></LangCtx.Provider>
   if (!user)      return <LangCtx.Provider value={lang}><LoginPage lang={lang} setLang={setLang} /></LangCtx.Provider>
   if (needsMfa)   return <LangCtx.Provider value={lang}><MfaPage onComplete={async () => {
-    try {
-      const memberships = await ensureOrgMembership(user.id)
-      const memberOrgIds = memberships.map(m => m.org_id)
-      const allOrgs = storage.get('orgs', INITIAL_ORGS)
-      const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
-      if (visibleOrgs.length) {
-        setOrgs(visibleOrgs)
-        if (!memberOrgIds.includes(activeOrgIdRef.current)) {
-          setActiveOrgId(visibleOrgs[0].id)
-          activeOrgIdRef.current = visibleOrgs[0].id
-        }
-      }
-      await loadOrgData(activeOrgIdRef.current)
-    } catch (e) { console.error('post-MFA init:', e) }
+    try { await initOrgs(user.id) } catch (e) { console.error('post-MFA init:', e) }
     setNeedsMfa(false)
   }} lang={lang} /></LangCtx.Provider>
 
