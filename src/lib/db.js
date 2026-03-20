@@ -473,13 +473,44 @@ export async function rejectJoinRequest(requestId) {
   if (error) throw error
 }
 
+// ── Project members ────────────────────────────────────────────
+export async function fetchMyProjectIds(orgId) {
+  const { data, error } = await supabase.rpc('get_my_project_ids', { p_org_id: orgId })
+  if (error) return null // RPC not yet created — no filtering
+  return data?.map(r => r.project_id) ?? null
+}
+
+export async function fetchProjectMembers(projectId) {
+  const { data, error } = await supabase.rpc('get_project_members', { p_project_id: projectId })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function addProjectMember(projectId, userId, role = 'member') {
+  const { error } = await supabase.rpc('add_project_member', { p_project_id: projectId, p_user_id: userId, p_role: role })
+  if (error) throw error
+}
+
+export async function removeProjectMember(projectId, userId) {
+  const { error } = await supabase.rpc('remove_project_member', { p_project_id: projectId, p_user_id: userId })
+  if (error) throw error
+}
+
 // ── Fetch all ──────────────────────────────────────────────────
 export async function fetchOrgData(orgId) {
-  const [ports, projs, secs, tasks] = await Promise.all([
+  const [ports, projs, secs, tasks, accessibleIds] = await Promise.all([
     fetchPortfolios(orgId),
     fetchProjects(orgId),
     fetchSections(orgId),
     fetchTasks(orgId),
+    fetchMyProjectIds(orgId),
   ])
-  return { ports, projs, secs, tasks }
+  if (accessibleIds === null) return { ports, projs, secs, tasks }
+  const idSet = new Set(accessibleIds)
+  return {
+    ports,
+    projs: projs.filter(p => idSet.has(p.id)),
+    secs: Object.fromEntries(Object.entries(secs).filter(([pid]) => idSet.has(pid))),
+    tasks: tasks.filter(t => idSet.has(t.pid)),
+  }
 }

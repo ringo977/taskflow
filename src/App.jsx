@@ -10,7 +10,7 @@ import {
   fetchOrgData, fetchSectionRows,
   upsertTask, updateTaskField, moveTaskToSection, updateTaskDeps,
   upsertProject, upsertPortfolio, upsertSections,
-  updateTaskPositions, ensureOrgMembership, seedOrg,
+  updateTaskPositions, ensureOrgMembership, addProjectMember, seedOrg,
 } from '@/lib/db'
 import { PROJECT_COLORS, INITIAL_PROJECTS, INITIAL_PORTFOLIOS, INITIAL_SECTIONS, INITIAL_TASKS } from '@/data/initialData'
 import { BIOMIMX_PROJECTS, BIOMIMX_PORTFOLIOS, BIOMIMX_SECTIONS, BIOMIMX_TASKS } from '@/data/biomimxData'
@@ -473,6 +473,15 @@ function App() {
     switchOrg(orgDef.id)
   }
 
+  const autoAddAssigneeToProject = async (projectId, assigneeName) => {
+    try {
+      const { data } = await supabase.from('profiles')
+        .select('id').or(`display_name.eq.${assigneeName},email.ilike.${assigneeName.split(' ')[0]}%`)
+        .limit(1).maybeSingle()
+      if (data) await addProjectMember(projectId, data.id).catch(() => {})
+    } catch {}
+  }
+
   // ── CRUD — optimistic + persist ──────────────────────────────
   const updTask = async (id, patch) => {
     const prev = tasks.find(t => t.id === id)
@@ -504,6 +513,9 @@ function App() {
         if (updated) await upsertTask(activeOrgId, { ...updated, ...fullPatch }, secRowsRef.current)
       } else if (!('deps' in patch && Object.keys(patch).length === 1)) {
         await updateTaskField(activeOrgId, id, fullPatch)
+      }
+      if ('who' in patch && patch.who && prev) {
+        autoAddAssigneeToProject(prev.pid, patch.who)
       }
     } catch (e) { console.error('updTask:', e) }
   }
@@ -580,6 +592,7 @@ function App() {
     setPid(id); setNav('projects')
     try {
       await upsertProject(activeOrgId, newProj)
+      await addProjectMember(id, user.id, 'owner').catch(() => {})
       await upsertSections(activeOrgId, id, secNames)
       secRowsRef.current = await fetchSectionRows(activeOrgId)
       for (const tk of tplTasks) await upsertTask(activeOrgId, tk, secRowsRef.current)

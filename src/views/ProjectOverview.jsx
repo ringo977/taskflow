@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
+import { fetchProjectMembers, addProjectMember, removeProjectMember } from '@/lib/db'
+import { getInitials } from '@/utils/initials'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 
@@ -143,23 +145,7 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
         </div>
 
         {/* Members */}
-        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.projectMembers}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(proj.members ?? []).map(name => {
-              const u = USERS.find(u => u.name === name)
-              return (
-                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar name={name} size={22} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: 'var(--tx1)' }}>{name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{u?.role ?? 'member'}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} />
 
         {/* Custom fields config */}
         <CustomFieldsConfig proj={proj} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} t={t} />
@@ -174,6 +160,86 @@ const FIELD_TYPES = [
   { id: 'number', label: 'Number', icon: '#' },
   { id: 'select', label: 'Select', icon: '▾' },
 ]
+
+function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t }) {
+  const [members, setMembers] = useState([])
+  const [showAdd, setShowAdd] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    fetchProjectMembers(projectId)
+      .then(setMembers)
+      .catch(() => {})
+  }, [projectId, busy])
+
+  const nonMembers = orgUsers.filter(u => !members.some(m => m.user_id === u.id))
+
+  const handleAdd = async (userId) => {
+    setBusy(true)
+    try {
+      await addProjectMember(projectId, userId)
+    } catch {}
+    finally { setBusy(false) }
+  }
+
+  const handleRemove = async (userId) => {
+    setBusy(true)
+    try {
+      await removeProjectMember(projectId, userId)
+    } catch {}
+    finally { setBusy(false) }
+  }
+
+  return (
+    <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={sectionTitleStyle}>{t.projectMembers}</div>
+        <button onClick={() => setShowAdd(s => !s)}
+          style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: '1px solid var(--accent)40', borderRadius: 'var(--r1)', padding: '2px 7px', cursor: 'pointer' }}>
+          {showAdd ? '✕' : '+'}
+        </button>
+      </div>
+
+      {showAdd && nonMembers.length > 0 && (
+        <div style={{ marginBottom: 10, padding: '8px', background: 'var(--bg2)', borderRadius: 'var(--r1)', maxHeight: 120, overflow: 'auto' }}>
+          {nonMembers.map(u => (
+            <div key={u.id} onClick={() => handleAdd(u.id)}
+              className="row-interactive"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 'var(--r1)', cursor: 'pointer', fontSize: 12, color: 'var(--tx2)' }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {getInitials(u.name)}
+              </div>
+              {u.name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {members.map(m => (
+          <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', background: (m.color ?? '#888') + '28', color: m.color ?? '#888', fontSize: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {getInitials(m.user_name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, color: 'var(--tx1)' }}>{m.user_name}</div>
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{m.role}</span>
+            {m.role !== 'owner' && (
+              <button onClick={() => handleRemove(m.user_id)}
+                style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
+            )}
+          </div>
+        ))}
+        {members.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>
+            {t.noProjectMembers ?? 'No members yet'}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function CustomFieldsConfig({ proj, onUpdProj, sectionTitleStyle, t }) {
   const fields = proj.customFields ?? []
