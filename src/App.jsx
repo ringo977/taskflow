@@ -726,7 +726,23 @@ function App() {
   // ── Gates ─────────────────────────────────────────────────────
   if (appLoading) return <LangCtx.Provider value={lang}><LoadingScreen message={tr.loadingMsg} /></LangCtx.Provider>
   if (!user)      return <LangCtx.Provider value={lang}><LoginPage lang={lang} setLang={setLang} /></LangCtx.Provider>
-  if (needsMfa)   return <LangCtx.Provider value={lang}><MfaPage onComplete={() => setNeedsMfa(false)} lang={lang} /></LangCtx.Provider>
+  if (needsMfa)   return <LangCtx.Provider value={lang}><MfaPage onComplete={async () => {
+    try {
+      const memberships = await ensureOrgMembership(user.id)
+      const memberOrgIds = memberships.map(m => m.org_id)
+      const allOrgs = storage.get('orgs', INITIAL_ORGS)
+      const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
+      if (visibleOrgs.length) {
+        setOrgs(visibleOrgs)
+        if (!memberOrgIds.includes(activeOrgIdRef.current)) {
+          setActiveOrgId(visibleOrgs[0].id)
+          activeOrgIdRef.current = visibleOrgs[0].id
+        }
+      }
+      await loadOrgData(activeOrgIdRef.current)
+    } catch (e) { console.error('post-MFA init:', e) }
+    setNeedsMfa(false)
+  }} lang={lang} /></LangCtx.Provider>
 
   const projectContent = (
     <>
