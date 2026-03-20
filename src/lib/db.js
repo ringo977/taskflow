@@ -389,10 +389,16 @@ export async function fetchOrgDirectory(orgId) {
 }
 
 // ── Org membership ──────────────────────────────────────────────
+export async function fetchMyMemberships() {
+  const { data, error } = await supabase.rpc('get_my_memberships')
+  if (!error && data) return data
+  const { data: fallback, error: e2 } = await supabase.from('org_members').select('org_id, role')
+  if (e2) throw e2
+  return fallback ?? []
+}
+
 export async function fetchUserOrgIds() {
-  const { data, error } = await supabase.from('org_members').select('org_id, role')
-  if (error) throw error
-  return data ?? []
+  return fetchMyMemberships()
 }
 
 export async function ensureOrgMembership(userId, defaultOrgId = 'polimi') {
