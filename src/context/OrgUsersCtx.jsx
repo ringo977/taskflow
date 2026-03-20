@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { getUsersForOrg } from '@/data/users'
 import { fetchOrgDirectory, fetchMyMemberships } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
 
@@ -7,7 +6,7 @@ const OrgUsersCtx = createContext(null)
 const RefreshCtx = createContext(() => {})
 
 export function OrgUsersProvider({ orgId, children }) {
-  const [users, setUsers] = useState(() => getUsersForOrg(orgId))
+  const [users, setUsers] = useState([])
   const [tick, setTick] = useState(0)
 
   const refresh = useCallback(() => setTick(n => n + 1), [])
@@ -20,12 +19,12 @@ export function OrgUsersProvider({ orgId, children }) {
         if (rows?.length) {
           setUsers(rows)
         } else {
-          injectCurrentUser(orgId).then(fallback => !cancelled && setUsers(fallback))
+          currentUserFallback(orgId).then(fb => !cancelled && setUsers(fb))
         }
       })
       .catch(() => {
         if (cancelled) return
-        injectCurrentUser(orgId).then(fallback => !cancelled && setUsers(fallback))
+        currentUserFallback(orgId).then(fb => !cancelled && setUsers(fb))
       })
     return () => { cancelled = true }
   }, [orgId, tick])
@@ -37,10 +36,10 @@ export function OrgUsersProvider({ orgId, children }) {
   )
 }
 
-async function injectCurrentUser(orgId) {
+async function currentUserFallback(orgId) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return getUsersForOrg(orgId)
+    if (!user) return []
     const memberships = await fetchMyMemberships()
     const membership = memberships.find(m => m.org_id === orgId)
     return [{
@@ -51,7 +50,7 @@ async function injectCurrentUser(orgId) {
       color: '#378ADD',
     }]
   } catch {
-    return getUsersForOrg(orgId)
+    return []
   }
 }
 
