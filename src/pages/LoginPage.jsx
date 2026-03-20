@@ -95,18 +95,18 @@ export default function LoginPage({ lang, setLang }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>{isIt ? 'Nome' : 'First name'}</label>
-              <input value={firstName} onChange={e => setFirst(e.target.value)} placeholder="Marco" style={inputStyle} autoComplete="given-name" autoFocus />
+              <input value={firstName} onChange={e => setFirst(e.target.value)} placeholder="John" style={inputStyle} autoComplete="given-name" autoFocus />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>{isIt ? 'Cognome' : 'Last name'}</label>
-              <input value={lastName} onChange={e => setLast(e.target.value)} placeholder="Rasponi" style={inputStyle} autoComplete="family-name" />
+              <input value={lastName} onChange={e => setLast(e.target.value)} placeholder="Doe" style={inputStyle} autoComplete="family-name" />
             </div>
           </div>
         )}
 
         <div>
           <label style={labelStyle}>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@polimi.it"
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john.doe@email.com"
             style={inputStyle} autoComplete="email" onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
         </div>
 
