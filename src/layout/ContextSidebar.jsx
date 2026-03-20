@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
+import { getInitials } from '@/utils/initials'
 import ConfirmModal from '@/components/ConfirmModal'
 
 const COLLAPSE_KEY = 'taskflow-sidebar-collapsed'
@@ -65,7 +66,18 @@ export default function ContextSidebar({
       }}
     >
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: project.color, flexShrink: 0 }} />
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{project.name}</span>
+      <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</div>
+        {project.members?.length > 0 && (
+          <div style={{ display: 'flex', marginTop: 2 }}>
+            {project.members.slice(0, 3).map((name, i) => {
+              const color = orgUsers.find(u => u.name === name)?.color ?? '#888'
+              return <div key={name} title={name} style={{ width: 16, height: 16, borderRadius: '50%', background: color + '22', color, fontSize: 6, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: i ? -4 : 0, zIndex: 3 - i, border: '1.5px solid var(--bg1)' }}>{getInitials(name)}</div>
+            })}
+            {project.members.length > 3 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--bg2)', color: 'var(--tx3)', fontSize: 7, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: -4 }}>+{project.members.length - 3}</div>}
+          </div>
+        )}
+      </div>
       {project.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
       {canManageProject(project.id) && (
         <button onClick={e => openContextMenu(e, 'project', project)}

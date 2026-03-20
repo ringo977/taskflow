@@ -4,6 +4,7 @@ import { LangCtx, useLang, translations } from '@/i18n'
 import { storage } from '@/utils/storage'
 import { generateSubtasks, createTaskFromText, summariseProject } from '@/utils/ai'
 import { exportTasksCsv as exportCsv } from '@/utils/exportCsv'
+import AvatarGroup from '@/components/AvatarGroup'
 import { supabase } from '@/lib/supabase'
 import { signOut, getUserOrgs, getMfaLevel, getFactors } from '@/lib/auth'
 import {
@@ -189,17 +190,20 @@ function ProjectHeader({ proj, view, setView, tasks, onAddTask, onSummary, onExp
   const t  = useLang()
   const po = portfolios.find(x => x.id === proj?.portfolio)
   const done = tasks.filter(t => t.done).length
+  const memberNames = useMemo(() => [...new Set(tasks.map(t => t.who).filter(Boolean))], [tasks])
   const VIEWS = [
     [t.overview, 'overview'], [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
   ]
   return (
-    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg1)', flexShrink: 0 }}>
+    <div className="project-header" style={{ padding: '12px 20px', borderBottom: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg1)', flexShrink: 0 }}>
       {po && <span style={{ fontSize: 12, color: po.color, background: po.color + '12', padding: '3px 10px', borderRadius: 'var(--r1)', fontWeight: 500, flexShrink: 0 }}>{po.name}</span>}
       <div style={{ width: 9, height: 9, borderRadius: '50%', background: proj?.color, flexShrink: 0 }} />
-      <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--tx1)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>{proj?.name}</span>
-      <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{done}/{tasks.length}</span>
-      <div style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+      <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>{proj?.name}</span>
+      <span style={{ fontSize: 13, color: 'var(--tx3)', flexShrink: 0 }}>{done}/{tasks.length}</span>
+      {memberNames.length > 0 && <AvatarGroup names={memberNames} size={26} />}
+      <div style={{ flex: 1 }} />
+      <div className="view-tabs" style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
         {VIEWS.map(([lb, v], i, arr) => (
           <button key={v} onClick={() => setView(v)} style={{
             padding: '5px 12px', fontSize: 12, border: 'none',
