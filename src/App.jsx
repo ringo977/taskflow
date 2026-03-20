@@ -407,6 +407,21 @@ function App() {
       }
     }
 
+    const initOrgs = async (userId) => {
+      const memberships = await ensureOrgMembership(userId)
+      const memberOrgIds = memberships.map(m => m.org_id)
+      const allOrgs = storage.get('orgs', INITIAL_ORGS)
+      const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
+      if (visibleOrgs.length) {
+        setOrgs(visibleOrgs)
+        if (!memberOrgIds.includes(activeOrgIdRef.current)) {
+          setActiveOrgId(visibleOrgs[0].id)
+          activeOrgIdRef.current = visibleOrgs[0].id
+        }
+      }
+      await loadOrgData(activeOrgIdRef.current)
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       deferAuthWork(async () => {
         if (cancelled) return
@@ -415,41 +430,31 @@ function App() {
             setUser(null); setNeedsMfa(false)
             finishBoot(); return
           }
-          if (session?.user) {
-            const u = session.user
-            const userObj = { id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' }
-            // Always ensure org membership on first sign-in (before MFA gate)
-            if (event === 'SIGNED_IN') {
-              try { await ensureOrgMembership(u.id) } catch (e) { console.error('ensureOrgMembership:', e) }
-              try {
-                const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
-                const hasVerifiedFactor = factors.some(f => f.status === 'verified')
-                if (!hasVerifiedFactor || (mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2')) {
-                  setUser(userObj)
-                  setNeedsMfa(true)
-                  return
-                }
-              } catch (e) { console.warn('MFA check:', e) }
-            }
+          if (!session?.user) { setUser(null); return }
+
+          const u = session.user
+          const userObj = { id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' }
+
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            // 1. Ensure org membership before anything else
+            try { await ensureOrgMembership(u.id) } catch (e) { console.error('ensureOrgMembership:', e) }
+
+            // 2. Check MFA — don't set user until we know MFA status
+            try {
+              const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
+              const hasVerifiedFactor = factors.some(f => f.status === 'verified')
+              if (!hasVerifiedFactor || (mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2')) {
+                setNeedsMfa(true)
+                setUser(userObj)
+                return
+              }
+            } catch (e) { console.warn('MFA check:', e) }
+
+            // 3. MFA passed — load everything
             setUser(userObj)
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              try {
-                const memberships = await ensureOrgMembership(u.id)
-                const memberOrgIds = memberships.map(m => m.org_id)
-                const allOrgs = storage.get('orgs', INITIAL_ORGS)
-                const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
-                if (visibleOrgs.length) {
-                  setOrgs(visibleOrgs)
-                  if (!memberOrgIds.includes(activeOrgIdRef.current)) {
-                    setActiveOrgId(visibleOrgs[0].id)
-                    activeOrgIdRef.current = visibleOrgs[0].id
-                  }
-                }
-                await loadOrgData(activeOrgIdRef.current)
-              } catch (e) { console.error('loadOrgData:', e) }
-            }
+            try { await initOrgs(u.id) } catch (e) { console.error('initOrgs:', e) }
           } else {
-            setUser(null)
+            setUser(userObj)
           }
         } finally {
           finishBoot()
