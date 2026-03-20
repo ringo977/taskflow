@@ -424,13 +424,23 @@ export async function fetchUserOrgIds() {
 export async function ensureOrgMembership(userId) {
   const memberships = await fetchUserOrgIds()
   if (memberships.length > 0) return memberships
-  const signupOrg = localStorage.getItem('taskflow-signup-org')
-  const orgId = signupOrg || 'polimi'
-  if (signupOrg) localStorage.removeItem('taskflow-signup-org')
+  // Determine org: localStorage (same browser) > user_metadata > default
+  let orgId = localStorage.getItem('taskflow-signup-org')
+  if (!orgId) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      orgId = user?.user_metadata?.signup_org
+    } catch {}
+  }
+  orgId = orgId || 'polimi'
+  localStorage.removeItem('taskflow-signup-org')
   const { error } = await supabase.from('org_members').insert({
     org_id: orgId, user_id: userId, role: 'member',
   })
-  if (error && error.code !== '23505') throw error
+  if (error && error.code !== '23505') {
+    console.error('ensureOrgMembership insert failed:', error)
+    throw error
+  }
   return [{ org_id: orgId, role: 'member' }]
 }
 
