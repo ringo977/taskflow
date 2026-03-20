@@ -413,7 +413,8 @@ function App() {
             if (event === 'SIGNED_IN') {
               try {
                 const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
-                if (factors.length === 0 || (mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2')) {
+                const hasVerifiedFactor = factors.some(f => f.status === 'verified')
+                if (hasVerifiedFactor && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
                   setNeedsMfa(true)
                 }
               } catch (e) { console.warn('MFA check:', e) }
