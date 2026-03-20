@@ -523,8 +523,9 @@ export async function updateOrgMemberRole(orgId, userId, role) {
 export async function requestJoinOrg(orgId) {
   const { error } = await supabase.rpc('request_join_org', { p_org_id: orgId })
   if (error) {
-    if (error.message?.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
-    if (error.message?.includes('ALREADY_REQUESTED')) throw new Error('ALREADY_REQUESTED')
+    const msg = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`
+    if (msg.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
+    if (msg.includes('ALREADY_REQUESTED')) throw new Error('ALREADY_REQUESTED')
     throw error
   }
 }
