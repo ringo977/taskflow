@@ -395,26 +395,35 @@ function App() {
 
   // ── Org initialization (shared by auth listener + MFA completion) ──
   const initOrgs = useCallback(async (userId) => {
+    let signupOrg = null
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      signupOrg = u?.user_metadata?.signup_org || null
+    } catch {}
+
     let memberships = []
     try { memberships = await ensureOrgMembership(userId) } catch {}
     if (!memberships.length) {
       try { memberships = await fetchUserOrgIds() } catch {}
     }
-    if (!memberships.length) {
-      try {
-        const { data: { user: u } } = await supabase.auth.getUser()
-        const so = u?.user_metadata?.signup_org
-        if (so) memberships = [{ org_id: so, role: 'member' }]
-      } catch {}
+    if (!memberships.length && signupOrg) {
+      memberships = [{ org_id: signupOrg, role: 'member' }]
     }
     const memberOrgIds = memberships.map(m => m.org_id)
     const allOrgs = storage.get('orgs', INITIAL_ORGS)
     const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
     if (visibleOrgs.length) {
       setOrgs(visibleOrgs)
-      if (!memberOrgIds.includes(activeOrgIdRef.current)) {
-        setActiveOrgId(visibleOrgs[0].id)
-        activeOrgIdRef.current = visibleOrgs[0].id
+      // Prefer org chosen at signup when user belongs to several (e.g. polimi + biomimx)
+      let next = activeOrgIdRef.current
+      if (signupOrg && memberOrgIds.includes(signupOrg)) {
+        next = signupOrg
+      } else if (!memberOrgIds.includes(next)) {
+        next = visibleOrgs[0].id
+      }
+      if (next !== activeOrgIdRef.current) {
+        setActiveOrgId(next)
+        activeOrgIdRef.current = next
       }
     }
     await loadOrgData(activeOrgIdRef.current)
