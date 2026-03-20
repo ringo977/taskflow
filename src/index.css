@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────── */
+:root {
+  /* Typography */
+  --fs-caption: 11px;
+  --fs-sm:      12px;
+  --fs-body:    13px;
+  --fs-base:    14px;
+  --fs-md:      16px;
+  --fs-lg:      20px;
+  --fs-xl:      28px;
+
+  /* Spacing (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* Radii */
+  --r1: 6px; --r2: 10px; --r3: 14px;
+
+  /* Surfaces */
+  --bg1: #ffffff;  --bg2: #f4f3ef;  --bg3: #eae8e1;
+
+  /* Semantic surfaces */
+  --bg-info:    #e6f1fb;  --bg-danger:  #fcebeb;
+  --bg-success: #eaf3de;  --bg-warning: #faeeda;
+
+  /* Text */
+  --tx1: #1a1a18;  --tx2: #5a5955;  --tx3: #9a9890;
+  --tx-info:    #185fa5;  --tx-danger:  #a32d2d;
+  --tx-success: #3b6d11;  --tx-warning: #854f0b;
+
+  /* Semantic palette */
+  --c-brand:   #378ADD;
+  --c-success: #1D9E75;
+  --c-danger:  #E24B4A;
+  --c-warning: #EF9F27;
+  --c-purple:  #7F77DD;
+  --c-lime:    #639922;
+
+  /* Borders */
+  --bd3: rgba(0,0,0,0.08);
+  --bd2: rgba(0,0,0,0.15);
+  --bd1: rgba(0,0,0,0.25);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-norm: 200ms;
+}
+
+/* ── Dark mode (auto via prefers-color-scheme, manual via data-theme) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg1: #1e1e1c;  --bg2: #262624;  --bg3: #2e2e2c;
+  --bg-info: #0c2d4a;  --bg-danger: #3a1515;
+  --bg-success: #1a2e0a;  --bg-warning: #2e1e08;
+  --tx1: #e8e6de;  --tx2: #a8a69e;  --tx3: #6a6860;
+  --tx-info: #85b7eb;  --tx-danger: #f09595;
+  --tx-success: #c0dd97;  --tx-warning: #fac775;
+  --c-brand: #5ea3e8;  --c-success: #34c48c;  --c-danger: #f07070;
+  --c-warning: #f5b84a;  --c-purple: #9d96f0;  --c-lime: #8dc23e;
+  --bd3: rgba(255,255,255,0.07);  --bd2: rgba(255,255,255,0.14);  --bd1: rgba(255,255,255,0.24);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.20);  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);  --shadow-lg: 0 8px 32px rgba(0,0,0,0.36);
+  color-scheme: dark;
+}}
+:root[data-theme="dark"] {
+  --bg1: #1e1e1c;  --bg2: #262624;  --bg3: #2e2e2c;
+  --bg-info: #0c2d4a;  --bg-danger: #3a1515;
+  --bg-success: #1a2e0a;  --bg-warning: #2e1e08;
+  --tx1: #e8e6de;  --tx2: #a8a69e;  --tx3: #6a6860;
+  --tx-info: #85b7eb;  --tx-danger: #f09595;
+  --tx-success: #c0dd97;  --tx-warning: #fac775;
+  --c-brand: #5ea3e8;  --c-success: #34c48c;  --c-danger: #f07070;
+  --c-warning: #f5b84a;  --c-purple: #9d96f0;  --c-lime: #8dc23e;
+  --bd3: rgba(255,255,255,0.07);  --bd2: rgba(255,255,255,0.14);  --bd1: rgba(255,255,255,0.24);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.20);  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);  --shadow-lg: 0 8px 32px rgba(0,0,0,0.36);
+  color-scheme: dark;
+}
+
+/* ── Resets & base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 15px; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--fs-base); line-height: 1.55; letter-spacing: -0.006em;
+  background: var(--bg3); color: var(--tx1);
+  min-height: 100vh; margin: 0; padding: var(--sp-4);
+  display: flex; align-items: center; justify-content: center;
+}
+#root { width: 100%; max-width: 1600px; }
+p { margin: 0; }
+
+/* ── Form controls ──────────────────────────────────────────── */
+input, select, textarea {
+  font-family: inherit; font-size: var(--fs-body);
+  padding: 7px 11px; border: 1px solid var(--bd2);
+  border-radius: var(--r1); background: var(--bg1); color: var(--tx1); outline: none;
+  transition: border-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--c-brand) 14%, transparent);
+}
+button {
+  font-family: inherit; font-size: var(--fs-body);
+  padding: 7px 14px; border: 1px solid var(--bd2);
+  border-radius: var(--r1); background: transparent; color: var(--tx1);
+  cursor: pointer; outline: none;
+  transition: background var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease),
+              transform 80ms var(--ease);
+}
+button:hover { background: var(--bg2); }
+button:active { transform: scale(0.97); }
+button:focus-visible {
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--c-brand) 20%, transparent);
+}
+
+/* ── Utility classes for interactive rows ───────────────────── */
+.hoverable {
+  transition: background var(--duration-fast) var(--ease);
+}
+.hoverable:hover {
+  background: var(--bg2);
+}
+.row-interactive {
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+.row-interactive:hover {
+  background: color-mix(in srgb, var(--bg2) 60%, transparent);
+}
+
+/* ── Miscellaneous ──────────────────────────────────────────── */
+mark { background: #EF9F2740; color: inherit; border-radius: 2px; padding: 0 2px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bd1); }
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.fade-in { animation: fadeIn var(--duration-norm) var(--ease) both; }
+
+/* ── Mobile responsive ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  body { padding: 0; }
+  #root { max-width: 100%; }
+  .app-shell { height: 100vh !important; min-height: 0 !important; border-radius: 0 !important; border: none !important; }
+  .icon-sidebar { width: 0 !important; overflow: hidden; padding: 0 !important; border: none !important; }
+  .icon-sidebar.open { width: 68px !important; overflow: visible; padding: 12px 0 !important; border-right: 1px solid var(--bd3) !important; position: absolute; z-index: 50; height: 100%; background: var(--bg2); }
+  .context-sidebar { display: none !important; }
+  .mobile-toggle { display: flex !important; }
+  .project-header { flex-wrap: wrap; gap: 8px !important; }
+  .project-header .view-tabs { order: 10; width: 100%; }
+}
+@media (min-width: 769px) {
+  .mobile-toggle { display: none !important; }
+}
