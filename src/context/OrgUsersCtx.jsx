@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getUsersForOrg } from '@/data/users'
-import { fetchOrgDirectory } from '@/lib/db'
+import { fetchOrgDirectory, fetchMyMemberships } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
 
 const OrgUsersCtx = createContext(null)
@@ -42,12 +42,8 @@ async function injectCurrentUser(orgId) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return fallback
-    const { data: membership } = await supabase
-      .from('org_members')
-      .select('role')
-      .eq('org_id', orgId)
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const memberships = await fetchMyMemberships()
+    const membership = memberships.find(m => m.org_id === orgId)
     const me = {
       id: user.id,
       name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User',
