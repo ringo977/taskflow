@@ -60,8 +60,8 @@ export default function LoginPage({ lang, setLang }) {
     : email && pass && pass2 && firstName.trim() && lastName.trim()
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', padding: 20, zIndex: 10 }}>
-      <div style={{ width: 380, background: 'var(--bg1)', borderRadius: 'var(--r3)', border: '1px solid var(--bd3)', padding: '36px 32px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', padding: 20, zIndex: 10, overflowY: 'auto' }}>
+      <div style={{ width: 380, maxWidth: '100%', background: 'var(--bg1)', borderRadius: 'var(--r3)', border: '1px solid var(--bd3)', padding: '36px 32px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', gap: 14, margin: 'auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -95,11 +95,11 @@ export default function LoginPage({ lang, setLang }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>{isIt ? 'Nome' : 'First name'}</label>
-              <input value={firstName} onChange={e => setFirst(e.target.value)} placeholder="Marco" style={inputStyle} autoFocus />
+              <input value={firstName} onChange={e => setFirst(e.target.value)} placeholder="Marco" style={inputStyle} autoComplete="given-name" autoFocus />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>{isIt ? 'Cognome' : 'Last name'}</label>
-              <input value={lastName} onChange={e => setLast(e.target.value)} placeholder="Rasponi" style={inputStyle} />
+              <input value={lastName} onChange={e => setLast(e.target.value)} placeholder="Rasponi" style={inputStyle} autoComplete="family-name" />
             </div>
           </div>
         )}
@@ -107,21 +107,24 @@ export default function LoginPage({ lang, setLang }) {
         <div>
           <label style={labelStyle}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@polimi.it"
-            style={inputStyle} onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
+            style={inputStyle} autoComplete="email" onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
         </div>
 
         <div>
           <label style={labelStyle}>Password</label>
-          <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="••••••••"
-            style={inputStyle} onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
+          <input type="password" value={pass} onChange={e => setPass(e.target.value)}
+            placeholder={mode === 'signup' ? (isIt ? 'Min. 8 caratteri' : 'Min. 8 characters') : '••••••••'}
+            style={inputStyle} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+            onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
         </div>
 
         {mode === 'signup' && (
           <>
             <div>
               <label style={labelStyle}>{isIt ? 'Conferma password' : 'Confirm password'}</label>
-              <input type="password" value={pass2} onChange={e => setPass2(e.target.value)} placeholder="••••••••"
-                style={inputStyle} />
+              <input type="password" value={pass2} onChange={e => setPass2(e.target.value)}
+                placeholder={isIt ? 'Ripeti password' : 'Repeat password'}
+                style={inputStyle} autoComplete="new-password" />
             </div>
 
             {/* Org selection */}
