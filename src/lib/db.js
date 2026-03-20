@@ -455,6 +455,11 @@ export async function confirmUserEmail(userId) {
   if (error) throw error
 }
 
+export async function deleteUserAccount(userId) {
+  const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId })
+  if (error) throw error
+}
+
 export async function addOrgMember(orgId, email, role = 'member') {
   const { error } = await supabase.rpc('add_org_member_by_email', {
     p_org_id: orgId, p_email: email, p_role: role,

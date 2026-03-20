@@ -156,6 +156,10 @@ const it = {
   userConfirmed: 'Email utente confermata',
   confirmError: 'Conferma fallita',
   registeredOn: 'Registrato il',
+  deleteAccount: 'Elimina account',
+  confirmDeleteAccount: 'Eliminare definitivamente l\'account di',
+  accountDeleted: 'Account eliminato',
+  accountDeleteError: 'Eliminazione fallita',
   // Delete / Archive
   confirm: 'Conferma',
   deleteTask: 'Elimina task',

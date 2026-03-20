@@ -156,6 +156,10 @@ const en = {
   userConfirmed: 'User email confirmed',
   confirmError: 'Confirm failed',
   registeredOn: 'Registered',
+  deleteAccount: 'Delete account',
+  confirmDeleteAccount: 'Permanently delete the account of',
+  accountDeleted: 'Account deleted',
+  accountDeleteError: 'Delete failed',
   // Delete / Archive
   confirm: 'Confirm',
   deleteTask: 'Delete task',

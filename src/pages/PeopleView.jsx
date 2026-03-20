@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
-import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest, fetchPendingSignups, confirmUserEmail } from '@/lib/db'
+import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest, fetchPendingSignups, confirmUserEmail, deleteUserAccount } from '@/lib/db'
+import ConfirmModal from '@/components/ConfirmModal'
 import { getInitials } from '@/utils/initials'
 
 const ROLES = ['admin', 'manager', 'member', 'guest']
@@ -26,6 +27,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   const [inviteRole, setInviteRole] = useState('member')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   const currentMember = USERS.find(u => u.id === currentUser?.id)
   const [dbRole, setDbRole] = useState(null)
@@ -121,6 +123,17 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       flash(t.removeError + (e?.message ? ` (${e.message})` : ''), 'err')
     }
     finally { setBusy(false) }
+  }
+
+  const handleDeleteAccount = async (userId) => {
+    setBusy(true)
+    try {
+      await deleteUserAccount(userId)
+      flash(t.accountDeleted ?? 'Account deleted')
+      refreshUsers()
+    } catch (e) {
+      flash((t.accountDeleteError ?? 'Delete failed') + (e?.message ? ` (${e.message})` : ''), 'err')
+    } finally { setBusy(false); setConfirmDelete(null) }
   }
 
   const handleRoleChange = async (u, newRole) => {
@@ -232,13 +245,22 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   </td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
                     {u.id !== currentUser?.id && isUUID(u.id) && (
-                      <button
-                        onClick={() => handleRemove(u)}
-                        disabled={busy}
-                        style={{ fontSize: 12, color: 'var(--c-danger)', background: 'none', border: '1px solid var(--c-danger)40', borderRadius: 'var(--r1)', padding: '2px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}
-                      >
-                        {t.removeMember}
-                      </button>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => handleRemove(u)}
+                          disabled={busy}
+                          style={{ fontSize: 12, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '2px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}
+                        >
+                          {t.removeMember}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(u)}
+                          disabled={busy}
+                          style={{ fontSize: 12, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '2px 10px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1 }}
+                        >
+                          {t.deleteAccount ?? 'Delete account'}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -362,6 +384,14 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
           )
         })}
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          message={`${t.confirmDeleteAccount ?? 'Permanently delete the account of'} "${confirmDelete.name}" (${confirmDelete.email})? ${t.cannotUndo ?? 'This cannot be undone.'}`}
+          onConfirm={() => handleDeleteAccount(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   )
 }
