@@ -417,35 +417,27 @@ export async function ensureOrgMembership(userId) {
 }
 
 export async function addOrgMember(orgId, email, role = 'member') {
-  const { data: profile, error: pe } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
-  if (pe) throw pe
-  if (!profile) throw new Error('USER_NOT_FOUND')
-  const { error } = await supabase.from('org_members').insert({
-    org_id: orgId, user_id: profile.id, role,
+  const { error } = await supabase.rpc('add_org_member_by_email', {
+    p_org_id: orgId, p_email: email, p_role: role,
   })
   if (error) {
-    if (error.code === '23505') throw new Error('ALREADY_MEMBER')
+    if (error.message?.includes('USER_NOT_FOUND')) throw new Error('USER_NOT_FOUND')
+    if (error.message?.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
     throw error
   }
 }
 
 export async function removeOrgMember(orgId, userId) {
-  const { error } = await supabase.from('org_members')
-    .delete()
-    .eq('org_id', orgId)
-    .eq('user_id', userId)
+  const { error } = await supabase.rpc('remove_org_member', {
+    p_org_id: orgId, p_user_id: userId,
+  })
   if (error) throw error
 }
 
 export async function updateOrgMemberRole(orgId, userId, role) {
-  const { error } = await supabase.from('org_members')
-    .update({ role })
-    .eq('org_id', orgId)
-    .eq('user_id', userId)
+  const { error } = await supabase.rpc('update_org_member_role', {
+    p_org_id: orgId, p_user_id: userId, p_role: role,
+  })
   if (error) throw error
 }
 
