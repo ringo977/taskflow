@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { PROJECT_COLORS } from '@/data/initialData'
 import { isOverdue } from '@/utils/filters'
+import { useOrgUsers } from '@/context/OrgUsersCtx'
 import AvatarGroup from '@/components/AvatarGroup'
 import ConfirmModal from '@/components/ConfirmModal'
 
-export default function PortfoliosView({ portfolios, projects, tasks, onSelProj, onAddPortfolio, onDeletePortfolio, onArchivePortfolio }) {
+export default function PortfoliosView({ portfolios, projects, tasks, onSelProj, onAddPortfolio, onDeletePortfolio, onArchivePortfolio, currentUser }) {
   const t = useLang()
+  const orgUsers = useOrgUsers()
+  const me = orgUsers.find(u => u.email === currentUser?.email)
+  const isAdmin = me?.role === 'admin'
   const [adding, setAdding] = useState(false)
   const [nm, setNm]   = useState('')
   const [desc, setDesc] = useState('')
@@ -60,13 +64,13 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
                   <span style={{ fontSize: 12, fontWeight: 500, color: po.color, background: po.color + '18', padding: '2px 8px', borderRadius: 'var(--r1)' }}>
                     {pps.length} {t.projects}
                   </span>
-                  {onArchivePortfolio && (
+                  {isAdmin && onArchivePortfolio && (
                     <button onClick={e => { e.stopPropagation(); onArchivePortfolio(po.id) }} title={po.status === 'archived' ? t.unarchive : t.archive}
                       style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 12, padding: '2px 4px', lineHeight: 1, opacity: 0.6 }}>
                       {po.status === 'archived' ? '↩' : '📦'}
                     </button>
                   )}
-                  {onDeletePortfolio && (
+                  {isAdmin && onDeletePortfolio && (
                     <button onClick={e => { e.stopPropagation(); setConfirmDel(po) }} title={t.deletePortfolio}
                       style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1, opacity: 0.5 }}>
                       ✕

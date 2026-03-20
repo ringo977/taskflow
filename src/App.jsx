@@ -751,14 +751,14 @@ function App() {
         </div>
         {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.3)' }} />}
 
-        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
+        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} currentUser={user} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
           {nav === 'home'       && <HomeDashboard  tasks={tasks} projects={projs} currentUser={user} onOpen={setSelId} onNav={goNav} lang={lang} />}
           {nav === 'projects'   && projectContent}
           {nav === 'portfolios' && (proj && projs.find(p => p.id === pid)
             ? projectContent
-            : <PortfoliosView portfolios={ports} projects={projs} tasks={tasks} onSelProj={selProj} onAddPortfolio={addPortfolio} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} />
+            : <PortfoliosView portfolios={ports} projects={projs} tasks={tasks} onSelProj={selProj} onAddPortfolio={addPortfolio} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} currentUser={user} />
           )}
           {nav === 'mytasks'    && <><FilterBar filters={filters} setFilters={setFilters} tasks={tasks} /><MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters} onOpen={setSelId} onToggle={togTask} lang={lang} /></>}
           {nav === 'people'     && <PeopleView tasks={tasks} projects={projs} currentUser={user} activeOrgId={activeOrgId} />}

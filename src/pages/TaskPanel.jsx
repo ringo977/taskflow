@@ -20,6 +20,8 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const [confirmDel, setConfirmDel] = useState(false)
   const commentRef = useRef(null)
   const proj = projects.find(p => p.id === task.pid)
+  const me = orgUsers.find(u => u.email === currentUser?.email)
+  const isAdmin = me?.role === 'admin'
   const ov   = isOverdue(task.due) && !task.done
 
   const deps = (task.deps ?? []).map(id => allTasks.find(t => t.id === id)).filter(Boolean)
@@ -275,8 +277,8 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
           </div>
         </div>
 
-        {/* Delete */}
-        {onDelete && (
+        {/* Delete (admin only) */}
+        {onDelete && isAdmin && (
           <div style={{ borderTop: '1px solid var(--bd3)', padding: '14px 0 0', marginTop: 8 }}>
             <button onClick={() => setConfirmDel(true)}
               style={{ fontSize: 12, padding: '6px 14px', borderRadius: 'var(--r1)', border: '1px solid var(--c-danger)', background: 'transparent', color: 'var(--c-danger)', cursor: 'pointer' }}>

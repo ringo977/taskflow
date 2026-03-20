@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useLang } from '@/i18n'
+import { useOrgUsers } from '@/context/OrgUsersCtx'
 import ConfirmModal from '@/components/ConfirmModal'
 
 const COLLAPSE_KEY = 'taskflow-sidebar-collapsed'
@@ -10,11 +11,14 @@ function loadCollapsed() {
 
 export default function ContextSidebar({
   navId, projects, portfolios, selPid,
-  onSelProj, onAddProject,
+  onSelProj, onAddProject, currentUser,
   onDeleteProject, onArchiveProject,
   onDeletePortfolio, onArchivePortfolio,
 }) {
   const t = useLang()
+  const orgUsers = useOrgUsers()
+  const me = orgUsers.find(u => u.email === currentUser?.email)
+  const isAdmin = me?.role === 'admin'
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const [showArchived, setShowArchived] = useState(false)
   const [actionMenu, setActionMenu] = useState(null)
@@ -47,7 +51,7 @@ export default function ContextSidebar({
   const SidebarItem = ({ project, selected }) => (
     <div
       onClick={() => onSelProj(project.id)}
-      onContextMenu={e => openContextMenu(e, 'project', project)}
+      onContextMenu={isAdmin ? e => openContextMenu(e, 'project', project) : undefined}
       className="row-interactive"
       style={{
         padding: '8px 12px', borderRadius: 'var(--r1)', cursor: 'pointer',
@@ -61,10 +65,12 @@ export default function ContextSidebar({
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: project.color, flexShrink: 0 }} />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{project.name}</span>
       {project.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
-      <button onClick={e => openContextMenu(e, 'project', project)}
-        style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, flexShrink: 0, opacity: 0.4 }}>
-        ⋯
-      </button>
+      {isAdmin && (
+        <button onClick={e => openContextMenu(e, 'project', project)}
+          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, flexShrink: 0, opacity: 0.4 }}>
+          ⋯
+        </button>
+      )}
     </div>
   )
 
@@ -95,15 +101,17 @@ export default function ContextSidebar({
                 return (
                   <div key={po.id} style={{ marginBottom: 14 }}>
                     <div
-                      onContextMenu={e => openContextMenu(e, 'portfolio', po)}
+                      onContextMenu={isAdmin ? e => openContextMenu(e, 'portfolio', po) : undefined}
                       style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', marginBottom: 3, cursor: 'default' }}>
                       <div style={{ width: 8, height: 8, borderRadius: 2, background: po.color, flexShrink: 0 }} />
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx1)', letterSpacing: '-0.01em', flex: 1, opacity: po.status === 'archived' ? 0.5 : 1 }}>{po.name}</span>
                       {po.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
-                      <button onClick={e => openContextMenu(e, 'portfolio', po)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, opacity: 0.4 }}>
-                        ⋯
-                      </button>
+                      {isAdmin && (
+                        <button onClick={e => openContextMenu(e, 'portfolio', po)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, opacity: 0.4 }}>
+                          ⋯
+                        </button>
+                      )}
                     </div>
                     {children.map(p => (
                       <div key={p.id} style={{ paddingLeft: 16 }}>
