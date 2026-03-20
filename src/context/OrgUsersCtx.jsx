@@ -1,11 +1,15 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getUsersForOrg } from '@/data/users'
 import { fetchOrgDirectory } from '@/lib/db'
 
 const OrgUsersCtx = createContext(null)
+const RefreshCtx = createContext(() => {})
 
 export function OrgUsersProvider({ orgId, children }) {
   const [users, setUsers] = useState(() => getUsersForOrg(orgId))
+  const [tick, setTick] = useState(0)
+
+  const refresh = useCallback(() => setTick(n => n + 1), [])
 
   useEffect(() => {
     setUsers(getUsersForOrg(orgId))
@@ -20,13 +24,20 @@ export function OrgUsersProvider({ orgId, children }) {
         setUsers(getUsersForOrg(orgId))
       })
     return () => { cancelled = true }
-  }, [orgId])
+  }, [orgId, tick])
 
-  return <OrgUsersCtx.Provider value={users}>{children}</OrgUsersCtx.Provider>
+  return (
+    <RefreshCtx.Provider value={refresh}>
+      <OrgUsersCtx.Provider value={users}>{children}</OrgUsersCtx.Provider>
+    </RefreshCtx.Provider>
+  )
 }
 
-/** Team for the active org: loaded from Supabase (org_members + profiles), fallback to static seed in data/users.js */
 export function useOrgUsers() {
   const users = useContext(OrgUsersCtx)
   return users ?? []
+}
+
+export function useRefreshOrgUsers() {
+  return useContext(RefreshCtx)
 }

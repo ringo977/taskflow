@@ -119,5 +119,22 @@ const it = {
   customFields: 'Campi personalizzati', fieldName: 'Nome campo', selectOptions: 'Opzioni (separate da virgola)', addField: 'Aggiungi campo',
   orgLabel: 'Organizzazioni', newOrg: 'Nuova organizzazione',
   orgNamePlaceholder: 'Nome organizzazione', orgShortPlaceholder: 'Abbreviazione (es. PoliMi)',
+  // Admin
+  manageMembers: 'Gestisci membri',
+  inviteMember: 'Invita membro',
+  emailPlaceholder: 'utente@esempio.com',
+  invite: 'Invita',
+  removeMember: 'Rimuovi',
+  roleAdmin: 'Admin', roleMember: 'Membro', roleGuest: 'Ospite',
+  confirmRemove: name => `Rimuovere ${name} dall'organizzazione?`,
+  inviteSuccess: email => `${email} invitato`,
+  inviteErrorNotFound: 'Nessun account trovato per questa email. L\'utente deve prima registrarsi.',
+  inviteErrorAlready: 'Questo utente è già membro.',
+  inviteError: 'Invito fallito.',
+  removeSuccess: name => `${name} rimosso`,
+  removeError: 'Rimozione fallita.',
+  roleUpdated: 'Ruolo aggiornato',
+  roleError: 'Aggiornamento ruolo fallito.',
+  cannotRemoveSelf: 'Non puoi rimuovere te stesso.',
 }
 export default it

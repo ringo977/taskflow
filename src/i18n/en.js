@@ -119,5 +119,22 @@ const en = {
   customFields: 'Custom fields', fieldName: 'Field name', selectOptions: 'Options (comma separated)', addField: 'Add field',
   orgLabel: 'Organizations', newOrg: 'New organization',
   orgNamePlaceholder: 'Organization name', orgShortPlaceholder: 'Abbreviation (e.g. PoliMi)',
+  // Admin
+  manageMembers: 'Manage members',
+  inviteMember: 'Invite member',
+  emailPlaceholder: 'user@example.com',
+  invite: 'Invite',
+  removeMember: 'Remove',
+  roleAdmin: 'Admin', roleMember: 'Member', roleGuest: 'Guest',
+  confirmRemove: name => `Remove ${name} from this organization?`,
+  inviteSuccess: email => `${email} invited`,
+  inviteErrorNotFound: 'No account found for this email. The user must sign up first.',
+  inviteErrorAlready: 'This user is already a member.',
+  inviteError: 'Failed to invite member.',
+  removeSuccess: name => `${name} removed`,
+  removeError: 'Failed to remove member.',
+  roleUpdated: 'Role updated',
+  roleError: 'Failed to update role.',
+  cannotRemoveSelf: 'You cannot remove yourself.',
 }
 export default en

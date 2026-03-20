@@ -405,6 +405,39 @@ export async function ensureOrgMembership(userId, defaultOrgId = 'polimi') {
   return [{ org_id: defaultOrgId, role: 'member' }]
 }
 
+export async function addOrgMember(orgId, email, role = 'member') {
+  const { data: profile, error: pe } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle()
+  if (pe) throw pe
+  if (!profile) throw new Error('USER_NOT_FOUND')
+  const { error } = await supabase.from('org_members').insert({
+    org_id: orgId, user_id: profile.id, role,
+  })
+  if (error) {
+    if (error.code === '23505') throw new Error('ALREADY_MEMBER')
+    throw error
+  }
+}
+
+export async function removeOrgMember(orgId, userId) {
+  const { error } = await supabase.from('org_members')
+    .delete()
+    .eq('org_id', orgId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function updateOrgMemberRole(orgId, userId, role) {
+  const { error } = await supabase.from('org_members')
+    .update({ role })
+    .eq('org_id', orgId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
 // ── Fetch all ──────────────────────────────────────────────────
 export async function fetchOrgData(orgId) {
   const [ports, projs, secs, tasks] = await Promise.all([

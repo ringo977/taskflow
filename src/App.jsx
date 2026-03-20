@@ -694,7 +694,7 @@ function App() {
             : <PortfoliosView portfolios={ports} projects={projs} tasks={tasks} onSelProj={selProj} onAddPortfolio={addPortfolio} />
           )}
           {nav === 'mytasks'    && <><FilterBar filters={filters} setFilters={setFilters} tasks={tasks} /><MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters} onOpen={setSelId} onToggle={togTask} lang={lang} /></>}
-          {nav === 'people'     && <PeopleView tasks={tasks} projects={projs} />}
+          {nav === 'people'     && <PeopleView tasks={tasks} projects={projs} currentUser={user} activeOrgId={activeOrgId} />}
           {nav === 'inbox'      && <InboxView onOpenTask={(id) => { setSelId(id) }} lang={lang} />}
 
           {showSum && <SummaryPanel summary={summary} loading={aiLoad && !summary} onClose={() => setShowSum(false)} />}
