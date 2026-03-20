@@ -422,9 +422,16 @@ export async function fetchUserOrgIds() {
 }
 
 export async function ensureOrgMembership(userId) {
+  // Try server-side RPC first (SECURITY DEFINER, bypasses RLS)
+  const { data, error } = await supabase.rpc('ensure_org_membership')
+  if (!error && data?.length) {
+    localStorage.removeItem('taskflow-signup-org')
+    return data
+  }
+  if (error) console.warn('ensure_org_membership RPC failed:', error.message)
+  // Fallback to client-side logic
   const memberships = await fetchUserOrgIds()
   if (memberships.length > 0) return memberships
-  // Determine org: localStorage (same browser) > user_metadata > default
   let orgId = localStorage.getItem('taskflow-signup-org')
   if (!orgId) {
     try {
@@ -434,12 +441,12 @@ export async function ensureOrgMembership(userId) {
   }
   orgId = orgId || 'polimi'
   localStorage.removeItem('taskflow-signup-org')
-  const { error } = await supabase.from('org_members').insert({
+  const { error: insErr } = await supabase.from('org_members').insert({
     org_id: orgId, user_id: userId, role: 'member',
   })
-  if (error && error.code !== '23505') {
-    console.error('ensureOrgMembership insert failed:', error)
-    throw error
+  if (insErr && insErr.code !== '23505') {
+    console.error('ensureOrgMembership insert failed:', insErr)
+    throw insErr
   }
   return [{ org_id: orgId, role: 'member' }]
 }
