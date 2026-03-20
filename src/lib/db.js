@@ -388,6 +388,23 @@ export async function fetchOrgDirectory(orgId) {
   return rows
 }
 
+// ── Org membership ──────────────────────────────────────────────
+export async function fetchUserOrgIds() {
+  const { data, error } = await supabase.from('org_members').select('org_id, role')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function ensureOrgMembership(userId, defaultOrgId = 'polimi') {
+  const memberships = await fetchUserOrgIds()
+  if (memberships.length > 0) return memberships
+  const { error } = await supabase.from('org_members').insert({
+    org_id: defaultOrgId, user_id: userId, role: 'member',
+  })
+  if (error && error.code !== '23505') throw error
+  return [{ org_id: defaultOrgId, role: 'member' }]
+}
+
 // ── Fetch all ──────────────────────────────────────────────────
 export async function fetchOrgData(orgId) {
   const [ports, projs, secs, tasks] = await Promise.all([

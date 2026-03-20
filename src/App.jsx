@@ -10,7 +10,7 @@ import {
   fetchOrgData, fetchSectionRows,
   upsertTask, updateTaskField, moveTaskToSection, updateTaskDeps,
   upsertProject, upsertPortfolio, upsertSections,
-  updateTaskPositions, seedOrg,
+  updateTaskPositions, ensureOrgMembership, seedOrg,
 } from '@/lib/db'
 import { PROJECT_COLORS, INITIAL_PROJECTS, INITIAL_PORTFOLIOS, INITIAL_SECTIONS, INITIAL_TASKS } from '@/data/initialData'
 import { BIOMIMX_PROJECTS, BIOMIMX_PORTFOLIOS, BIOMIMX_SECTIONS, BIOMIMX_TASKS } from '@/data/biomimxData'
@@ -406,9 +406,21 @@ function App() {
           if (session?.user) {
             const u = session.user
             setUser({ id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' })
-            // Only refetch org snapshot on first load or new sign-in — not on TOKEN_REFRESHED (avoids lock contention + redundant fetches)
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-              try { await loadOrgData(activeOrgIdRef.current) } catch (e) { console.error('loadOrgData:', e) }
+              try {
+                const memberships = await ensureOrgMembership(u.id)
+                const memberOrgIds = memberships.map(m => m.org_id)
+                const allOrgs = storage.get('orgs', INITIAL_ORGS)
+                const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
+                if (visibleOrgs.length) {
+                  setOrgs(visibleOrgs)
+                  if (!memberOrgIds.includes(activeOrgIdRef.current)) {
+                    setActiveOrgId(visibleOrgs[0].id)
+                    activeOrgIdRef.current = visibleOrgs[0].id
+                  }
+                }
+                await loadOrgData(activeOrgIdRef.current)
+              } catch (e) { console.error('loadOrgData:', e) }
             }
             if (event === 'SIGNED_IN') {
               try {
