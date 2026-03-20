@@ -38,26 +38,20 @@ export function OrgUsersProvider({ orgId, children }) {
 }
 
 async function injectCurrentUser(orgId) {
-  const fallback = getUsersForOrg(orgId)
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return fallback
+    if (!user) return getUsersForOrg(orgId)
     const memberships = await fetchMyMemberships()
     const membership = memberships.find(m => m.org_id === orgId)
-    const me = {
+    return [{
       id: user.id,
       name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User',
       email: user.email ?? '',
       role: membership?.role ?? 'member',
       color: '#378ADD',
-    }
-    const existing = fallback.find(u => u.email === me.email)
-    if (existing) {
-      return fallback.map(u => u.email === me.email ? { ...u, id: me.id, role: me.role } : u)
-    }
-    return [me, ...fallback]
+    }]
   } catch {
-    return fallback
+    return getUsersForOrg(orgId)
   }
 }
 

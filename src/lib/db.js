@@ -366,6 +366,18 @@ export async function seedOrg(orgId, { projs, ports, secs, tasks }) {
 
 // ── Org directory (People, assignees) — org_members + profiles ──
 export async function fetchOrgDirectory(orgId) {
+  // Try RPC first (SECURITY DEFINER, bypasses RLS)
+  const { data: rpcRows, error: rpcErr } = await supabase.rpc('get_org_directory', { p_org_id: orgId })
+  if (!rpcErr && rpcRows?.length) {
+    return rpcRows.map(r => ({
+      id: r.user_id,
+      name: (r.display_name?.trim()) || 'User',
+      email: r.email ?? '',
+      role: r.role,
+      color: r.color ?? '#378ADD',
+    }))
+  }
+  // Fallback to direct query
   const { data: members, error: e1 } = await supabase
     .from('org_members')
     .select('user_id, role')
