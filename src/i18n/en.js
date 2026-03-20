@@ -1,7 +1,7 @@
 const en = {
   appName: 'TaskFlow',
   home: 'Home', projects: 'Projects', portfolios: 'Portfolios',
-  myTasks: 'My tasks', people: 'People', inbox: 'Inbox',
+  myTasks: 'My tasks', people: 'People', inbox: 'Inbox', trash: 'Trash',
   searchPlaceholder: 'Search tasks, projects…', noResults: 'No results',
   signIn: 'Sign in', email: 'Email', password: 'Password',
   signing: 'Signing in…', emailNotFound: 'Email not found.', wrongPassword: 'Wrong password.',
@@ -167,5 +167,8 @@ const en = {
   msgDeleted: name => `"${name}" deleted`,
   msgArchived: name => `"${name}" archived`,
   msgUnarchived: name => `"${name}" unarchived`,
+  restore: 'Restore', deletePermanently: 'Delete permanently',
+  trashEmpty: 'Trash is empty', trashItems: 'items',
+  cannotUndo: 'This cannot be undone.',
 }
 export default en

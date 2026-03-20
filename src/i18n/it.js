@@ -1,7 +1,7 @@
 const it = {
   appName: 'TaskFlow',
   home: 'Home', projects: 'Progetti', portfolios: 'Portfolios',
-  myTasks: 'I miei task', people: 'People', inbox: 'Inbox',
+  myTasks: 'I miei task', people: 'People', inbox: 'Inbox', trash: 'Cestino',
   searchPlaceholder: 'Cerca task, progetti…', noResults: 'Nessun risultato',
   signIn: 'Accedi', email: 'Email', password: 'Password',
   signing: 'Accesso…', emailNotFound: 'Email non trovata.', wrongPassword: 'Password errata.',
@@ -167,5 +167,8 @@ const it = {
   msgDeleted: name => `"${name}" eliminato`,
   msgArchived: name => `"${name}" archiviato`,
   msgUnarchived: name => `"${name}" ripristinato`,
+  restore: 'Ripristina', deletePermanently: 'Elimina definitivamente',
+  trashEmpty: 'Il cestino è vuoto', trashItems: 'elementi',
+  cannotUndo: 'Questa azione è irreversibile.',
 }
 export default it

@@ -30,6 +30,7 @@ import TaskPanel       from '@/pages/TaskPanel'
 import AddModal        from '@/pages/AddModal'
 import MyTasksView     from '@/views/MyTasksView'
 import InboxView       from '@/pages/InboxView'
+import TrashView       from '@/pages/TrashView'
 import BoardView       from '@/views/BoardView'
 import ListView        from '@/views/ListView'
 import CalendarView    from '@/views/CalendarView'
@@ -773,6 +774,7 @@ function App() {
           {nav === 'mytasks'    && <><FilterBar filters={filters} setFilters={setFilters} tasks={tasks} /><MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters} onOpen={setSelId} onToggle={togTask} lang={lang} /></>}
           {nav === 'people'     && <PeopleView tasks={tasks} projects={projs} currentUser={user} activeOrgId={activeOrgId} />}
           {nav === 'inbox'      && <InboxView onOpenTask={(id) => { setSelId(id) }} lang={lang} />}
+          {nav === 'trash'      && <TrashView orgId={activeOrgId} onReload={() => loadOrgData(activeOrgId)} />}
 
           {showSum && <SummaryPanel summary={summary} loading={aiLoad && !summary} onClose={() => setShowSum(false)} />}
         </div>

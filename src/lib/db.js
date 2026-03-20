@@ -43,7 +43,7 @@ const toTask = (r, secName, subs, cmts, deps) => ({
 export async function fetchPortfolios(orgId) {
   const { data, error } = await supabase
     .from('portfolios').select('*')
-    .eq('org_id', orgId).order('name')
+    .eq('org_id', orgId).is('deleted_at', null).order('name')
   if (error) throw error
   return (data ?? []).map(toPortfolio)
 }
@@ -60,8 +60,8 @@ export async function upsertPortfolio(orgId, p) {
 // ── Projects ───────────────────────────────────────────────────
 export async function fetchProjects(orgId) {
   const [{ data, error }, { data: taskRows }] = await Promise.all([
-    supabase.from('projects').select('*').eq('org_id', orgId).order('name'),
-    supabase.from('tasks').select('project_id, assignee_name').eq('org_id', orgId),
+    supabase.from('projects').select('*').eq('org_id', orgId).is('deleted_at', null).order('name'),
+    supabase.from('tasks').select('project_id, assignee_name').eq('org_id', orgId).is('deleted_at', null),
   ])
   if (error) throw error
   const membersByPid = {}
@@ -134,7 +134,7 @@ export async function fetchTasks(orgId) {
     { data: depRows, error: de },
     secRows,
   ] = await Promise.all([
-    supabase.from('tasks').select('*').eq('org_id', orgId).order('position').order('created_at'),
+    supabase.from('tasks').select('*').eq('org_id', orgId).is('deleted_at', null).order('position').order('created_at'),
     supabase.from('subtasks').select('*').eq('org_id', orgId).order('position'),
     supabase.from('comments').select('*').eq('org_id', orgId).order('created_at'),
     supabase.from('task_dependencies').select('*').eq('org_id', orgId).then(r => r).catch(() => ({ data: [], error: null })),
@@ -532,32 +532,51 @@ export async function fetchMyProjectRoles(orgId) {
 }
 
 // ── Delete operations ──────────────────────────────────────────
+const NOW = () => new Date().toISOString()
+
 export async function deleteTask(orgId, taskId) {
-  await supabase.from('subtasks').delete().eq('task_id', taskId)
-  await supabase.from('comments').delete().eq('task_id', taskId)
-  await supabase.from('task_dependencies').delete().or(`task_id.eq.${taskId},depends_on.eq.${taskId}`)
-  const { error } = await supabase.from('tasks').delete().eq('id', taskId).eq('org_id', orgId)
+  const { error } = await supabase.from('tasks').update({ deleted_at: NOW() }).eq('id', taskId).eq('org_id', orgId)
   if (error) throw error
 }
 
 export async function deleteProject(orgId, projectId) {
-  const { data: taskRows } = await supabase.from('tasks').select('id').eq('org_id', orgId).eq('project_id', projectId)
-  const taskIds = (taskRows ?? []).map(t => t.id)
-  if (taskIds.length) {
-    await supabase.from('subtasks').delete().in('task_id', taskIds)
-    await supabase.from('comments').delete().in('task_id', taskIds)
-    await supabase.from('task_dependencies').delete().or(taskIds.map(id => `task_id.eq.${id}`).join(','))
-    await supabase.from('tasks').delete().eq('org_id', orgId).eq('project_id', projectId)
-  }
-  await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', projectId)
-  await supabase.from('project_members').delete().eq('project_id', projectId).then(() => {}).catch(() => {})
-  const { error } = await supabase.from('projects').delete().eq('id', projectId).eq('org_id', orgId)
+  await supabase.from('tasks').update({ deleted_at: NOW() }).eq('org_id', orgId).eq('project_id', projectId)
+  const { error } = await supabase.from('projects').update({ deleted_at: NOW() }).eq('id', projectId).eq('org_id', orgId)
   if (error) throw error
 }
 
 export async function deletePortfolio(orgId, portfolioId) {
-  await supabase.from('projects').update({ portfolio_id: null }).eq('org_id', orgId).eq('portfolio_id', portfolioId)
-  const { error } = await supabase.from('portfolios').delete().eq('id', portfolioId).eq('org_id', orgId)
+  const { error } = await supabase.from('portfolios').update({ deleted_at: NOW() }).eq('id', portfolioId).eq('org_id', orgId)
+  if (error) throw error
+}
+
+export async function fetchTrash(orgId) {
+  const [{ data: tasks }, { data: projects }, { data: portfolios }] = await Promise.all([
+    supabase.from('tasks').select('id, title, deleted_at, project_id').eq('org_id', orgId).not('deleted_at', 'is', null).order('deleted_at', { ascending: false }),
+    supabase.from('projects').select('id, name, color, deleted_at').eq('org_id', orgId).not('deleted_at', 'is', null).order('deleted_at', { ascending: false }),
+    supabase.from('portfolios').select('id, name, color, deleted_at').eq('org_id', orgId).not('deleted_at', 'is', null).order('deleted_at', { ascending: false }),
+  ])
+  return { tasks: tasks ?? [], projects: projects ?? [], portfolios: portfolios ?? [] }
+}
+
+export async function restoreItem(table, id) {
+  const { error } = await supabase.from(table).update({ deleted_at: null }).eq('id', id)
+  if (error) throw error
+}
+
+export async function permanentlyDelete(table, id, orgId) {
+  if (table === 'tasks') {
+    await supabase.from('subtasks').delete().eq('task_id', id)
+    await supabase.from('comments').delete().eq('task_id', id)
+    await supabase.from('task_dependencies').delete().or(`task_id.eq.${id},depends_on.eq.${id}`)
+  }
+  if (table === 'projects') {
+    const { data: taskRows } = await supabase.from('tasks').select('id').eq('org_id', orgId).eq('project_id', id)
+    for (const t of taskRows ?? []) await permanentlyDelete('tasks', t.id, orgId)
+    await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', id)
+    await supabase.from('project_members').delete().eq('project_id', id).then(() => {}).catch(() => {})
+  }
+  const { error } = await supabase.from(table).delete().eq('id', id)
   if (error) throw error
 }
 
