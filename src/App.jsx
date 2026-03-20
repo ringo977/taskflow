@@ -276,6 +276,7 @@ function App() {
   const [ports, setPorts] = useState(() => oget(activeOrgId, 'ports', seedFor(activeOrgId).ports))
   const [secs,  setSecs]  = useState(() => oget(activeOrgId, 'secs',  seedFor(activeOrgId).secs))
   const [tasks, setTasks] = useState(() => oget(activeOrgId, 'tasks', seedFor(activeOrgId).tasks))
+  const [myProjectRoles, setMyProjectRoles] = useState({})
   const secRowsRef = useRef([])
   const activeOrgIdRef = useRef(activeOrgId)
   useEffect(() => { activeOrgIdRef.current = activeOrgId }, [activeOrgId])
@@ -366,10 +367,12 @@ function App() {
         const seeded = await fetchOrgData(orgId)
         setProjs(seeded.projs); setPorts(seeded.ports)
         setSecs(seeded.secs);   setTasks(seeded.tasks)
+        setMyProjectRoles(seeded.myProjectRoles ?? {})
         setPid(seeded.projs[0]?.id ?? '')
       } else {
         setProjs(data.projs); setPorts(data.ports)
         setSecs(data.secs);   setTasks(data.tasks)
+        setMyProjectRoles(data.myProjectRoles ?? {})
         setPid(prev => data.projs.find(p => p.id === prev) ? prev : (data.projs[0]?.id ?? ''))
       }
       // Cache section rows for mutations
@@ -595,6 +598,7 @@ function App() {
     try {
       await upsertProject(activeOrgId, newProj)
       await addProjectMember(id, user.id, 'owner').catch(() => {})
+      setMyProjectRoles(prev => ({ ...prev, [id]: 'owner' }))
       await upsertSections(activeOrgId, id, secNames)
       secRowsRef.current = await fetchSectionRows(activeOrgId)
       for (const tk of tplTasks) await upsertTask(activeOrgId, tk, secRowsRef.current)
@@ -720,7 +724,7 @@ function App() {
       <ProjectHeader proj={proj} view={view} setView={setView} tasks={pTasks} onAddTask={() => { setAddDue(''); setShowAdd(true) }} onSummary={getSum} onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports} />
       {view !== 'overview' && view !== 'timeline' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {orgLoading && <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>⟳ {tr.syncing}</div>}
-      {view === 'overview'   && <ProjectOverview project={proj} tasks={tasks} onUpdProj={updProj} onOpen={setSelId} lang={lang} />}
+      {view === 'overview'   && <ProjectOverview project={proj} tasks={tasks} onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user} myProjectRoles={myProjectRoles} />}
       {view === 'board'      && <BoardView    tasks={pTasks} secs={pSecs} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onReorder={reorderTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} onUpdateSecs={async (names) => { setSecs(s => ({ ...s, [pid]: names })); try { await upsertSections(activeOrgId, pid, names); secRowsRef.current = await fetchSectionRows(activeOrgId) } catch(e) { console.error('updateSecs:', e) } }} filters={filters} lang={lang} />}
       {view === 'lista'      && <ListView     tasks={pTasks} secs={pSecs} project={proj} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} filters={filters} lang={lang} />}
       {view === 'timeline'   && <TimelineView tasks={pTasks} secs={pSecs} projects={projs} onOpen={setSelId} lang={lang} />}
@@ -751,7 +755,7 @@ function App() {
         </div>
         {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.3)' }} />}
 
-        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} currentUser={user} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
+        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
           {nav === 'home'       && <HomeDashboard  tasks={tasks} projects={projs} currentUser={user} onOpen={setSelId} onNav={goNav} lang={lang} />}
@@ -767,7 +771,7 @@ function App() {
           {showSum && <SummaryPanel summary={summary} loading={aiLoad && !summary} onClose={() => setShowSum(false)} />}
         </div>
 
-        {selTask && <TaskPanel task={selTask} projects={projs} allTasks={tasks} currentUser={user} orgId={activeOrgId} onClose={() => setSelId(null)} onUpd={updTask} onDelete={delTask} onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />}
+        {selTask && <TaskPanel task={selTask} projects={projs} allTasks={tasks} currentUser={user} orgId={activeOrgId} myProjectRoles={myProjectRoles} onClose={() => setSelId(null)} onUpd={updTask} onDelete={delTask} onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />}
         {showAdd && <AddModal secs={pSecs} onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }} aiLoad={aiLoad} onAICreate={aiCreate} currentUser={user} defaultDue={addDue} />}
         {showCmdK && <CommandPalette tasks={tasks} projects={projs} onOpenTask={id => { setSelId(id) }} onOpenProject={id => { selProj(id) }} onNavigate={n => { goNav(n) }} onClose={() => setShowCmdK(false)} />}
         {showNewProj && <NewProjectModal templates={PROJECT_TEMPLATES} portfolios={ports} onAdd={(name, color, portfolio, tpl) => { addProject(name, color, portfolio, tpl); setShowNewProj(false) }} onClose={() => setShowNewProj(false)} lang={lang} />}

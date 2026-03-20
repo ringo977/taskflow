@@ -11,7 +11,7 @@ function loadCollapsed() {
 
 export default function ContextSidebar({
   navId, projects, portfolios, selPid,
-  onSelProj, onAddProject, currentUser,
+  onSelProj, onAddProject, currentUser, myProjectRoles = {},
   onDeleteProject, onArchiveProject,
   onDeletePortfolio, onArchivePortfolio,
 }) {
@@ -19,6 +19,8 @@ export default function ContextSidebar({
   const orgUsers = useOrgUsers()
   const me = orgUsers.find(u => u.email === currentUser?.email)
   const isAdmin = me?.role === 'admin'
+  const isManager = me?.role === 'manager'
+  const canManageProject = (projectId) => isAdmin || (isManager && myProjectRoles[projectId] === 'owner')
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const [showArchived, setShowArchived] = useState(false)
   const [actionMenu, setActionMenu] = useState(null)
@@ -51,7 +53,7 @@ export default function ContextSidebar({
   const SidebarItem = ({ project, selected }) => (
     <div
       onClick={() => onSelProj(project.id)}
-      onContextMenu={isAdmin ? e => openContextMenu(e, 'project', project) : undefined}
+      onContextMenu={canManageProject(project.id) ? e => openContextMenu(e, 'project', project) : undefined}
       className="row-interactive"
       style={{
         padding: '8px 12px', borderRadius: 'var(--r1)', cursor: 'pointer',
@@ -65,7 +67,7 @@ export default function ContextSidebar({
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: project.color, flexShrink: 0 }} />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{project.name}</span>
       {project.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
-      {isAdmin && (
+      {canManageProject(project.id) && (
         <button onClick={e => openContextMenu(e, 'project', project)}
           style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, flexShrink: 0, opacity: 0.4 }}>
           ⋯

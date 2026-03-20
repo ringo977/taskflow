@@ -14,9 +14,12 @@ const STATUS_CFG = {
   off_track: { label: 'off_track', color: 'var(--c-danger)', bg: 'color-mix(in srgb, var(--c-danger) 10%, transparent)' },
 }
 
-export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lang }) {
+export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {} }) {
   const t = useLang()
   const USERS = useOrgUsers()
+  const me = USERS.find(u => u.email === currentUser?.email)
+  const isAdmin = me?.role === 'admin'
+  const isManager = me?.role === 'manager'
   const [addRes, setAddRes] = useState(false)
   const [resTitle, setResTitle] = useState('')
   const [resUrl, setResUrl]   = useState('')
@@ -145,7 +148,7 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
         </div>
 
         {/* Members */}
-        <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} />
+        <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} canManage={isAdmin || (isManager && myProjectRoles[proj.id] === 'owner')} />
 
         {/* Custom fields config */}
         <CustomFieldsConfig proj={proj} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} t={t} />
@@ -161,7 +164,7 @@ const FIELD_TYPES = [
   { id: 'select', label: 'Select', icon: '▾' },
 ]
 
-function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t }) {
+function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canManage = false }) {
   const [members, setMembers] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -194,10 +197,12 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t }) {
     <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={sectionTitleStyle}>{t.projectMembers}</div>
-        <button onClick={() => setShowAdd(s => !s)}
-          style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: '1px solid var(--accent)40', borderRadius: 'var(--r1)', padding: '2px 7px', cursor: 'pointer' }}>
-          {showAdd ? '✕' : '+'}
-        </button>
+        {canManage && (
+          <button onClick={() => setShowAdd(s => !s)}
+            style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: '1px solid var(--accent)40', borderRadius: 'var(--r1)', padding: '2px 7px', cursor: 'pointer' }}>
+            {showAdd ? '✕' : '+'}
+          </button>
+        )}
       </div>
 
       {showAdd && nonMembers.length > 0 && (
@@ -225,7 +230,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t }) {
               <div style={{ fontSize: 13, color: 'var(--tx1)' }}>{m.user_name}</div>
             </div>
             <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{m.role}</span>
-            {m.role !== 'owner' && (
+            {canManage && m.role !== 'owner' && (
               <button onClick={() => handleRemove(m.user_id)}
                 style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
             )}

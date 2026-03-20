@@ -498,6 +498,14 @@ export async function removeProjectMember(projectId, userId) {
   if (error) throw error
 }
 
+export async function fetchMyProjectRoles(orgId) {
+  const { data, error } = await supabase.rpc('get_my_project_roles', { p_org_id: orgId })
+  if (error) return {}
+  const map = {}
+  for (const r of (data ?? [])) map[r.project_id] = r.role
+  return map
+}
+
 // ── Delete operations ──────────────────────────────────────────
 export async function deleteTask(orgId, taskId) {
   await supabase.from('subtasks').delete().eq('task_id', taskId)
@@ -530,19 +538,21 @@ export async function deletePortfolio(orgId, portfolioId) {
 
 // ── Fetch all ──────────────────────────────────────────────────
 export async function fetchOrgData(orgId) {
-  const [ports, projs, secs, tasks, accessibleIds] = await Promise.all([
+  const [ports, projs, secs, tasks, accessibleIds, myProjectRoles] = await Promise.all([
     fetchPortfolios(orgId),
     fetchProjects(orgId),
     fetchSections(orgId),
     fetchTasks(orgId),
     fetchMyProjectIds(orgId),
+    fetchMyProjectRoles(orgId),
   ])
-  if (accessibleIds === null) return { ports, projs, secs, tasks }
+  if (accessibleIds === null) return { ports, projs, secs, tasks, myProjectRoles }
   const idSet = new Set(accessibleIds)
   return {
     ports,
     projs: projs.filter(p => idSet.has(p.id)),
     secs: Object.fromEntries(Object.entries(secs).filter(([pid]) => idSet.has(pid))),
     tasks: tasks.filter(t => idSet.has(t.pid)),
+    myProjectRoles,
   }
 }

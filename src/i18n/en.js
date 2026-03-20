@@ -125,7 +125,7 @@ const en = {
   emailPlaceholder: 'user@example.com',
   invite: 'Invite',
   removeMember: 'Remove',
-  roleAdmin: 'Admin', roleMember: 'Member', roleGuest: 'Guest',
+  roleAdmin: 'Admin', roleManager: 'Manager', roleMember: 'Member', roleGuest: 'Guest',
   confirmRemove: name => `Remove ${name} from this organization?`,
   inviteSuccess: email => `${email} invited`,
   inviteErrorNotFound: 'No account found for this email. The user must sign up first.',

@@ -125,7 +125,7 @@ const it = {
   emailPlaceholder: 'utente@esempio.com',
   invite: 'Invita',
   removeMember: 'Rimuovi',
-  roleAdmin: 'Admin', roleMember: 'Membro', roleGuest: 'Ospite',
+  roleAdmin: 'Admin', roleManager: 'Manager', roleMember: 'Membro', roleGuest: 'Ospite',
   confirmRemove: name => `Rimuovere ${name} dall'organizzazione?`,
   inviteSuccess: email => `${email} invitato`,
   inviteErrorNotFound: 'Nessun account trovato per questa email. L\'utente deve prima registrarsi.',

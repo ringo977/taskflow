@@ -5,8 +5,8 @@ import { isOverdue } from '@/utils/filters'
 import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest } from '@/lib/db'
 import { getInitials } from '@/utils/initials'
 
-const ROLES = ['admin', 'member', 'guest']
-const ROLE_COLORS = { admin: 'var(--c-danger)', member: 'var(--accent)', guest: 'var(--tx3)' }
+const ROLES = ['admin', 'manager', 'member', 'guest']
+const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
 
 function RoleBadge({ role }) {
   return (
