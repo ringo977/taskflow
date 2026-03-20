@@ -156,13 +156,15 @@ mark { background: #EF9F2740; color: inherit; border-radius: 2px; padding: 0 2px
 @media (max-width: 768px) {
   body { padding: 0; }
   #root { max-width: 100%; }
-  .app-shell { height: 100vh !important; min-height: 0 !important; border-radius: 0 !important; border: none !important; }
+  .app-shell { height: 100dvh !important; min-height: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
   .icon-sidebar { width: 0 !important; overflow: hidden; padding: 0 !important; border: none !important; }
-  .icon-sidebar.open { width: 68px !important; overflow: visible; padding: 12px 0 !important; border-right: 1px solid var(--bd3) !important; position: absolute; z-index: 50; height: 100%; background: var(--bg2); }
-  .context-sidebar { display: none !important; }
+  .icon-sidebar.open { width: 60px !important; overflow: visible; padding: 10px 0 !important; border-right: 1px solid var(--bd3) !important; position: absolute; z-index: 51; height: 100%; background: var(--bg2); }
+  .context-sidebar { position: absolute !important; left: 0 !important; top: 0 !important; width: 0 !important; height: 100% !important; z-index: 50; overflow: hidden !important; transition: width 0.15s var(--ease); }
+  .context-sidebar.mobile-open { left: 60px !important; width: 220px !important; overflow-y: auto !important; background: var(--bg1) !important; border-right: 1px solid var(--bd3) !important; box-shadow: var(--shadow-md); }
   .mobile-toggle { display: flex !important; }
-  .project-header { flex-wrap: wrap; gap: 8px !important; }
-  .project-header .view-tabs { order: 10; width: 100%; }
+  .mobile-main { overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+  .project-header { flex-wrap: wrap; gap: 6px !important; padding: 10px 12px !important; }
+  .project-header .view-tabs { order: 10; width: 100%; overflow-x: auto; }
 }
 @media (min-width: 769px) {
   .mobile-toggle { display: none !important; }
