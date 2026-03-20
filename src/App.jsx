@@ -429,6 +429,68 @@ function App() {
     await loadOrgData(activeOrgIdRef.current)
   }, [loadOrgData])
 
+  /** Re-read org_members (no ensureOrgMembership) and fix active org + sidebar when admin removes user from an org while session is open. */
+  const syncOrgContextFromDb = useCallback(async () => {
+    let memberships = []
+    try { memberships = await fetchUserOrgIds() } catch (e) {
+      console.warn('syncOrgContextFromDb:', e)
+      return
+    }
+    const memberOrgIds = memberships.map(m => m.org_id)
+    const allOrgs = storage.get('orgs', INITIAL_ORGS)
+    const visibleOrgs = allOrgs.filter(o => memberOrgIds.includes(o.id))
+    setOrgs(visibleOrgs)
+
+    let signupOrg = null
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      signupOrg = u?.user_metadata?.signup_org || null
+    } catch {}
+
+    let next = activeOrgIdRef.current
+    if (memberOrgIds.length) {
+      if (!next || !memberOrgIds.includes(next)) {
+        next = (signupOrg && memberOrgIds.includes(signupOrg)) ? signupOrg : (visibleOrgs[0]?.id ?? memberOrgIds[0])
+        setActiveOrgId(next)
+        activeOrgIdRef.current = next
+      }
+      await loadOrgData(activeOrgIdRef.current)
+    } else {
+      setDbStatus('error')
+    }
+  }, [loadOrgData])
+
+  // When org_members changes (e.g. admin removed you from PoliMi), refresh memberships without re-login
+  useEffect(() => {
+    if (!user?.id) return
+    const ch = supabase
+      .channel(`org-memberships-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'org_members', filter: `user_id=eq.${user.id}` },
+        () => { syncOrgContextFromDb() },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [user?.id, syncOrgContextFromDb])
+
+  useEffect(() => {
+    if (!user?.id) return
+    let t
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'hidden') return
+      clearTimeout(t)
+      t = setTimeout(() => { syncOrgContextFromDb() }, 400)
+    }
+    window.addEventListener('focus', onFocusOrVisible)
+    document.addEventListener('visibilitychange', onFocusOrVisible)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('focus', onFocusOrVisible)
+      document.removeEventListener('visibilitychange', onFocusOrVisible)
+    }
+  }, [user?.id, syncOrgContextFromDb])
+
   // ── Auth listener ────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
