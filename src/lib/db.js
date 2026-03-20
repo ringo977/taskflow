@@ -434,6 +434,17 @@ export async function ensureOrgMembership(userId) {
   return [{ org_id: orgId, role: 'member' }]
 }
 
+export async function fetchPendingSignups(orgId) {
+  const { data, error } = await supabase.rpc('get_pending_signups', { p_org_id: orgId })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function confirmUserEmail(userId) {
+  const { error } = await supabase.rpc('admin_confirm_user', { p_user_id: userId })
+  if (error) throw error
+}
+
 export async function addOrgMember(orgId, email, role = 'member') {
   const { error } = await supabase.rpc('add_org_member_by_email', {
     p_org_id: orgId, p_email: email, p_role: role,

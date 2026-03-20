@@ -150,6 +150,12 @@ const en = {
   reject: 'Reject',
   requestApproved: 'Request approved',
   requestRejected: 'Request rejected',
+  pendingSignups: 'Pending signups',
+  pendingSignupsDesc: 'These users registered but never confirmed their email. You can confirm them manually.',
+  confirmEmail: 'Confirm email',
+  userConfirmed: 'User email confirmed',
+  confirmError: 'Confirm failed',
+  registeredOn: 'Registered',
   // Delete / Archive
   confirm: 'Confirm',
   deleteTask: 'Delete task',

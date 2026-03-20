@@ -41,7 +41,7 @@ export default function LoginPage({ lang, setLang }) {
     if (pass.length < 8) { setErr(isIt ? 'Password minimo 8 caratteri.' : 'Password must be at least 8 characters.'); return }
     setLoading(true)
     try {
-      await signUp(email.trim(), pass, { firstName: firstName.trim(), lastName: lastName.trim() })
+      await signUp(email.trim(), pass, { firstName: firstName.trim(), lastName: lastName.trim(), orgId })
       if (orgId) {
         localStorage.setItem('taskflow-signup-org', orgId)
       }

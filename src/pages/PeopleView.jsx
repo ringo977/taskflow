@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
-import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest } from '@/lib/db'
+import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest, fetchPendingSignups, confirmUserEmail } from '@/lib/db'
 import { getInitials } from '@/utils/initials'
 
 const ROLES = ['admin', 'manager', 'member', 'guest']
@@ -43,13 +43,28 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
 
   const isAdmin = currentMember?.role === 'admin' || dbRole === 'admin'
   const [pendingReqs, setPendingReqs] = useState([])
+  const [pendingSignups, setPendingSignups] = useState([])
 
   useEffect(() => {
     if (!isAdmin) return
     fetchPendingJoinRequests()
       .then(rows => setPendingReqs(rows.filter(r => r.org_id === activeOrgId)))
       .catch(() => {})
+    fetchPendingSignups(activeOrgId)
+      .then(setPendingSignups)
+      .catch(() => {})
   }, [isAdmin, activeOrgId, busy])
+
+  const handleConfirmEmail = async (userId) => {
+    setBusy(true)
+    try {
+      await confirmUserEmail(userId)
+      setPendingSignups(s => s.filter(x => x.user_id !== userId))
+      flash(t.userConfirmed ?? 'User email confirmed')
+    } catch (e) {
+      flash((t.confirmError ?? 'Confirm failed') + (e?.message ? ` (${e.message})` : ''), 'err')
+    } finally { setBusy(false) }
+  }
 
   const handleApprove = async (reqId) => {
     setBusy(true)
@@ -123,14 +138,22 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--tx1)' }}>{t.people}</div>
-        {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(s => !s)}
-            style={{ fontSize: 12, fontWeight: 500, color: showAdmin ? 'var(--bg1)' : 'var(--accent)', background: showAdmin ? 'var(--accent)' : 'var(--accent)18', border: '1px solid var(--accent)', borderRadius: 'var(--r1)', padding: '3px 10px', cursor: 'pointer', transition: 'all .15s' }}
-          >
-            {t.manageMembers}
-          </button>
-        )}
+        {isAdmin && (() => {
+          const pendingCount = pendingSignups.length + pendingReqs.length
+          return (
+            <button
+              onClick={() => setShowAdmin(s => !s)}
+              style={{ fontSize: 12, fontWeight: 500, color: showAdmin ? '#fff' : 'var(--accent)', background: showAdmin ? 'var(--accent)' : 'var(--accent)18', border: '1px solid var(--accent)', borderRadius: 'var(--r1)', padding: '3px 10px', cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              {t.manageMembers}
+              {pendingCount > 0 && (
+                <span style={{ background: 'var(--c-warning)', color: '#fff', fontSize: 10, fontWeight: 600, borderRadius: 10, padding: '1px 6px', lineHeight: '16px' }}>
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          )
+        })()}
       </div>
       <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 16 }}>{t.teamMembers(USERS.length)}</div>
 
@@ -223,6 +246,37 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
             </tbody>
           </table>
 
+          {/* Pending signups (unconfirmed emails) */}
+          {pendingSignups.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-warning)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="8" cy="11" r="0.8" fill="currentColor"/></svg>
+                {t.pendingSignups ?? 'Pending signups'} ({pendingSignups.length})
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8 }}>
+                {t.pendingSignupsDesc ?? 'These users registered but never confirmed their email. You can confirm them manually.'}
+              </div>
+              {pendingSignups.map(s => (
+                <div key={s.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--c-warning)28', color: 'var(--c-warning)', fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {getInitials(s.display_name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{s.email}</span>
+                    <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
+                      {t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                  <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
+                    style={{ fontSize: 12, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                    {t.confirmEmail ?? 'Confirm email'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Pending join requests */}
           {pendingReqs.length > 0 && (
             <div style={{ marginTop: 16 }}>
@@ -240,7 +294,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => handleApprove(req.id)} disabled={busy}
-                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: 'var(--bg1)', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
+                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
                       {t.approve ?? 'Approve'}
                     </button>
                     <button onClick={() => handleReject(req.id)} disabled={busy}

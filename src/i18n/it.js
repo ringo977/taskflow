@@ -150,6 +150,12 @@ const it = {
   reject: 'Rifiuta',
   requestApproved: 'Richiesta approvata',
   requestRejected: 'Richiesta rifiutata',
+  pendingSignups: 'Registrazioni in attesa',
+  pendingSignupsDesc: 'Questi utenti si sono registrati ma non hanno confermato l\'email. Puoi confermarli manualmente.',
+  confirmEmail: 'Conferma email',
+  userConfirmed: 'Email utente confermata',
+  confirmError: 'Conferma fallita',
+  registeredOn: 'Registrato il',
   // Delete / Archive
   confirm: 'Conferma',
   deleteTask: 'Elimina task',
