@@ -1,18 +1,33 @@
 import { useState } from 'react'
 import { useLang } from '@/i18n'
+import { INITIAL_ORGS } from '@/data/orgs'
+import { requestJoinOrg } from '@/lib/db'
 
 const PROJECT_COLORS = ['#378ADD','#D85A30','#1D9E75','#7F77DD','#EF9F27','#639922','#D4537E']
 
 export default function OrgSwitcher({ orgs, activeOrgId, onSwitch, onAddOrg }) {
   const t = useLang()
-  const [open, setOpen]     = useState(false)
-  const [adding, setAdding] = useState(false)
-  const [nm, setNm]         = useState('')
-  const [short, setShort]   = useState('')
-  const [ci, setCi]         = useState(0)
-  const [desc, setDesc]     = useState('')
+  const [open, setOpen]       = useState(false)
+  const [adding, setAdding]   = useState(false)
+  const [nm, setNm]           = useState('')
+  const [short, setShort]     = useState('')
+  const [ci, setCi]           = useState(0)
+  const [desc, setDesc]       = useState('')
+  const [reqSent, setReqSent] = useState({})
 
   const activeOrg = orgs.find(o => o.id === activeOrgId) ?? orgs[0]
+  const memberOrgIds = orgs.map(o => o.id)
+  const otherOrgs = INITIAL_ORGS.filter(o => !memberOrgIds.includes(o.id))
+
+  const handleRequestJoin = async (orgId) => {
+    try {
+      await requestJoinOrg(orgId)
+      setReqSent(s => ({ ...s, [orgId]: 'sent' }))
+    } catch (e) {
+      if (e.message === 'ALREADY_REQUESTED') setReqSent(s => ({ ...s, [orgId]: 'sent' }))
+      else if (e.message === 'ALREADY_MEMBER') setReqSent(s => ({ ...s, [orgId]: 'member' }))
+    }
+  }
 
   const doAdd = () => {
     if (!nm.trim() || !short.trim()) return
@@ -83,6 +98,34 @@ export default function OrgSwitcher({ orgs, activeOrgId, onSwitch, onAddOrg }) {
               )}
             </div>
           ))}
+
+          {otherOrgs.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--bd3)', marginTop: 8, paddingTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 10px', marginBottom: 4 }}>
+                {t.otherOrgs ?? 'Other organizations'}
+              </div>
+              {otherOrgs.map(org => (
+                <div key={org.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 'var(--r1)' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 'var(--r1)', background: org.color + '22', border: `1px solid ${org.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: org.color }}>{org.shortName.slice(0, 3)}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--tx2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.name}</div>
+                  </div>
+                  {reqSent[org.id] === 'sent' ? (
+                    <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 500 }}>{t.requestSent ?? '✓ Sent'}</span>
+                  ) : (
+                    <button
+                      onClick={() => handleRequestJoin(org.id)}
+                      style={{ fontSize: 11, padding: '3px 8px', border: '1px solid var(--accent)', borderRadius: 'var(--r1)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' }}
+                    >
+                      {t.requestJoin ?? 'Request'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ borderTop: '1px solid var(--bd3)', marginTop: 8, paddingTop: 8 }}>
             {!adding ? (

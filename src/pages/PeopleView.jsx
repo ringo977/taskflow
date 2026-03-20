@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
-import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships } from '@/lib/db'
+import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest } from '@/lib/db'
 import { getInitials } from '@/utils/initials'
 
 const ROLES = ['admin', 'member', 'guest']
@@ -41,6 +41,35 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   }, [activeOrgId])
 
   const isAdmin = currentMember?.role === 'admin' || dbRole === 'admin'
+  const [pendingReqs, setPendingReqs] = useState([])
+
+  useEffect(() => {
+    if (!isAdmin) return
+    fetchPendingJoinRequests()
+      .then(rows => setPendingReqs(rows.filter(r => r.org_id === activeOrgId)))
+      .catch(() => {})
+  }, [isAdmin, activeOrgId, busy])
+
+  const handleApprove = async (reqId) => {
+    setBusy(true)
+    try {
+      await approveJoinRequest(reqId)
+      setPendingReqs(r => r.filter(x => x.id !== reqId))
+      refreshUsers()
+      flash(t.requestApproved ?? 'Request approved')
+    } catch { flash(t.inviteError, 'err') }
+    finally { setBusy(false) }
+  }
+
+  const handleReject = async (reqId) => {
+    setBusy(true)
+    try {
+      await rejectJoinRequest(reqId)
+      setPendingReqs(r => r.filter(x => x.id !== reqId))
+      flash(t.requestRejected ?? 'Request rejected')
+    } catch { flash(t.removeError, 'err') }
+    finally { setBusy(false) }
+  }
 
   const flash = (text, type = 'ok') => {
     setMsg({ text, type })
@@ -189,6 +218,36 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
               ))}
             </tbody>
           </table>
+
+          {/* Pending join requests */}
+          {pendingReqs.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', marginBottom: 8 }}>
+                {t.pendingRequests ?? 'Pending requests'} ({pendingReqs.length})
+              </div>
+              {pendingReqs.map(req => (
+                <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)08' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)28', color: 'var(--accent)', fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {getInitials(req.user_name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{req.user_name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{req.user_email}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => handleApprove(req.id)} disabled={busy}
+                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
+                      {t.approve ?? 'Approve'}
+                    </button>
+                    <button onClick={() => handleReject(req.id)} disabled={busy}
+                      style={{ fontSize: 12, padding: '3px 10px', border: '1px solid var(--c-danger)40', borderRadius: 'var(--r1)', background: 'none', color: 'var(--c-danger)', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
+                      {t.reject ?? 'Reject'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

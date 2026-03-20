@@ -401,14 +401,17 @@ export async function fetchUserOrgIds() {
   return fetchMyMemberships()
 }
 
-export async function ensureOrgMembership(userId, defaultOrgId = 'polimi') {
+export async function ensureOrgMembership(userId) {
   const memberships = await fetchUserOrgIds()
   if (memberships.length > 0) return memberships
+  const signupOrg = localStorage.getItem('taskflow-signup-org')
+  const orgId = signupOrg || 'polimi'
+  if (signupOrg) localStorage.removeItem('taskflow-signup-org')
   const { error } = await supabase.from('org_members').insert({
-    org_id: defaultOrgId, user_id: userId, role: 'member',
+    org_id: orgId, user_id: userId, role: 'member',
   })
   if (error && error.code !== '23505') throw error
-  return [{ org_id: defaultOrgId, role: 'member' }]
+  return [{ org_id: orgId, role: 'member' }]
 }
 
 export async function addOrgMember(orgId, email, role = 'member') {
@@ -441,6 +444,32 @@ export async function updateOrgMemberRole(orgId, userId, role) {
     .update({ role })
     .eq('org_id', orgId)
     .eq('user_id', userId)
+  if (error) throw error
+}
+
+// ── Join requests ──────────────────────────────────────────────
+export async function requestJoinOrg(orgId) {
+  const { error } = await supabase.rpc('request_join_org', { p_org_id: orgId })
+  if (error) {
+    if (error.message?.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
+    if (error.message?.includes('ALREADY_REQUESTED')) throw new Error('ALREADY_REQUESTED')
+    throw error
+  }
+}
+
+export async function fetchPendingJoinRequests() {
+  const { data, error } = await supabase.rpc('get_pending_join_requests')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function approveJoinRequest(requestId) {
+  const { error } = await supabase.rpc('approve_join_request', { p_request_id: requestId })
+  if (error) throw error
+}
+
+export async function rejectJoinRequest(requestId) {
+  const { error } = await supabase.rpc('reject_join_request', { p_request_id: requestId })
   if (error) throw error
 }
 

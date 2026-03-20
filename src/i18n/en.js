@@ -137,5 +137,14 @@ const en = {
   roleError: 'Failed to update role.',
   cannotRemoveSelf: 'You cannot remove yourself.',
   confirmLogout: 'Sign out?',
+  // Join requests
+  otherOrgs: 'Other organizations',
+  requestJoin: 'Request',
+  requestSent: '✓ Sent',
+  pendingRequests: 'Pending requests',
+  approve: 'Approve',
+  reject: 'Reject',
+  requestApproved: 'Request approved',
+  requestRejected: 'Request rejected',
 }
 export default en

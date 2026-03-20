@@ -11,8 +11,13 @@
 import { supabase } from './supabase'
 
 // ── Sign up (prima registrazione) ─────────────────────────────
-export async function signUp(email, password) {
-  const { data, error } = await supabase.auth.signUp({ email, password })
+export async function signUp(email, password, { firstName, lastName } = {}) {
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || undefined
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: fullName ? { data: { full_name: fullName } } : undefined,
+  })
   if (error) throw error
   return data
 }

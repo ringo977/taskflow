@@ -137,5 +137,14 @@ const it = {
   roleError: 'Aggiornamento ruolo fallito.',
   cannotRemoveSelf: 'Non puoi rimuovere te stesso.',
   confirmLogout: 'Vuoi uscire?',
+  // Join requests
+  otherOrgs: 'Altre organizzazioni',
+  requestJoin: 'Richiedi',
+  requestSent: '✓ Inviata',
+  pendingRequests: 'Richieste in attesa',
+  approve: 'Approva',
+  reject: 'Rifiuta',
+  requestApproved: 'Richiesta approvata',
+  requestRejected: 'Richiesta rifiutata',
 }
 export default it
