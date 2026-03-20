@@ -6,6 +6,7 @@ import { supabase } from './supabase'
 // ── Shape adapters ─────────────────────────────────────────────
 const toPortfolio = r => ({
   id: r.id, name: r.name, color: r.color, desc: r.description ?? '',
+  status: r.status ?? 'active',
 })
 
 const toProject = (r, memberNames) => ({
@@ -50,7 +51,8 @@ export async function fetchPortfolios(orgId) {
 export async function upsertPortfolio(orgId, p) {
   const { error } = await supabase.from('portfolios').upsert({
     id: p.id, org_id: orgId, name: p.name, color: p.color,
-    description: p.desc ?? '', updated_at: new Date().toISOString(),
+    description: p.desc ?? '', status: p.status ?? 'active',
+    updated_at: new Date().toISOString(),
   })
   if (error) throw error
 }
@@ -493,6 +495,36 @@ export async function addProjectMember(projectId, userId, role = 'member') {
 
 export async function removeProjectMember(projectId, userId) {
   const { error } = await supabase.rpc('remove_project_member', { p_project_id: projectId, p_user_id: userId })
+  if (error) throw error
+}
+
+// ── Delete operations ──────────────────────────────────────────
+export async function deleteTask(orgId, taskId) {
+  await supabase.from('subtasks').delete().eq('task_id', taskId)
+  await supabase.from('comments').delete().eq('task_id', taskId)
+  await supabase.from('task_dependencies').delete().or(`task_id.eq.${taskId},depends_on.eq.${taskId}`)
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId).eq('org_id', orgId)
+  if (error) throw error
+}
+
+export async function deleteProject(orgId, projectId) {
+  const { data: taskRows } = await supabase.from('tasks').select('id').eq('org_id', orgId).eq('project_id', projectId)
+  const taskIds = (taskRows ?? []).map(t => t.id)
+  if (taskIds.length) {
+    await supabase.from('subtasks').delete().in('task_id', taskIds)
+    await supabase.from('comments').delete().in('task_id', taskIds)
+    await supabase.from('task_dependencies').delete().or(taskIds.map(id => `task_id.eq.${id}`).join(','))
+    await supabase.from('tasks').delete().eq('org_id', orgId).eq('project_id', projectId)
+  }
+  await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', projectId)
+  await supabase.from('project_members').delete().eq('project_id', projectId).then(() => {}).catch(() => {})
+  const { error } = await supabase.from('projects').delete().eq('id', projectId).eq('org_id', orgId)
+  if (error) throw error
+}
+
+export async function deletePortfolio(orgId, portfolioId) {
+  await supabase.from('projects').update({ portfolio_id: null }).eq('org_id', orgId).eq('portfolio_id', portfolioId)
+  const { error } = await supabase.from('portfolios').delete().eq('id', portfolioId).eq('org_id', orgId)
   if (error) throw error
 }
 

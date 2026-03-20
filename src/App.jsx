@@ -10,7 +10,9 @@ import {
   fetchOrgData, fetchSectionRows,
   upsertTask, updateTaskField, moveTaskToSection, updateTaskDeps,
   upsertProject, upsertPortfolio, upsertSections,
-  updateTaskPositions, ensureOrgMembership, addProjectMember, seedOrg,
+  updateTaskPositions, ensureOrgMembership, addProjectMember,
+  deleteTask as dbDeleteTask, deleteProject as dbDeleteProject, deletePortfolio as dbDeletePortfolio,
+  seedOrg,
 } from '@/lib/db'
 import { PROJECT_COLORS, INITIAL_PROJECTS, INITIAL_PORTFOLIOS, INITIAL_SECTIONS, INITIAL_TASKS } from '@/data/initialData'
 import { BIOMIMX_PROJECTS, BIOMIMX_PORTFOLIOS, BIOMIMX_SECTIONS, BIOMIMX_TASKS } from '@/data/biomimxData'
@@ -610,6 +612,55 @@ function App() {
     } catch (e) { console.error('addPortfolio:', e); toast(tr.msgSaveError, 'error') }
   }
 
+  const delTask = async (id) => {
+    const task = tasks.find(t => t.id === id)
+    setTasks(p => p.filter(t => t.id !== id))
+    setSelId(null)
+    try {
+      await dbDeleteTask(activeOrgId, id)
+      toast(tr.msgDeleted(task?.title ?? 'Task'), 'success')
+    } catch (e) { console.error('delTask:', e); toast(tr.msgSaveError, 'error') }
+  }
+
+  const delProject = async (id) => {
+    const p = projs.find(p => p.id === id)
+    setProjs(prev => prev.filter(p => p.id !== id))
+    setTasks(prev => prev.filter(t => t.pid !== id))
+    setSecs(prev => { const n = { ...prev }; delete n[id]; return n })
+    if (pid === id) { setPid(null); setSelId(null) }
+    try {
+      await dbDeleteProject(activeOrgId, id)
+      toast(tr.msgDeleted(p?.name ?? 'Project'), 'success')
+    } catch (e) { console.error('delProject:', e); toast(tr.msgSaveError, 'error') }
+  }
+
+  const delPortfolio = async (id) => {
+    const po = ports.find(p => p.id === id)
+    setPorts(prev => prev.filter(p => p.id !== id))
+    setProjs(prev => prev.map(p => p.portfolio === id ? { ...p, portfolio: null } : p))
+    try {
+      await dbDeletePortfolio(activeOrgId, id)
+      toast(tr.msgDeleted(po?.name ?? 'Portfolio'), 'success')
+    } catch (e) { console.error('delPortfolio:', e); toast(tr.msgSaveError, 'error') }
+  }
+
+  const archiveProject = async (id) => {
+    const p = projs.find(p => p.id === id)
+    const newStatus = p?.status === 'archived' ? 'active' : 'archived'
+    updProj(id, { status: newStatus })
+    toast(newStatus === 'archived' ? tr.msgArchived(p?.name) : tr.msgUnarchived(p?.name), 'success')
+  }
+
+  const archivePortfolio = async (id) => {
+    const po = ports.find(p => p.id === id)
+    const newStatus = po?.status === 'archived' ? 'active' : 'archived'
+    setPorts(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p))
+    try {
+      await upsertPortfolio(activeOrgId, { ...po, status: newStatus })
+      toast(newStatus === 'archived' ? tr.msgArchived(po?.name) : tr.msgUnarchived(po?.name), 'success')
+    } catch (e) { console.error('archivePortfolio:', e) }
+  }
+
   const updProj = async (id, patch) => {
     setProjs(p => p.map(proj => proj.id === id ? { ...proj, ...patch } : proj))
     try {
@@ -700,14 +751,14 @@ function App() {
         </div>
         {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.3)' }} />}
 
-        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} /></div>}
+        {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
           {nav === 'home'       && <HomeDashboard  tasks={tasks} projects={projs} currentUser={user} onOpen={setSelId} onNav={goNav} lang={lang} />}
           {nav === 'projects'   && projectContent}
           {nav === 'portfolios' && (proj && projs.find(p => p.id === pid)
             ? projectContent
-            : <PortfoliosView portfolios={ports} projects={projs} tasks={tasks} onSelProj={selProj} onAddPortfolio={addPortfolio} />
+            : <PortfoliosView portfolios={ports} projects={projs} tasks={tasks} onSelProj={selProj} onAddPortfolio={addPortfolio} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} />
           )}
           {nav === 'mytasks'    && <><FilterBar filters={filters} setFilters={setFilters} tasks={tasks} /><MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters} onOpen={setSelId} onToggle={togTask} lang={lang} /></>}
           {nav === 'people'     && <PeopleView tasks={tasks} projects={projs} currentUser={user} activeOrgId={activeOrgId} />}
@@ -716,7 +767,7 @@ function App() {
           {showSum && <SummaryPanel summary={summary} loading={aiLoad && !summary} onClose={() => setShowSum(false)} />}
         </div>
 
-        {selTask && <TaskPanel task={selTask} projects={projs} allTasks={tasks} currentUser={user} orgId={activeOrgId} onClose={() => setSelId(null)} onUpd={updTask} onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />}
+        {selTask && <TaskPanel task={selTask} projects={projs} allTasks={tasks} currentUser={user} orgId={activeOrgId} onClose={() => setSelId(null)} onUpd={updTask} onDelete={delTask} onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />}
         {showAdd && <AddModal secs={pSecs} onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }} aiLoad={aiLoad} onAICreate={aiCreate} currentUser={user} defaultDue={addDue} />}
         {showCmdK && <CommandPalette tasks={tasks} projects={projs} onOpenTask={id => { setSelId(id) }} onOpenProject={id => { selProj(id) }} onNavigate={n => { goNav(n) }} onClose={() => setShowCmdK(false)} />}
         {showNewProj && <NewProjectModal templates={PROJECT_TEMPLATES} portfolios={ports} onAdd={(name, color, portfolio, tpl) => { addProject(name, color, portfolio, tpl); setShowNewProj(false) }} onClose={() => setShowNewProj(false)} lang={lang} />}

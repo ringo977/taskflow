@@ -3,28 +3,42 @@ import { useLang } from '@/i18n'
 import { PROJECT_COLORS } from '@/data/initialData'
 import { isOverdue } from '@/utils/filters'
 import AvatarGroup from '@/components/AvatarGroup'
+import ConfirmModal from '@/components/ConfirmModal'
 
-export default function PortfoliosView({ portfolios, projects, tasks, onSelProj, onAddPortfolio }) {
+export default function PortfoliosView({ portfolios, projects, tasks, onSelProj, onAddPortfolio, onDeletePortfolio, onArchivePortfolio }) {
   const t = useLang()
   const [adding, setAdding] = useState(false)
   const [nm, setNm]   = useState('')
   const [desc, setDesc] = useState('')
   const [ci, setCi]   = useState(0)
+  const [confirmDel, setConfirmDel] = useState(null)
+  const [showArchived, setShowArchived] = useState(false)
+
+  const hasArchived = portfolios.some(p => p.status === 'archived')
+  const visiblePortfolios = showArchived ? portfolios : portfolios.filter(p => p.status !== 'archived')
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx1)', marginBottom: 2 }}>{t.portfolios}</div>
-          <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.portfolios_count(portfolios.length)}</div>
+          <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.portfolios_count(visiblePortfolios.length)}</div>
         </div>
-        <button onClick={() => setAdding(true)} style={{ padding: '7px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}>
-          {t.newPortfolio}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {hasArchived && (
+            <button onClick={() => setShowArchived(!showArchived)}
+              style={{ fontSize: 12, padding: '5px 12px', color: 'var(--tx3)', background: 'transparent', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
+              {showArchived ? t.hideArchived : t.showArchived}
+            </button>
+          )}
+          <button onClick={() => setAdding(true)} style={{ padding: '7px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}>
+            {t.newPortfolio}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
-        {portfolios.map(po => {
+        {visiblePortfolios.map(po => {
           const pps   = projects.filter(p => p.portfolio === po.id)
           const allT  = tasks.filter(task => pps.find(p => p.id === task.pid))
           const doneT = allT.filter(task => task.done).length
@@ -32,7 +46,7 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
           const od    = allT.filter(task => !task.done && isOverdue(task.due)).length
 
           return (
-            <div key={po.id} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', padding: 16 }}>
+            <div key={po.id} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', padding: 16, opacity: po.status === 'archived' ? 0.6 : 1 }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
@@ -42,9 +56,23 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--tx3)', paddingLeft: 17 }}>{po.desc}</div>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 500, color: po.color, background: po.color + '18', padding: '2px 8px', borderRadius: 'var(--r1)' }}>
-                  {pps.length} {t.projects}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: po.color, background: po.color + '18', padding: '2px 8px', borderRadius: 'var(--r1)' }}>
+                    {pps.length} {t.projects}
+                  </span>
+                  {onArchivePortfolio && (
+                    <button onClick={e => { e.stopPropagation(); onArchivePortfolio(po.id) }} title={po.status === 'archived' ? t.unarchive : t.archive}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 12, padding: '2px 4px', lineHeight: 1, opacity: 0.6 }}>
+                      {po.status === 'archived' ? '↩' : '📦'}
+                    </button>
+                  )}
+                  {onDeletePortfolio && (
+                    <button onClick={e => { e.stopPropagation(); setConfirmDel(po) }} title={t.deletePortfolio}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1, opacity: 0.5 }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Progress bar */}
@@ -81,6 +109,14 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
           )
         })}
       </div>
+
+      {confirmDel && (
+        <ConfirmModal
+          message={t.confirmDeletePortfolio(confirmDel.name)}
+          onConfirm={() => { onDeletePortfolio(confirmDel.id); setConfirmDel(null) }}
+          onCancel={() => setConfirmDel(null)}
+        />
+      )}
 
       {/* Add portfolio modal */}
       {adding && (

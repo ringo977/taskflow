@@ -6,9 +6,10 @@ import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { uploadAttachment, deleteAttachment } from '@/lib/db'
 import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
+import ConfirmModal from '@/components/ConfirmModal'
 import Checkbox from '@/components/Checkbox'
 
-export default function TaskPanel({ task, projects, allTasks = [], currentUser, orgId, onClose, onUpd, onGenSubs, aiLoad, lang }) {
+export default function TaskPanel({ task, projects, allTasks = [], currentUser, orgId, onClose, onUpd, onDelete, onGenSubs, aiLoad, lang }) {
   const t    = useLang()
   const orgUsers = useOrgUsers()
   const [nc, setNc] = useState('')
@@ -16,6 +17,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const [depSearch, setDepSearch] = useState('')
   const [showDepPicker, setShowDepPicker] = useState(false)
   const [mentionQuery, setMentionQuery] = useState(null)
+  const [confirmDel, setConfirmDel] = useState(false)
   const commentRef = useRef(null)
   const proj = projects.find(p => p.id === task.pid)
   const ov   = isOverdue(task.due) && !task.done
@@ -272,6 +274,24 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
             )}
           </div>
         </div>
+
+        {/* Delete */}
+        {onDelete && (
+          <div style={{ borderTop: '1px solid var(--bd3)', padding: '14px 0 0', marginTop: 8 }}>
+            <button onClick={() => setConfirmDel(true)}
+              style={{ fontSize: 12, padding: '6px 14px', borderRadius: 'var(--r1)', border: '1px solid var(--c-danger)', background: 'transparent', color: 'var(--c-danger)', cursor: 'pointer' }}>
+              {t.deleteTask}
+            </button>
+          </div>
+        )}
+
+        {confirmDel && (
+          <ConfirmModal
+            message={t.confirmDeleteTask(task.title)}
+            onConfirm={() => { setConfirmDel(false); onDelete(task.id) }}
+            onCancel={() => setConfirmDel(false)}
+          />
+        )}
       </div>
     </div>
   )

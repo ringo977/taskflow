@@ -146,5 +146,21 @@ const en = {
   reject: 'Reject',
   requestApproved: 'Request approved',
   requestRejected: 'Request rejected',
+  // Delete / Archive
+  confirm: 'Confirm',
+  deleteTask: 'Delete task',
+  deleteProject: 'Delete project',
+  deletePortfolio: 'Delete portfolio',
+  confirmDeleteTask: title => `Delete "${title}"? This cannot be undone.`,
+  confirmDeleteProject: name => `Delete project "${name}" and all its tasks? This cannot be undone.`,
+  confirmDeletePortfolio: name => `Delete portfolio "${name}"? Projects inside will be kept.`,
+  archive: 'Archive',
+  unarchive: 'Unarchive',
+  showArchived: 'Show archived',
+  hideArchived: 'Hide archived',
+  archived: 'Archived',
+  msgDeleted: name => `"${name}" deleted`,
+  msgArchived: name => `"${name}" archived`,
+  msgUnarchived: name => `"${name}" unarchived`,
 }
 export default en

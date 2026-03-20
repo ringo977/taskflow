@@ -146,5 +146,21 @@ const it = {
   reject: 'Rifiuta',
   requestApproved: 'Richiesta approvata',
   requestRejected: 'Richiesta rifiutata',
+  // Delete / Archive
+  confirm: 'Conferma',
+  deleteTask: 'Elimina task',
+  deleteProject: 'Elimina progetto',
+  deletePortfolio: 'Elimina portfolio',
+  confirmDeleteTask: title => `Eliminare "${title}"? L'azione è irreversibile.`,
+  confirmDeleteProject: name => `Eliminare il progetto "${name}" e tutti i suoi task? L'azione è irreversibile.`,
+  confirmDeletePortfolio: name => `Eliminare il portfolio "${name}"? I progetti al suo interno verranno mantenuti.`,
+  archive: 'Archivia',
+  unarchive: 'Ripristina',
+  showArchived: 'Mostra archiviati',
+  hideArchived: 'Nascondi archiviati',
+  archived: 'Archiviato',
+  msgDeleted: name => `"${name}" eliminato`,
+  msgArchived: name => `"${name}" archiviato`,
+  msgUnarchived: name => `"${name}" ripristinato`,
 }
 export default it
