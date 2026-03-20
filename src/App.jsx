@@ -758,7 +758,7 @@ function App() {
         {showCtx && <div className="context-sidebar"><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={selProj} onAddProject={() => setShowNewProj(true)} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
-          {nav === 'home'       && <HomeDashboard  tasks={tasks} projects={projs} currentUser={user} onOpen={setSelId} onNav={goNav} lang={lang} />}
+          {nav === 'home'       && <HomeDashboard  tasks={tasks} projects={projs} secs={secs} currentUser={user} onOpen={setSelId} onNav={goNav} lang={lang} />}
           {nav === 'projects'   && projectContent}
           {nav === 'portfolios' && (proj && projs.find(p => p.id === pid)
             ? projectContent

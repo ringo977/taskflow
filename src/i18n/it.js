@@ -93,6 +93,10 @@ const it = {
   chartTasksPerPerson: 'Task per persona', chartOpenLabel: 'Aperti', chartDoneLabel: 'Completati',
   chartByPriority: 'Task aperti per priorità', chartActivity: 'Attività ultime 2 settimane',
   chartCompleted: 'Completati', chartCreated: 'Creati',
+  chartBurndown: 'Burndown', chartRemaining: 'Rimanenti', chartIdeal: 'Ideale',
+  chartByStatus: 'Task per stato', chartVelocity: 'Velocità settimanale',
+  chartOverdueByProject: 'Scaduti per progetto', chartTasksCompleted: 'task completati',
+  chartAllProjects: 'Tutti i progetti', chartLast30d: 'ultimi 30 giorni', chartWeeks: 'settimane',
   // Board
   dblClickRename: 'Doppio clic per rinominare', deleteSection: 'Elimina sezione',
   sectionNamePlaceholder: 'Nome sezione…', addSectionLabel: 'Aggiungi sezione',

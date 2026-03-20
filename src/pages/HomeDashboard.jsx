@@ -4,10 +4,12 @@ import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
+import { useState, useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
   AreaChart, Area, CartesianGrid,
+  LineChart, Line,
 } from 'recharts'
 
 // ── Custom tooltip ────────────────────────────────────────────
@@ -27,9 +29,10 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function HomeDashboard({ tasks, projects, currentUser, onOpen, onNav, lang }) {
+export default function HomeDashboard({ tasks, projects, secs = {}, currentUser, onOpen, onNav, lang }) {
   const t = useLang()
   const USERS = useOrgUsers()
+  const [burndownPid, setBurndownPid] = useState('__all__')
   const now    = new Date()
   const ts     = now.toISOString().slice(0, 10)
   const weEnd  = new Date(now); weEnd.setDate(now.getDate() + 7)
@@ -82,6 +85,60 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
     const done = pt.filter(task => task.done).length
     return { ...p, total: pt.length, done, pct: pt.length ? Math.round(done / pt.length * 100) : 0 }
   })
+
+  // 5. Burndown chart: remaining open tasks over last 30 days
+  const burndownData = useMemo(() => {
+    const scope = burndownPid === '__all__' ? tasks : tasks.filter(tk => tk.pid === burndownPid)
+    const total = scope.length
+    const points = []
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(now.getDate() - i)
+      const ds = d.toISOString().slice(0, 10)
+      const label = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
+      const doneByDate = scope.filter(tk => tk.done && tk.due && tk.due <= ds).length
+      points.push({ date: label, [t.chartRemaining]: total - doneByDate, [t.chartIdeal]: Math.round(total * (1 - (30 - i) / 30)) })
+    }
+    return points
+  }, [tasks, burndownPid, t])
+
+  // 6. Status distribution: tasks by section name
+  const statusData = useMemo(() => {
+    const counts = {}
+    const statusColors = ['var(--c-brand)', 'var(--c-warning)', 'var(--c-success)', 'var(--tx3)', '#9b59b6', '#e67e22']
+    for (const task of tasks) {
+      const sec = task.sec ?? 'Other'
+      counts[sec] = (counts[sec] ?? 0) + 1
+    }
+    return Object.entries(counts).map(([name, value], i) => ({
+      name, value, color: statusColors[i % statusColors.length],
+    }))
+  }, [tasks])
+
+  // 7. Weekly velocity: tasks completed per week (last 8 weeks)
+  const velocityData = useMemo(() => {
+    const weeks = []
+    for (let w = 7; w >= 0; w--) {
+      const weekEnd = new Date(now)
+      weekEnd.setDate(now.getDate() - w * 7)
+      const weekStart = new Date(weekEnd)
+      weekStart.setDate(weekEnd.getDate() - 6)
+      const ws = weekStart.toISOString().slice(0, 10)
+      const we = weekEnd.toISOString().slice(0, 10)
+      const label = weekStart.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
+      const count = tasks.filter(tk => tk.done && tk.due && tk.due >= ws && tk.due <= we).length
+      weeks.push({ week: label, [t.chartCompleted]: count })
+    }
+    return weeks
+  }, [tasks, t])
+
+  // 8. Overdue by project: horizontal bar
+  const overdueByProj = useMemo(() => {
+    return projects.map(p => {
+      const od = tasks.filter(tk => tk.pid === p.id && !tk.done && isOverdue(tk.due)).length
+      return { name: p.name.length > 14 ? p.name.slice(0, 14) + '…' : p.name, overdue: od, color: p.color }
+    }).filter(d => d.overdue > 0).sort((a, b) => b.overdue - a.overdue).slice(0, 6)
+  }, [tasks, projects])
 
   const StatCard = ({ label, value, color, onClick }) => (
     <div onClick={onClick} className="row-interactive"
@@ -219,6 +276,99 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Charts row 3: burndown + status */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Burndown chart */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <SectionTitle>{t.chartBurndown}</SectionTitle>
+            <select value={burndownPid} onChange={e => setBurndownPid(e.target.value)}
+              style={{ fontSize: 11, padding: '3px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer' }}>
+              <option value="__all__">{t.chartAllProjects}</option>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={burndownData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--bd3)" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--tx3)' }} axisLine={false} tickLine={false} interval={5} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--tx3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={24} />
+              <Tooltip content={<ChartTooltip />} />
+              <Line type="monotone" dataKey={t.chartIdeal} stroke="var(--tx3)" strokeWidth={1} strokeDasharray="5 3" dot={false} />
+              <Line type="monotone" dataKey={t.chartRemaining} stroke="var(--c-danger)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+          <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--tx3)' }}>
+              <div style={{ width: 16, height: 2, background: 'var(--c-danger)' }} />
+              {t.chartRemaining}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--tx3)' }}>
+              <div style={{ width: 16, height: 0, borderTop: '2px dashed var(--tx3)' }} />
+              {t.chartIdeal}
+            </div>
+          </div>
+        </div>
+
+        {/* Status distribution donut */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.chartByStatus}</SectionTitle>
+          {statusData.length === 0
+            ? <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>—</div>
+            : (
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={2} dataKey="value">
+                    {statusData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip content={<ChartTooltip />} />
+                  <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11, color: 'var(--tx2)' }}>{v}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            )
+          }
+        </div>
+      </div>
+
+      {/* Charts row 4: velocity + overdue by project */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Weekly velocity */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.chartVelocity}</SectionTitle>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={velocityData} barSize={20}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--bd3)" vertical={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'var(--tx3)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--tx3)' }} axisLine={false} tickLine={false} allowDecimals={false} width={20} />
+              <Tooltip content={<ChartTooltip />} />
+              <Bar dataKey={t.chartCompleted} fill="var(--c-success)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Overdue by project */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.chartOverdueByProject}</SectionTitle>
+          {overdueByProj.length === 0
+            ? <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>🎉 {t.noOpenTasks}</div>
+            : (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={overdueByProj} layout="vertical" barSize={14}>
+                  <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--tx3)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--tx2)' }} axisLine={false} tickLine={false} width={90} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="overdue" name={t.overdue} radius={[0, 4, 4, 0]}>
+                    {overdueByProj.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )
+          }
         </div>
       </div>
 
