@@ -107,16 +107,22 @@ export async function fetchSections(orgId) {
 }
 
 export async function upsertSections(orgId, projectId, names) {
-  await supabase.from('sections').delete()
-    .eq('org_id', orgId).eq('project_id', projectId)
-  if (!names.length) return
-  const { error } = await supabase.from('sections').insert(
-    names.map((name, i) => ({
-      id: `${projectId}_s${i}`, org_id: orgId,
-      project_id: projectId, name, position: i,
-    }))
-  )
+  if (!names.length) {
+    await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', projectId)
+    return
+  }
+  const rows = names.map((name, i) => ({
+    id: `${projectId}_s${i}`, org_id: orgId,
+    project_id: projectId, name, position: i,
+  }))
+  const { error } = await supabase.from('sections').upsert(rows, { onConflict: 'id' })
   if (error) throw error
+  // Remove stale sections beyond the new list
+  const keepIds = new Set(rows.map(r => r.id))
+  const { data: existing } = await supabase.from('sections').select('id')
+    .eq('org_id', orgId).eq('project_id', projectId)
+  const stale = (existing ?? []).filter(r => !keepIds.has(r.id)).map(r => r.id)
+  if (stale.length) await supabase.from('sections').delete().in('id', stale)
 }
 
 // ── Tasks ──────────────────────────────────────────────────────

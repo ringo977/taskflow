@@ -7,6 +7,7 @@ import { getInitials } from '@/utils/initials'
 
 const ROLES = ['admin', 'manager', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
+const isUUID = id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
 function RoleBadge({ role }) {
   return (
@@ -192,7 +193,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   </td>
                   <td style={{ padding: '8px 8px', color: 'var(--tx3)' }}>{u.email}</td>
                   <td style={{ padding: '8px 8px' }}>
-                    {u.id === currentUser?.id
+                    {u.id === currentUser?.id || !isUUID(u.id)
                       ? <RoleBadge role={u.role} />
                       : (
                         <select
@@ -207,7 +208,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                     }
                   </td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                    {u.id !== currentUser?.id && (
+                    {u.id !== currentUser?.id && isUUID(u.id) && (
                       <button
                         onClick={() => handleRemove(u)}
                         disabled={busy}

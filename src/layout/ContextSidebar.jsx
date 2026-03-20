@@ -131,6 +131,12 @@ export default function ContextSidebar({
               <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> {t.newProject ?? 'New project'}
             </div>
           )}
+          {navId === 'portfolios' && (
+            <div onClick={() => onSelProj(null)} className="row-interactive"
+              style={{ padding: '8px 12px', borderRadius: 'var(--r1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--tx3)', marginTop: 8, borderTop: '1px solid var(--bd3)', paddingTop: 12 }}>
+              ← {t.portfolios}
+            </div>
+          )}
         </div>
       )}
 
