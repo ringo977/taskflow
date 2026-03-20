@@ -51,8 +51,8 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       .then(rows => setPendingReqs(rows.filter(r => r.org_id === activeOrgId)))
       .catch(() => {})
     fetchPendingSignups(activeOrgId)
-      .then(setPendingSignups)
-      .catch(() => {})
+      .then(rows => { console.log('[PeopleView] pending signups:', rows); setPendingSignups(rows) })
+      .catch(e => console.error('[PeopleView] fetchPendingSignups error:', e))
   }, [isAdmin, activeOrgId, busy])
 
   const handleConfirmEmail = async (userId) => {
