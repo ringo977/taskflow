@@ -784,7 +784,13 @@ function App() {
         <div className={`icon-sidebar${mobileSidebar ? ' open' : ''}`} style={{ flexShrink: 0 }}>
           <IconSidebar dbStatus={dbStatus}
             active={nav} onNav={(n) => { goNav(n); setMobileSidebar(false) }}
-            currentUser={user} onLogout={async () => { await signOut(); setUser(null) }}
+            currentUser={user} onLogout={async () => {
+              await signOut()
+              setUser(null)
+              setOrgs(INITIAL_ORGS)
+              setActiveOrgId(INITIAL_ORGS[0]?.id ?? 'polimi')
+              activeOrgIdRef.current = INITIAL_ORGS[0]?.id ?? 'polimi'
+            }}
             lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
             orgs={orgs} activeOrgId={activeOrgId}
             onSwitchOrg={(id) => { switchOrg(id); setMobileSidebar(false) }} onAddOrg={addOrg}

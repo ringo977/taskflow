@@ -409,12 +409,23 @@ export async function fetchOrgDirectory(orgId) {
 }
 
 // ── Org membership ──────────────────────────────────────────────
+/** PostgREST may return one row as an object instead of a single-element array. */
+function normalizeMembershipRows(data) {
+  if (data == null) return []
+  if (Array.isArray(data)) return data
+  if (typeof data === 'object' && data !== null && 'org_id' in data) return [data]
+  return []
+}
+
 export async function fetchMyMemberships() {
   const { data, error } = await supabase.rpc('get_my_memberships')
-  if (!error && data) return data
+  if (!error && data != null) {
+    const rows = normalizeMembershipRows(data)
+    if (rows.length) return rows
+  }
   const { data: fallback, error: e2 } = await supabase.from('org_members').select('org_id, role')
   if (e2) throw e2
-  return fallback ?? []
+  return normalizeMembershipRows(fallback)
 }
 
 export async function fetchUserOrgIds() {
@@ -424,9 +435,10 @@ export async function fetchUserOrgIds() {
 export async function ensureOrgMembership(userId) {
   // Try server-side RPC first (SECURITY DEFINER, bypasses RLS)
   const { data, error } = await supabase.rpc('ensure_org_membership')
-  if (!error && data?.length) {
+  const rpcRows = normalizeMembershipRows(data)
+  if (!error && rpcRows.length) {
     localStorage.removeItem('taskflow-signup-org')
-    return data
+    return rpcRows
   }
   if (error) console.warn('ensure_org_membership RPC failed:', error.message)
   // Fallback to client-side logic
