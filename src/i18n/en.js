@@ -136,5 +136,6 @@ const en = {
   roleUpdated: 'Role updated',
   roleError: 'Failed to update role.',
   cannotRemoveSelf: 'You cannot remove yourself.',
+  confirmLogout: 'Sign out?',
 }
 export default en

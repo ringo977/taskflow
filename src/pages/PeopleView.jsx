@@ -3,6 +3,7 @@ import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
 import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships } from '@/lib/db'
+import { getInitials } from '@/utils/initials'
 
 const ROLES = ['admin', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', member: 'var(--accent)', guest: 'var(--tx3)' }
@@ -151,8 +152,8 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
               {USERS.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--bd3)08' }}>
                   <td style={{ padding: '8px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 12, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {u.name.slice(0, 2).toUpperCase()}
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {getInitials(u.name)}
                     </div>
                     <span style={{ color: 'var(--tx1)', fontWeight: 500 }}>{u.name}</span>
                     {u.id === currentUser?.id && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic' }}>(you)</span>}
@@ -204,8 +205,8 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
           return (
             <div key={u.id} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {u.name.slice(0, 2).toUpperCase()}
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {getInitials(u.name)}
                 </div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--tx1)' }}>{u.name}</div>

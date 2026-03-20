@@ -136,5 +136,6 @@ const it = {
   roleUpdated: 'Ruolo aggiornato',
   roleError: 'Aggiornamento ruolo fallito.',
   cannotRemoveSelf: 'Non puoi rimuovere te stesso.',
+  confirmLogout: 'Vuoi uscire?',
 }
 export default it

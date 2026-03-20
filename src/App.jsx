@@ -405,7 +405,19 @@ function App() {
           }
           if (session?.user) {
             const u = session.user
-            setUser({ id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' })
+            const userObj = { id: u.id, name: u.user_metadata?.full_name ?? u.email?.split('@')[0], email: u.email, color: '#378ADD' }
+            if (event === 'SIGNED_IN') {
+              try {
+                const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
+                const hasVerifiedFactor = factors.some(f => f.status === 'verified')
+                if (!hasVerifiedFactor || (mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2')) {
+                  setUser(userObj)
+                  setNeedsMfa(true)
+                  return
+                }
+              } catch (e) { console.warn('MFA check:', e) }
+            }
+            setUser(userObj)
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
               try {
                 const memberships = await ensureOrgMembership(u.id)
@@ -421,15 +433,6 @@ function App() {
                 }
                 await loadOrgData(activeOrgIdRef.current)
               } catch (e) { console.error('loadOrgData:', e) }
-            }
-            if (event === 'SIGNED_IN') {
-              try {
-                const [mfaData, factors] = await Promise.all([getMfaLevel(), getFactors()])
-                const hasVerifiedFactor = factors.some(f => f.status === 'verified')
-                if (!hasVerifiedFactor || (mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2')) {
-                  setNeedsMfa(true)
-                }
-              } catch (e) { console.warn('MFA check:', e) }
             }
           } else {
             setUser(null)
