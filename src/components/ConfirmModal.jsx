@@ -4,7 +4,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel, danger = tr
   const t = useLang()
   return (
     <div onClick={onCancel} role="dialog" aria-modal="true"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
+      style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
       <div onClick={e => e.stopPropagation()}
         style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: '22px 24px', width: 340, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ fontSize: 14, color: 'var(--tx1)', lineHeight: 1.5, marginBottom: 18 }}>{message}</div>

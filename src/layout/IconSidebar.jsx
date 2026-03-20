@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { useInbox } from '@/context/InboxCtx'
 import { getInitials } from '@/utils/initials'
+import ConfirmModal from '@/components/ConfirmModal'
 import OrgSwitcher from './OrgSwitcher'
 
 export function TFLogo({ size = 24, color = 'currentColor' }) {
@@ -44,6 +46,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
   const t = useLang()
   const orgUsers = useOrgUsers()
   const { unread } = useInbox()
+  const [showLogout, setShowLogout] = useState(false)
   const userColor = orgUsers.find(u => u.name === currentUser.name)?.color ?? '#888'
 
   const NAV = [
@@ -118,7 +121,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
         })()}
         <div
           title={`${currentUser.name} — ${t.logout}`}
-          onClick={() => { if (confirm(t.confirmLogout ?? 'Sign out?')) onLogout() }}
+          onClick={() => setShowLogout(true)}
           role="button"
           tabIndex={0}
           className="hoverable"
@@ -127,6 +130,14 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
           {getInitials(currentUser.name)}
         </div>
       </div>
+      {showLogout && (
+        <ConfirmModal
+          message={t.confirmLogout ?? 'Sign out?'}
+          onConfirm={() => { setShowLogout(false); onLogout() }}
+          onCancel={() => setShowLogout(false)}
+          danger={false}
+        />
+      )}
     </div>
   )
 }

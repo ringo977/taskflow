@@ -112,7 +112,7 @@ const oset = (orgId, key, val) => storage.set(`${orgId}_${key}`, val)
 // ── Loading spinner ───────────────────────────────────────────
 function LoadingScreen({ message }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', margin: '-20px', gap: 14 }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', gap: 14, zIndex: 10 }}>
       <svg width="28" height="28" viewBox="0 0 20 20" fill="none">
         <rect x="1"  y="3.5"  width="10" height="3.5" rx="1.5" fill="var(--tx1)"/>
         <rect x="4"  y="9"    width="10" height="3.5" rx="1.5" fill="var(--tx1)" opacity="0.7"/>
@@ -132,7 +132,7 @@ function NewProjectModal({ templates, portfolios, onAdd, onClose, lang }) {
   const [selPort, setSelPort] = useState('')
   const [selTpl, setSelTpl] = useState('')
   return (
-    <div onClick={onClose} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+    <div onClick={onClose} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 420, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', overflow: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>{t.newProject ?? 'New project'}</span>
@@ -742,7 +742,7 @@ function App() {
     <LangCtx.Provider value={lang}>
       <div className="app-shell" style={{ display: 'flex', height: '92vh', minHeight: 620, background: 'var(--bg3)', borderRadius: 'var(--r3)', overflow: 'hidden', border: '1px solid var(--bd3)', position: 'relative', boxShadow: 'var(--shadow-lg)' }}>
 
-        <button className="mobile-toggle" onClick={() => setMobileSidebar(v => !v)}
+        <button className="mobile-toggle" onClick={() => setMobileSidebar(v => !v)} aria-label="Menu"
           style={{ position: 'absolute', top: 10, left: 10, zIndex: 55, width: 34, height: 34, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16, padding: 0 }}>
           ☰
         </button>
@@ -757,7 +757,7 @@ function App() {
             onSetup2FA={() => setNeedsMfa(true)}
           />
         </div>
-        {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.3)' }} />}
+        {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'var(--overlay)' }} />}
 
         {showCtx && <div className={`context-sidebar${mobileSidebar ? ' mobile-open' : ''}`}><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={(id) => { selProj(id); setMobileSidebar(false) }} onAddProject={() => { setShowNewProj(true); setMobileSidebar(false) }} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 

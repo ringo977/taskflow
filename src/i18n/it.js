@@ -99,7 +99,7 @@ const it = {
   chartAllProjects: 'Tutti i progetti', chartLast30d: 'ultimi 30 giorni', chartWeeks: 'settimane',
   // Board
   dblClickRename: 'Doppio clic per rinominare', deleteSection: 'Elimina sezione',
-  sectionNamePlaceholder: 'Nome sezione…', addSectionLabel: 'Aggiungi sezione',
+  sectionNamePlaceholder: 'Nome sezione…', addSectionLabel: 'Aggiungi sezione', emptySection: 'Nessun task in questa sezione',
   // List
   sort: 'Ordina', nSelected: 'selezionati',
   // Inbox

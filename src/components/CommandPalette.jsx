@@ -63,13 +63,13 @@ export default function CommandPalette({ tasks, projects, onOpenTask, onOpenProj
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', zIndex: 999 }} />
       <div style={{
         position: 'fixed', top: '18%', left: '50%', transform: 'translateX(-50%)',
         width: 520, maxHeight: '60vh', background: 'var(--bg1)',
         border: '1px solid var(--bd2)', borderRadius: 'var(--r2)',
         boxShadow: 'var(--shadow-lg)', zIndex: 1000, display: 'flex', flexDirection: 'column',
-        overflow: 'hidden', animation: 'toast-in 0.15s var(--ease) both',
+        overflow: 'hidden', animation: 'toastIn 0.15s var(--ease) both',
       }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>

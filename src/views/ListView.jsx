@@ -125,6 +125,10 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                   )
                 })}
 
+                {filtered.length === 0 && !q && (
+                  <div style={{ padding: '12px 10px', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>{t.emptySection ?? 'No tasks yet'}</div>
+                )}
+
                 {addIn === sec ? (
                   <div style={{ padding: '6px 10px', display: 'flex', gap: 5 }}>
                     <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t.addTaskTitle}

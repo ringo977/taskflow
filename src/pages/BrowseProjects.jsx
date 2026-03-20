@@ -87,7 +87,7 @@ export default function BrowseProjects({ projects, portfolios, tasks, onSelProj,
 
       {/* Add project modal */}
       {adding && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
           <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 380, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <span style={{ fontWeight: 500, fontSize: 14 }}>{t.newProject}</span>

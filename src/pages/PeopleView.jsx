@@ -165,7 +165,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
             <button
               onClick={handleInvite}
               disabled={busy || !inviteEmail.trim()}
-              style={{ padding: '7px 16px', borderRadius: 'var(--r1)', border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, cursor: busy ? 'wait' : 'pointer', opacity: busy || !inviteEmail.trim() ? 0.5 : 1 }}
+              style={{ padding: '7px 16px', borderRadius: 'var(--r1)', border: 'none', background: 'var(--accent)', color: 'var(--bg1)', fontSize: 13, fontWeight: 500, cursor: busy ? 'wait' : 'pointer', opacity: busy || !inviteEmail.trim() ? 0.5 : 1 }}
             >
               {t.invite}
             </button>
@@ -183,7 +183,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
             </thead>
             <tbody>
               {USERS.map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--bd3)08' }}>
+                <tr key={u.id} style={{ borderBottom: '1px solid var(--bd3)' }}>
                   <td style={{ padding: '8px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {getInitials(u.name)}
@@ -230,7 +230,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                 {t.pendingRequests ?? 'Pending requests'} ({pendingReqs.length})
               </div>
               {pendingReqs.map(req => (
-                <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)08' }}>
+                <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)' }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)28', color: 'var(--accent)', fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {getInitials(req.user_name)}
                   </div>
@@ -240,7 +240,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => handleApprove(req.id)} disabled={busy}
-                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
+                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: 'var(--bg1)', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
                       {t.approve ?? 'Approve'}
                     </button>
                     <button onClick={() => handleReject(req.id)} disabled={busy}

@@ -105,7 +105,7 @@ export default function HomeDashboard({ tasks, projects, secs = {}, currentUser,
   // 6. Status distribution: tasks by section name
   const statusData = useMemo(() => {
     const counts = {}
-    const statusColors = ['var(--c-brand)', 'var(--c-warning)', 'var(--c-success)', 'var(--tx3)', '#9b59b6', '#e67e22']
+    const statusColors = ['var(--c-brand)', 'var(--c-warning)', 'var(--c-success)', 'var(--tx3)', 'var(--c-purple)', 'var(--c-lime)']
     for (const task of tasks) {
       const sec = task.sec ?? 'Other'
       counts[sec] = (counts[sec] ?? 0) + 1

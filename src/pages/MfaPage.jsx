@@ -57,7 +57,7 @@ export default function MfaPage({ onComplete, lang }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', margin: '-20px', padding: 20 }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', padding: 20, zIndex: 10 }}>
       <div style={{ width: 400, background: 'var(--bg1)', borderRadius: 'var(--r3)', border: '1px solid var(--bd3)', padding: '40px 36px', boxShadow: 'var(--shadow-lg)' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>

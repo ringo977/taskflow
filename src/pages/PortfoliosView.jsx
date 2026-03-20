@@ -124,7 +124,7 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
 
       {/* Add portfolio modal */}
       {adding && (
-        <div onClick={() => setAdding(false)} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+        <div onClick={() => setAdding(false)} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 360, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>{t.newPortfolioTitle}</span>

@@ -60,7 +60,7 @@ export default function LoginPage({ lang, setLang }) {
     : email && pass && pass2 && firstName.trim() && lastName.trim()
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', margin: '-20px', padding: 20 }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', padding: 20, zIndex: 10 }}>
       <div style={{ width: 380, background: 'var(--bg1)', borderRadius: 'var(--r3)', border: '1px solid var(--bd3)', padding: '36px 32px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Header */}

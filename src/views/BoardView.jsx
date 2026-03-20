@@ -159,6 +159,12 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
               <div style={{ height: 3, background: 'var(--c-brand)', borderRadius: 2, margin: '2px 0' }} />
             )}
 
+            {filtered.length === 0 && !q && (
+              <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic', lineHeight: 1.6 }}>
+                {t.emptySection ?? 'No tasks yet'}
+              </div>
+            )}
+
             {addIn === sec ? (
               <div style={{ marginTop: 4 }}>
                 <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t.addTaskTitle}

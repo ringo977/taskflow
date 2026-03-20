@@ -40,16 +40,22 @@
   --c-warning: #EF9F27;
   --c-purple:  #7F77DD;
   --c-lime:    #639922;
+  --accent:    var(--c-brand);
 
   /* Borders */
   --bd3: rgba(0,0,0,0.08);
   --bd2: rgba(0,0,0,0.15);
   --bd1: rgba(0,0,0,0.25);
+  --bd-info:    color-mix(in srgb, var(--c-brand) 20%, transparent);
+  --bd-success: color-mix(in srgb, var(--c-success) 20%, transparent);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+
+  /* Overlay */
+  --overlay: rgba(0,0,0,0.35);
 
   /* Motion */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -67,8 +73,12 @@
   --tx-success: #c0dd97;  --tx-warning: #fac775;
   --c-brand: #5ea3e8;  --c-success: #34c48c;  --c-danger: #f07070;
   --c-warning: #f5b84a;  --c-purple: #9d96f0;  --c-lime: #8dc23e;
+  --accent: var(--c-brand);
   --bd3: rgba(255,255,255,0.07);  --bd2: rgba(255,255,255,0.14);  --bd1: rgba(255,255,255,0.24);
+  --bd-info: color-mix(in srgb, var(--c-brand) 25%, transparent);
+  --bd-success: color-mix(in srgb, var(--c-success) 25%, transparent);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.20);  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);  --shadow-lg: 0 8px 32px rgba(0,0,0,0.36);
+  --overlay: rgba(0,0,0,0.55);
   color-scheme: dark;
 }}
 :root[data-theme="dark"] {
@@ -80,8 +90,12 @@
   --tx-success: #c0dd97;  --tx-warning: #fac775;
   --c-brand: #5ea3e8;  --c-success: #34c48c;  --c-danger: #f07070;
   --c-warning: #f5b84a;  --c-purple: #9d96f0;  --c-lime: #8dc23e;
+  --accent: var(--c-brand);
   --bd3: rgba(255,255,255,0.07);  --bd2: rgba(255,255,255,0.14);  --bd1: rgba(255,255,255,0.24);
+  --bd-info: color-mix(in srgb, var(--c-brand) 25%, transparent);
+  --bd-success: color-mix(in srgb, var(--c-success) 25%, transparent);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.20);  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);  --shadow-lg: 0 8px 32px rgba(0,0,0,0.36);
+  --overlay: rgba(0,0,0,0.55);
   color-scheme: dark;
 }
 
@@ -141,7 +155,7 @@ button:focus-visible {
 }
 
 /* ── Miscellaneous ──────────────────────────────────────────── */
-mark { background: #EF9F2740; color: inherit; border-radius: 2px; padding: 0 2px; }
+mark { background: color-mix(in srgb, var(--c-warning) 25%, transparent); color: inherit; border-radius: 2px; padding: 0 2px; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 99px; }
@@ -150,6 +164,7 @@ mark { background: #EF9F2740; color: inherit; border-radius: 2px; padding: 0 2px
 /* ── Animations ─────────────────────────────────────────────── */
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-8px) scale(0.97) } to { opacity: 1; transform: none } }
 .fade-in { animation: fadeIn var(--duration-norm) var(--ease) both; }
 
 /* ── Mobile responsive ─────────────────────────────────────── */

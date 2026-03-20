@@ -219,7 +219,7 @@ export default function TimelineView({ tasks, secs, projects, onOpen, lang }) {
                           cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 8px', overflow: 'hidden',
                         }}>
                         {isBlocked && <span style={{ fontSize: 11, marginRight: 4 }}>⊘</span>}
-                        <span style={{ fontSize: 12, color: isBlocked ? 'var(--c-warning)' : '#fff', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: task.done ? 'line-through' : 'none' }}>
+                        <span style={{ fontSize: 12, color: isBlocked ? 'var(--c-warning)' : 'var(--bg1)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: task.done ? 'line-through' : 'none' }}>
                           {task.title}
                         </span>
                       </div>
