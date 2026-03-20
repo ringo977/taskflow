@@ -364,16 +364,18 @@ function App() {
     setDbStatus('syncing')
     try {
       const data = await fetchOrgData(orgId)
-      // If DB is empty, seed it from local data
-      if (data.projs.length === 0) {
+      const seededKey = `taskflow-${orgId}-seeded`
+      if (data.projs.length === 0 && !localStorage.getItem(seededKey)) {
         const seed = seedFor(orgId)
         await seedOrg(orgId, seed)
+        localStorage.setItem(seededKey, '1')
         const seeded = await fetchOrgData(orgId)
         setProjs(seeded.projs); setPorts(seeded.ports)
         setSecs(seeded.secs);   setTasks(seeded.tasks)
         setMyProjectRoles(seeded.myProjectRoles ?? {})
         setPid(seeded.projs[0]?.id ?? '')
       } else {
+        localStorage.setItem(seededKey, '1')
         setProjs(data.projs); setPorts(data.ports)
         setSecs(data.secs);   setTasks(data.tasks)
         setMyProjectRoles(data.myProjectRoles ?? {})
