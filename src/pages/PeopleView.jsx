@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
 import { addOrgMember, removeOrgMember, updateOrgMemberRole } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 const ROLES = ['admin', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', member: 'var(--accent)', guest: 'var(--tx3)' }
@@ -26,7 +27,19 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   const [msg, setMsg] = useState(null)
 
   const currentMember = USERS.find(u => u.id === currentUser?.id)
-  const isAdmin = currentMember?.role === 'admin'
+  const [dbAdmin, setDbAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!currentUser?.id || !activeOrgId) return
+    supabase.from('org_members')
+      .select('role')
+      .eq('org_id', activeOrgId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.role === 'admin') setDbAdmin(true) })
+  }, [currentUser?.id, activeOrgId])
+
+  const isAdmin = currentMember?.role === 'admin' || dbAdmin
 
   const flash = (text, type = 'ok') => {
     setMsg({ text, type })
