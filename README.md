@@ -64,7 +64,7 @@ taskflow/
 │
 └── src/
     ├── main.jsx                   # React root + BrowserRouter
-    ├── App.jsx                    # Lightweight orchestrator (~190 LOC): hooks + lazy loading + rendering
+    ├── App.jsx                    # Thin orchestrator (~156 LOC): bootstrap + providers + layout composition
     ├── index.css                  # Design tokens, dark mode, base styles
     ├── constants.js               # Shared constants (filters, templates, org seeds)
     │
@@ -88,6 +88,7 @@ taskflow/
     │   ├── useTaskActions.js      # Task CRUD with optimistic UI + revert on error
     │   ├── useProjectActions.js   # Project/portfolio CRUD with optimistic UI
     │   ├── useUIState.js          # Navigation, URL sync, keyboard shortcuts, modals
+    │   ├── useAppActions.js        # Composed hook: wires task/project/section/AI + rule engine
     │   ├── useAIActions.js         # AI subtask gen, task creation, project summary
     │   ├── useSectionActions.js   # Kanban column (section) updates
     │   ├── useRuleEngine.js       # Automation rules: trigger detection + action execution
@@ -105,7 +106,10 @@ taskflow/
     │   ├── it.js                  # Italian strings (~220 keys)
     │   └── en.js                  # English strings
     │
-    ├── layout/                    # Shell components
+    ├── layout/                    # Shell & layout components
+    │   ├── AuthGate.jsx           # Auth screen dispatcher (loading/login/MFA)
+    │   ├── MainContent.jsx        # Nav routing + project view dispatcher
+    │   ├── ModalLayer.jsx         # All floating panels & modals
     │   ├── IconSidebar.jsx        # Left icon nav (68px)
     │   ├── ContextSidebar.jsx     # Right contextual sidebar (240px)
     │   └── OrgSwitcher.jsx        # Organization switcher
@@ -178,8 +182,9 @@ Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for 
 
 ### State management
 
-`App.jsx` is a lightweight orchestrator (~190 LOC) that uses `React.lazy` + `Suspense` to code-split 18 page/view/modal components into separate chunks, keeping the initial bundle small. It delegates all business logic to seven custom hooks:
+`App.jsx` is a thin orchestrator (~156 LOC) that composes bootstrap, providers, and three layout components (`AuthGate`, `MainContent`, `ModalLayer`). All business logic lives in custom hooks, composed via `useAppActions`:
 
+- **`useAppActions`** — top-level composition hook: wires task/project/section/AI actions together and wraps mutations with the rule engine
 - **`useAppBootstrap`** — auth state, MFA flow, org initialization, realtime subscriptions, data loading from Supabase with localStorage fallback
 - **`useTaskActions`** — task CRUD with optimistic UI and automatic revert on error
 - **`useProjectActions`** — project/portfolio CRUD with optimistic UI and revert
@@ -188,7 +193,7 @@ Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for 
 - **`useSectionActions`** — Kanban column (section) rename/reorder with Supabase persistence
 - **`useRuleEngine`** — automation rules engine: evaluates per-project rules on task mutations and runs periodic deadline checks
 
-No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, and org user directory.
+No Redux or Zustand. Five React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, org user directory, and app actions.
 
 ### Code splitting
 
