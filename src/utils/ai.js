@@ -35,7 +35,7 @@ export class AIError extends Error {
   }
 }
 
-function classifyStatus(status, serverMsg) {
+function classifyStatus(status, _serverMsg) {
   if (status === 408 || status === 504) return 'TIMEOUT'
   if (status === 429) return 'RATE_LIMIT'
   if (status === 401 || status === 403) return 'AUTH'
@@ -80,7 +80,7 @@ export async function callAI(system, user, maxTokens = 1000) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system, user, maxTokens }),
     })
-  } catch (_err) {
+  } catch {
     throw new AIError(AI_ERROR_MESSAGES.NETWORK, 'NETWORK')
   }
 

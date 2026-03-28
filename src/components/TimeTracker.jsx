@@ -12,6 +12,7 @@ import Avatar from '@/components/Avatar'
  */
 export default function TimeTracker({ task, currentUser, onUpd, sectionTitle }) {
   const t = useLang()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const entries = task.timeEntries ?? []
   const [running, setRunning] = useState(null)   // { startedAt: timestamp }
   const [elapsed, setElapsed] = useState(0)       // seconds

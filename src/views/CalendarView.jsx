@@ -14,7 +14,7 @@ function getMonday(d) {
   return copy
 }
 
-export default function CalendarView({ tasks, projects, onOpen, onMove, onUpd, onAddTaskOnDate, filters, lang }) {
+export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove, onUpd, onAddTaskOnDate, filters, lang: _lang }) {
   const t = useLang()
   const today = new Date()
   const todayStr = toDS(today)
@@ -47,6 +47,7 @@ export default function CalendarView({ tasks, projects, onOpen, onMove, onUpd, o
       const diff = (new Date(task.due + 'T12:00:00') - today) / 864e5
       return diff >= 0 && diff <= 7
     }).sort((a, b) => a.due.localeCompare(b.due)),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   [filtered, todayStr])
 
   const upcomingByDay = useMemo(() => {

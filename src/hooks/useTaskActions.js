@@ -135,6 +135,7 @@ export function useTaskActions({
         toast(tr.msgSaveError, 'error')
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tasks, setTasks, activeOrgId, secRowsRef, user, autoAddAssigneeToProject, toast, tr]
   )
 

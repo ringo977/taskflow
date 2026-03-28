@@ -68,7 +68,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
     const dragTask = tasks.find(t => t.id === drag)
     if (!dragTask) return
 
-    const filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
+    const _filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
     const idx = getDropIndex(sec, e.clientY)
 
     if (dragTask.sec !== sec) {

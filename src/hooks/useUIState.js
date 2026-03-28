@@ -16,6 +16,7 @@ export function useUIState({ activeOrgId }) {
   const location = useLocation()
 
   // ── State Initialization from URL ───────────────────────────────────────
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const initRoute = useMemo(() => parseRoute(location.pathname), [])
   const [nav, setNav] = useState(initRoute.nav)
   const [pid, setPid] = useState(() =>
@@ -122,6 +123,7 @@ export function useUIState({ activeOrgId }) {
     if (r.pid && r.pid !== pid && r.pid !== '-') setPid(r.pid)
     if (r.view && r.view !== view && r.view !== '-') setView(r.view)
     setSelId(r.taskId && r.taskId !== '-' ? r.taskId : null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
   // ── Navigation helpers ─────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, isOverdue } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'

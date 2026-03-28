@@ -41,6 +41,7 @@ export default function MfaPage({ onComplete, lang }) {
       })
 
     return () => clearTimeout(timeout)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const doVerify = async () => {
@@ -49,7 +50,7 @@ export default function MfaPage({ onComplete, lang }) {
     try {
       await verifyTotp(factorId, code)
       onComplete()
-    } catch (e) {
+    } catch {
       setErr(isIt ? 'Codice non valido. Riprova.' : 'Invalid code. Try again.')
       setCode('')
     }

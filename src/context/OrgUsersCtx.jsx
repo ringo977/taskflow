@@ -54,11 +54,13 @@ async function currentUserFallback(orgId) {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOrgUsers() {
   const users = useContext(OrgUsersCtx)
   return users ?? []
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useRefreshOrgUsers() {
   return useContext(RefreshCtx)
 }

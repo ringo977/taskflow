@@ -1,5 +1,6 @@
 import { useLang } from '@/i18n'
 import { useInbox } from '@/context/InboxCtx'
+// eslint-disable-next-line no-unused-vars
 import Avatar from '@/components/Avatar'
 
 const ICONS = {

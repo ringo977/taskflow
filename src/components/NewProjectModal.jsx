@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { PROJECT_COLORS } from '@/data/initialData'
 
-export default function NewProjectModal({ templates, portfolios, onAdd, onClose, lang }) {
+export default function NewProjectModal({ templates, portfolios, onAdd, onClose, lang: _lang }) {
   const t = useLang()
   const [nm, setNm] = useState('')
   const [ci, setCi] = useState(0)

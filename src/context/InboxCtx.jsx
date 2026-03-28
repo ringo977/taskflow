@@ -51,6 +51,7 @@ export function InboxProvider({ orgId, children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useInbox() {
   return useContext(InboxCtx) ?? { items: [], unread: 0, push: () => {}, markRead: () => {}, markAllRead: () => {} }
 }

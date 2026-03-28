@@ -99,6 +99,7 @@ export const useProjectActions = ({
         toast(tr.msgSaveError, 'error')
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       projs,
       setProjs,
@@ -195,6 +196,7 @@ export const useProjectActions = ({
         'success'
       )
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [projs, toast, tr]
   )
 

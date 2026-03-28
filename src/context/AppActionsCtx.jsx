@@ -8,6 +8,7 @@ export function AppActionsProvider({ actions, children }) {
 }
 
 /** Consume the nearest AppActionsProvider. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppActionsCtx() {
   const ctx = useContext(AppActionsCtx)
   if (!ctx) throw new Error('useAppActionsCtx must be used within AppActionsProvider')

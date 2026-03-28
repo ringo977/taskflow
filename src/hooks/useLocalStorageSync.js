@@ -22,6 +22,7 @@ export function useLocalStorageSync(global, orgData, orgId) {
     scheduleBatch(pending, () => {
       for (const [k, v] of Object.entries(global)) storage.set(k, v)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [global.lang, global.theme, global.orgs, global.activeOrgId])
 
   // ── Org-namespaced keys ────────────────────────────────────────
@@ -30,6 +31,7 @@ export function useLocalStorageSync(global, orgData, orgId) {
     scheduleBatch(pending, () => {
       for (const [k, v] of Object.entries(orgData)) oset(orgId, k, v)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId, orgData.projs, orgData.ports, orgData.secs, orgData.tasks])
 
   // ── Theme side-effect (data-theme attribute) ───────────────────

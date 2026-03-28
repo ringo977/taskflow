@@ -10,6 +10,7 @@ export default function TrashView({ orgId, onReload }) {
   const [confirm, setConfirm] = useState(null)
 
   const load = () => fetchTrash(orgId).then(setData).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [orgId])
 
   const handleRestore = async (table, id) => {

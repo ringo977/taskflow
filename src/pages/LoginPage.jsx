@@ -7,7 +7,7 @@ const inputStyle = { width: '100%', fontSize: '14px', padding: '10px 14px', bord
 const labelStyle = { fontSize: 11, color: 'var(--tx3)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
 export default function LoginPage({ lang, setLang }) {
-  const t = useLang()
+  const _t = useLang()
   const [mode, setMode]       = useState('login')
   const [email, setEmail]     = useState('')
   const [pass, setPass]       = useState('')

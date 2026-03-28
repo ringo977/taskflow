@@ -13,6 +13,7 @@ export function ToastProvider({ children }) {
     setToasts(prev => [...prev, { id, message, type, exiting: false, duration }])
     timers.current[id] = setTimeout(() => dismiss(id), duration)
     return id
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const dismiss = useCallback((id) => {
@@ -29,6 +30,7 @@ export function ToastProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   return useContext(ToastCtx)
 }

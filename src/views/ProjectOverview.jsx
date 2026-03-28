@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
+// eslint-disable-next-line no-unused-vars
 import { fmtDate } from '@/utils/format'
 import { fetchProjectMembers, addProjectMember, removeProjectMember } from '@/lib/db'
 import { getInitials } from '@/utils/initials'
 import Avatar from '@/components/Avatar'
+// eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
 import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
@@ -18,7 +20,7 @@ const STATUS_CFG = {
   off_track: { label: 'off_track', color: 'var(--c-danger)', bg: 'color-mix(in srgb, var(--c-danger) 10%, transparent)' },
 }
 
-export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
+export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang: _lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const me = USERS.find(u => u.email === currentUser?.email)
@@ -39,7 +41,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
   const odCount = pTasks.filter(task => !task.done && isOverdue(task.due)).length
   const recent  = [...pTasks].sort((a, b) => (b.id > a.id ? 1 : -1)).slice(0, 8)
 
-  const status  = STATUS_CFG[proj.statusLabel] ?? STATUS_CFG.on_track
+  const _status = STATUS_CFG[proj.statusLabel] ?? STATUS_CFG.on_track
   const statusLabels = { on_track: t.onTrack, at_risk: t.atRisk, off_track: t.offTrack }
 
   const resources = proj.resources ?? []
@@ -290,7 +292,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
 }
 
 function CustomFieldsConfig({ proj, onUpdProj, sectionTitleStyle, t }) {
-  const fields = proj.customFields ?? []
+  const fields = useMemo(() => proj.customFields ?? [], [proj.customFields])
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState('text')

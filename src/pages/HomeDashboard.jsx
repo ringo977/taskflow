@@ -29,7 +29,7 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function HomeDashboard({ tasks, projects, secs = {}, currentUser, onOpen, onNav, lang }) {
+export default function HomeDashboard({ tasks, projects, secs: _secs = {}, currentUser, onOpen, onNav, lang }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const [burndownPid, setBurndownPid] = useState('__all__')
@@ -100,6 +100,7 @@ export default function HomeDashboard({ tasks, projects, secs = {}, currentUser,
       points.push({ date: label, [t.chartRemaining]: total - doneByDate, [t.chartIdeal]: Math.round(total * (1 - (30 - i) / 30)) })
     }
     return points
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, burndownPid, t])
 
   // 6. Status distribution: tasks by section name
@@ -130,6 +131,7 @@ export default function HomeDashboard({ tasks, projects, secs = {}, currentUser,
       weeks.push({ week: label, [t.chartCompleted]: count })
     }
     return weeks
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, t])
 
   // 8. Overdue by project: horizontal bar
