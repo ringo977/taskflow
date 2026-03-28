@@ -33,6 +33,7 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/jsx-no-target-blank': 'warn',
+      'react/jsx-uses-vars': 'error',
 
       // Hooks
       'react-hooks/rules-of-hooks': 'error',
