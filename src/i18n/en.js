@@ -223,6 +223,24 @@ const en = {
   balanced: 'Balanced',
   light: 'Light',
 
+  // ── Dashboard widgets (new) ─────────────────────────────
+  upcomingDeadlines: 'Upcoming deadlines',
+  noUpcoming: 'No deadlines this week',
+  dueTomorrow: 'Tomorrow',
+  daysLeft: n => `${n}d left`,
+  recentActivityFeed: 'Recent activity',
+  noRecentActivity: 'No recent activity',
+  actCreated: 'created',
+  actCompleted: 'completed',
+  actCommented: 'commented on',
+  actAssigned: 'assigned',
+  projectHealth: 'Project health',
+  healthGood: 'On track',
+  healthWarning: 'At risk',
+  healthCritical: 'Off track',
+  healthScore: 'Health',
+  tasksLabel: 'tasks',
+
   // ── Forms ───────────────────────────────────────────────
   forms: 'Forms',
   noForms: 'No forms yet. Add one to collect structured requests.',

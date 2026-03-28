@@ -223,6 +223,24 @@ const it = {
   balanced: 'Bilanciato',
   light: 'Leggero',
 
+  // ── Dashboard widgets (nuovi) ───────────────────────────
+  upcomingDeadlines: 'Scadenze in arrivo',
+  noUpcoming: 'Nessuna scadenza questa settimana',
+  dueTomorrow: 'Domani',
+  daysLeft: n => `${n}g rimasti`,
+  recentActivityFeed: 'Attività recente',
+  noRecentActivity: 'Nessuna attività recente',
+  actCreated: 'ha creato',
+  actCompleted: 'ha completato',
+  actCommented: 'ha commentato',
+  actAssigned: 'ha assegnato',
+  projectHealth: 'Salute dei progetti',
+  healthGood: 'In linea',
+  healthWarning: 'A rischio',
+  healthCritical: 'Fuori rotta',
+  healthScore: 'Stato',
+  tasksLabel: 'task',
+
   // ── Forms ───────────────────────────────────────────────
   forms: 'Form',
   noForms: 'Nessun form. Aggiungine uno per raccogliere richieste.',

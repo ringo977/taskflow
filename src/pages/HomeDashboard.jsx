@@ -29,6 +29,18 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
+/** Format a timestamp as relative time (e.g. "2h ago", "3d ago") */
+function formatTimeAgo(ts, _t) {
+  const diff = Date.now() - ts
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return _t.justNow ?? 'just now'
+  if (mins < 60) return `${mins}m`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h`
+  const days = Math.floor(hrs / 24)
+  return `${days}d`
+}
+
 export default function HomeDashboard({ tasks, projects, secs: _secs = {}, currentUser, onOpen, onNav, lang }) {
   const t = useLang()
   const USERS = useOrgUsers()
@@ -46,6 +58,61 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const overdue  = mine.filter(task => isOverdue(task.due))
   const dueToday = mine.filter(task => task.due === ts)
   const dueWeek  = mine.filter(task => task.due && task.due > ts && task.due <= weStr)
+
+  // ── New widget data ─────────────────────────────────────────
+
+  // Upcoming deadlines: all open tasks due within next 7 days, sorted by date
+  const upcomingDeadlines = useMemo(() => {
+    return tasks
+      .filter(task => !task.done && task.due && task.due >= ts && task.due <= weStr)
+      .sort((a, b) => a.due.localeCompare(b.due))
+      .slice(0, 8)
+  }, [tasks, ts, weStr])
+
+  // Recent activity: derive from task ids (creation timestamp) + done status + comments
+  const recentActivity = useMemo(() => {
+    const acts = []
+    for (const task of tasks) {
+      // creation event
+      const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
+      if (!isNaN(idTs) && idTs > Date.now() - 7 * 86400000) {
+        acts.push({ type: 'created', task, time: idTs })
+      }
+      // completion event (approximate: if done and due is recent, treat due as completion date)
+      if (task.done && task.due) {
+        const dueTs = new Date(task.due + 'T12:00:00').getTime()
+        if (dueTs > Date.now() - 7 * 86400000) {
+          acts.push({ type: 'completed', task, time: dueTs })
+        }
+      }
+      // comments
+      if (task.comments?.length) {
+        for (const c of task.comments.slice(-2)) {
+          const cTs = new Date(c.date).getTime()
+          if (cTs > Date.now() - 7 * 86400000) {
+            acts.push({ type: 'commented', task, time: cTs, who: c.user })
+          }
+        }
+      }
+    }
+    return acts.sort((a, b) => b.time - a.time).slice(0, 8)
+  }, [tasks])
+
+  // Project health scores
+  const projectHealthData = useMemo(() => {
+    return projects.map(p => {
+      const pt = tasks.filter(tk => tk.pid === p.id)
+      const total = pt.length
+      if (total === 0) return null
+      const done = pt.filter(tk => tk.done).length
+      const od = pt.filter(tk => !tk.done && isOverdue(tk.due)).length
+      const pct = Math.round(done / total * 100)
+      const odPct = total > 0 ? od / total : 0
+      // Health: critical if >25% overdue, warning if >10%, good otherwise
+      const health = odPct > 0.25 ? 'critical' : odPct > 0.10 ? 'warning' : 'good'
+      return { ...p, total, done, pct, overdue: od, health }
+    }).filter(Boolean).slice(0, 6)
+  }, [tasks, projects])
 
   // ── Chart data ────────────────────────────────────────────────
 
@@ -198,6 +265,114 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
         <StatCard label={t.thisWeek}       value={dueWeek.length}                   color="var(--c-brand)" onClick={() => onNav('mytasks')} />
         <StatCard label={t.completedTotal} value={tasks.filter(t => t.done).length} color="var(--c-success)" onClick={() => {}} />
       </div>
+
+      {/* New widgets row: upcoming deadlines + recent activity */}
+      <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Upcoming deadlines */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <SectionTitle>{t.upcomingDeadlines ?? 'Upcoming deadlines'}</SectionTitle>
+            <span style={{ fontSize: 11, color: 'var(--tx3)' }}>7 {t.days ?? 'days'}</span>
+          </div>
+          {upcomingDeadlines.length === 0
+            ? <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>🎉 {t.noUpcoming ?? 'No deadlines this week'}</div>
+            : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {upcomingDeadlines.map(task => {
+                  const p = projects.find(x => x.id === task.pid)
+                  const daysUntil = Math.round((new Date(task.due + 'T00:00:00') - new Date(ts + 'T00:00:00')) / 86400000)
+                  const urgencyColor = daysUntil === 0 ? 'var(--c-danger)' : daysUntil === 1 ? 'var(--c-warning)' : 'var(--tx3)'
+                  const urgencyLabel = daysUntil === 0 ? t.today : daysUntil === 1 ? (t.dueTomorrow ?? 'Tomorrow') : (t.daysLeft ?? (n => `${n}d left`))(daysUntil)
+                  return (
+                    <div key={task.id} onClick={() => onOpen(task.id)} className="row-interactive"
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--bd3)', cursor: 'pointer' }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: p?.color ?? '#888', flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 12, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</span>
+                      <Badge pri={task.pri} />
+                      <span style={{ fontSize: 11, color: urgencyColor, flexShrink: 0, fontWeight: 500, minWidth: 50, textAlign: 'right' }}>{urgencyLabel}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          }
+        </div>
+
+        {/* Recent activity feed */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.recentActivityFeed ?? 'Recent activity'}</SectionTitle>
+          {recentActivity.length === 0
+            ? <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>{t.noRecentActivity ?? 'No recent activity'}</div>
+            : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {recentActivity.map((act, i) => {
+                  const p = projects.find(x => x.id === act.task.pid)
+                  const ago = formatTimeAgo(act.time, t)
+                  const typeColor = act.type === 'completed' ? 'var(--c-success)' : act.type === 'created' ? 'var(--c-brand)' : 'var(--tx3)'
+                  const typeIcon = act.type === 'completed' ? '✓' : act.type === 'created' ? '+' : '💬'
+                  const typeLabel = act.type === 'created' ? (t.actCreated ?? 'created')
+                    : act.type === 'completed' ? (t.actCompleted ?? 'completed')
+                    : (t.actCommented ?? 'commented on')
+                  const who = act.who ?? act.task.who ?? ''
+                  return (
+                    <div key={`${act.task.id}-${act.type}-${i}`} onClick={() => onOpen(act.task.id)}
+                      className="row-interactive"
+                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 0', borderBottom: '1px solid var(--bd3)', cursor: 'pointer' }}>
+                      <span style={{ fontSize: 11, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: `color-mix(in srgb, ${typeColor} 15%, transparent)`, color: typeColor, flexShrink: 0 }}>{typeIcon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontWeight: 500 }}>{who ? who.split(' ')[0] : ''}</span>{' '}
+                          <span style={{ color: 'var(--tx3)' }}>{typeLabel}</span>{' '}
+                          {act.task.title}
+                        </div>
+                      </div>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: p?.color ?? '#888', flexShrink: 0 }} />
+                      <span style={{ fontSize: 10, color: 'var(--tx3)', flexShrink: 0 }}>{ago}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          }
+        </div>
+      </div>
+
+      {/* Project health scores */}
+      {projectHealthData.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionTitle>{t.projectHealth ?? 'Project health'}</SectionTitle>
+          <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {projectHealthData.map(p => {
+              const healthColor = p.health === 'critical' ? 'var(--c-danger)' : p.health === 'warning' ? 'var(--c-warning)' : 'var(--c-success)'
+              const healthLabel = p.health === 'critical' ? (t.healthCritical ?? 'Off track')
+                : p.health === 'warning' ? (t.healthWarning ?? 'At risk')
+                : (t.healthGood ?? 'On track')
+              return (
+                <div key={p.id} onClick={() => onNav('projects', p.id)}
+                  className="row-interactive"
+                  style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '14px 16px', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />
+                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--tx1)' }}>{p.pct}%</span>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: healthColor, padding: '2px 8px', borderRadius: 'var(--r1)', background: `color-mix(in srgb, ${healthColor} 12%, transparent)` }}>{healthLabel}</span>
+                  </div>
+                  <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden', marginBottom: 6 }}>
+                    <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 'var(--r1)' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--tx3)' }}>
+                    <span>{p.done}/{p.total} {t.tasksLabel ?? 'tasks'}</span>
+                    {p.overdue > 0 && <span style={{ color: 'var(--c-danger)' }}>{p.overdue} {t.overdue?.toLowerCase?.() ?? 'overdue'}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Charts row 1 */}
       <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
