@@ -377,7 +377,7 @@ All tables are protected by org-scoped Row Level Security.
 - **Automation rules**: 8 triggers × 8 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask
 - **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards)
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
-- **Forms**: Per-project form builder with configurable fields that map to task properties (title, description, assignee, etc.)
+- **Forms**: Visual form builder with 8 field types (text, textarea, select, date, number, checkbox, url, email), drag reorder, live preview, placeholder/default values, and task property mapping
 - **Goals**: Per-project goals with animated SVG progress rings and automatic roll-up from linked tasks; supports sub-goals (key results)
 - **Time tracking**: Per-task start/stop timer and manual time entry with duration logging
 - **Approval workflow**: Request, approve, reject, or request changes on any task — visible status badges on task cards

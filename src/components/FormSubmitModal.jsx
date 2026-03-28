@@ -4,12 +4,16 @@ import { useLang } from '@/i18n'
 /**
  * FormSubmitModal — renders a project form for submission.
  * On submit, creates a task with mapped fields.
+ * Supports: text, textarea, select, date, number, checkbox, url, email
  */
 export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
   const t = useLang()
   const [values, setValues] = useState(() => {
     const init = {}
-    for (const f of form.fields ?? []) init[f.id] = ''
+    for (const f of form.fields ?? []) {
+      if (f.type === 'checkbox') init[f.id] = f.defaultValue === 'true' ? 'true' : ''
+      else init[f.id] = f.defaultValue ?? ''
+    }
     return init
   })
   const [errors, setErrors] = useState({})
@@ -23,7 +27,14 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
     // Validate required fields
     const errs = {}
     for (const f of form.fields ?? []) {
-      if (f.required && !values[f.id]?.trim()) errs[f.id] = true
+      if (f.required) {
+        const v = values[f.id]
+        if (f.type === 'checkbox') {
+          if (v !== 'true') errs[f.id] = true
+        } else if (!v?.trim()) {
+          errs[f.id] = true
+        }
+      }
     }
     if (Object.keys(errs).length) { setErrors(errs); return }
 
@@ -40,15 +51,19 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
     const extraLines = []
 
     for (const f of form.fields ?? []) {
-      const val = values[f.id]?.trim() ?? ''
-      if (!val) continue
+      const raw = values[f.id] ?? ''
+      const val = typeof raw === 'string' ? raw.trim() : raw
+      if (!val && val !== 'true') continue
+
+      const displayVal = f.type === 'checkbox' ? (val === 'true' ? '✓' : '✗') : val
+
       switch (f.mapsTo) {
-        case 'title': task.title = val; break
-        case 'desc': task.desc = val; break
-        case 'who': task.who = val; break
-        case 'due': task.due = val; break
-        case 'pri': task.pri = val; break
-        default: extraLines.push(`**${f.label}**: ${val}`)
+        case 'title': task.title = displayVal; break
+        case 'desc': task.desc = displayVal; break
+        case 'who': task.who = displayVal; break
+        case 'due': task.due = displayVal; break
+        case 'pri': task.pri = displayVal; break
+        default: extraLines.push(`**${f.label}**: ${displayVal}`)
       }
     }
 
@@ -63,13 +78,19 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
     onSubmit(task)
   }
 
+  const fieldInputStyle = (fid) => ({
+    fontSize: 13, padding: '7px 10px', borderRadius: 'var(--r1)',
+    border: `1px solid ${errors[fid] ? 'var(--c-danger)' : 'var(--bd3)'}`,
+    background: 'var(--bg2)', color: 'var(--tx1)', width: '100%',
+  })
+
   const overlayStyle = {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 120,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   }
   const modalStyle = {
     background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)',
-    padding: '24px', width: 440, maxHeight: '80vh', overflow: 'auto',
+    padding: '24px', width: 460, maxHeight: '80vh', overflow: 'auto',
     boxShadow: 'var(--shadow-lg)',
   }
 
@@ -90,28 +111,19 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
               </label>
 
               {field.type === 'text' && (
-                <input
-                  value={values[field.id] ?? ''}
-                  onChange={e => setValue(field.id, e.target.value)}
-                  style={{ fontSize: 13, padding: '7px 10px', borderRadius: 'var(--r1)', border: `1px solid ${errors[field.id] ? 'var(--c-danger)' : 'var(--bd3)'}`, background: 'var(--bg2)', color: 'var(--tx1)', width: '100%' }}
-                />
+                <input value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  placeholder={field.placeholder || ''} style={fieldInputStyle(field.id)} />
               )}
 
               {field.type === 'textarea' && (
-                <textarea
-                  value={values[field.id] ?? ''}
-                  onChange={e => setValue(field.id, e.target.value)}
-                  rows={3}
-                  style={{ fontSize: 13, padding: '7px 10px', borderRadius: 'var(--r1)', border: `1px solid ${errors[field.id] ? 'var(--c-danger)' : 'var(--bd3)'}`, background: 'var(--bg2)', color: 'var(--tx1)', width: '100%', resize: 'vertical' }}
-                />
+                <textarea value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  rows={3} placeholder={field.placeholder || ''}
+                  style={{ ...fieldInputStyle(field.id), resize: 'vertical' }} />
               )}
 
               {field.type === 'select' && (
-                <select
-                  value={values[field.id] ?? ''}
-                  onChange={e => setValue(field.id, e.target.value)}
-                  style={{ fontSize: 13, padding: '7px 10px', borderRadius: 'var(--r1)', border: `1px solid ${errors[field.id] ? 'var(--c-danger)' : 'var(--bd3)'}`, background: 'var(--bg2)', color: 'var(--tx1)', width: '100%', cursor: 'pointer' }}
-                >
+                <select value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  style={{ ...fieldInputStyle(field.id), cursor: 'pointer' }}>
                   <option value="">{t.formSelectOption ?? 'Select...'}</option>
                   {(typeof field.options === 'string' ? field.options.split(',') : field.options ?? [])
                     .map(o => o.trim()).filter(Boolean)
@@ -121,12 +133,32 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
               )}
 
               {field.type === 'date' && (
-                <input
-                  type="date"
-                  value={values[field.id] ?? ''}
-                  onChange={e => setValue(field.id, e.target.value)}
-                  style={{ fontSize: 13, padding: '7px 10px', borderRadius: 'var(--r1)', border: `1px solid ${errors[field.id] ? 'var(--c-danger)' : 'var(--bd3)'}`, background: 'var(--bg2)', color: 'var(--tx1)', width: '100%' }}
-                />
+                <input type="date" value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  style={fieldInputStyle(field.id)} />
+              )}
+
+              {field.type === 'number' && (
+                <input type="number" value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  placeholder={field.placeholder || ''} style={fieldInputStyle(field.id)} />
+              )}
+
+              {field.type === 'checkbox' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--tx1)', cursor: 'pointer', padding: '4px 0' }}>
+                  <input type="checkbox" checked={values[field.id] === 'true'}
+                    onChange={e => setValue(field.id, e.target.checked ? 'true' : '')}
+                    style={{ width: 16, height: 16, accentColor: 'var(--accent)' }} />
+                  {field.placeholder || field.label}
+                </label>
+              )}
+
+              {field.type === 'url' && (
+                <input type="url" value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  placeholder={field.placeholder || 'https://…'} style={fieldInputStyle(field.id)} />
+              )}
+
+              {field.type === 'email' && (
+                <input type="email" value={values[field.id] ?? ''} onChange={e => setValue(field.id, e.target.value)}
+                  placeholder={field.placeholder || 'user@example.com'} style={fieldInputStyle(field.id)} />
               )}
 
               {errors[field.id] && (
@@ -142,7 +174,7 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
             {t.formSubmit ?? 'Submit'}
           </button>
           <button onClick={onClose}
-            style={{ fontSize: 13, padding: '8px 16px', borderRadius: 'var(--r1)' }}>
+            style={{ fontSize: 13, padding: '8px 16px', background: 'var(--bg1)', color: 'var(--tx2)', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
             {t.cancel ?? 'Cancel'}
           </button>
         </div>

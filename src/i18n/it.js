@@ -285,6 +285,13 @@ const it = {
   formMapsWho: 'Assegnatario',
   formMapsDue: 'Scadenza',
   formMapsPri: 'Priorità',
+  formPreview: 'Anteprima',
+  formNoFields: 'Nessun campo. Aggiungine uno per iniziare.',
+  formPlaceholder: 'Segnaposto',
+  formPlaceholderHint: 'Testo suggerimento nel campo vuoto…',
+  formDefaultValue: 'Valore predefinito',
+  formDefaultValueHint: 'Valore pre-compilato (opzionale)',
+  formRequired: 'Obb',
 
   // ── Goals ───────────────────────────────────────────────
   goals: 'Obiettivi',

@@ -285,6 +285,13 @@ const en = {
   formMapsWho: 'Assignee',
   formMapsDue: 'Due date',
   formMapsPri: 'Priority',
+  formPreview: 'Preview',
+  formNoFields: 'No fields yet. Add one to get started.',
+  formPlaceholder: 'Placeholder',
+  formPlaceholderHint: 'Hint text shown in empty field…',
+  formDefaultValue: 'Default value',
+  formDefaultValueHint: 'Pre-filled value (optional)',
+  formRequired: 'Req',
 
   // ── Goals ───────────────────────────────────────────────
   goals: 'Goals',
