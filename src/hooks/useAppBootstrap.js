@@ -242,11 +242,16 @@ export function useAppBootstrap() {
     }
   }, [initOrgs])
 
-  // ── Realtime sync (lines 554-558) ─────────────────────────────
+  // ── Realtime sync (targeted patches + full reload fallback) ────
   const realtimeReload = useCallback(() => {
     if (dbStatus === 'supabase') loadOrgData(activeOrgIdRef.current)
   }, [dbStatus, loadOrgData])
-  useRealtimeSync(activeOrgId, realtimeReload)
+  useRealtimeSync(activeOrgId, {
+    onFullReload: realtimeReload,
+    setTasks,
+    setProjs,
+    secRowsRef,
+  })
 
   // ── Org switching (lines 561-576) ─────────────────────────────
   const switchOrg = async (newOrgId) => {

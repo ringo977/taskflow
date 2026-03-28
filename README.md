@@ -63,16 +63,32 @@ taskflow/
 │
 └── src/
     ├── main.jsx                   # React root + BrowserRouter
-    ├── App.jsx                    # App shell: state, routing, CRUD, layout
+    ├── App.jsx                    # Lightweight orchestrator (~220 LOC): hooks + rendering
     ├── index.css                  # Design tokens, dark mode, base styles
+    ├── constants.js               # Shared constants (filters, templates, org seeds)
     │
     ├── lib/                       # Data layer
     │   ├── supabase.js            # Supabase client config
     │   ├── auth.js                # Auth helpers (sign in/out, MFA, org membership)
-    │   └── db.js                  # All CRUD operations + shape adapters
+    │   ├── db.js                  # Re-export shim → db/ modules
+    │   └── db/                    # Modular data layer (split from monolithic db.js)
+    │       ├── index.js           # Barrel re-export + fetchOrgData
+    │       ├── adapters.js        # Shape adapters (toTask, toProject, toPortfolio)
+    │       ├── tasks.js           # Task CRUD + _persistRelated helper
+    │       ├── projects.js        # Project + portfolio CRUD
+    │       ├── sections.js        # Section operations
+    │       ├── org.js             # Org directory, membership, join requests
+    │       ├── trash.js           # Soft delete, restore, permanent delete
+    │       ├── attachments.js     # Supabase Storage operations
+    │       └── seed.js            # Org seeding
     │
-    ├── hooks/
-    │   └── useRealtimeSync.js     # Supabase realtime subscriptions
+    ├── hooks/                     # Custom hooks (business logic)
+    │   ├── useAppBootstrap.js     # Auth, MFA, org init, realtime, data loading
+    │   ├── useTaskActions.js      # Task CRUD with optimistic UI + revert on error
+    │   ├── useProjectActions.js   # Project/portfolio CRUD with optimistic UI
+    │   ├── useUIState.js          # Navigation, URL sync, keyboard shortcuts, modals
+    │   ├── useRealtimeSync.js     # Supabase realtime subscriptions (debounced)
+    │   └── useLocalStorageSync.js # Batched localStorage writes via microtask
     │
     ├── context/                   # React contexts (cross-cutting concerns)
     │   ├── ToastCtx.jsx           # Toast notifications
@@ -120,6 +136,10 @@ taskflow/
     │   ├── TaskCard.jsx           # Card for board/list views
     │   ├── CommandPalette.jsx     # Cmd+K global search
     │   ├── ConfirmModal.jsx       # Confirmation dialogs
+    │   ├── LoadingScreen.jsx      # Boot loading screen
+    │   ├── NewProjectModal.jsx    # New project creation modal
+    │   ├── ProjectHeader.jsx      # Project header with view switcher
+    │   ├── SummaryPanel.jsx       # AI summary side panel
     │   └── index.js               # Barrel export
     │
     ├── utils/                     # Pure utility functions
@@ -129,6 +149,7 @@ taskflow/
     │   ├── highlight.jsx          # Search term highlighting
     │   ├── initials.js            # User initials extraction
     │   ├── storage.js             # localStorage wrapper (tf_ prefix)
+    │   ├── routing.js             # parseRoute(), buildPath(), deferAuthWork()
     │   └── exportCsv.js           # CSV export
     │
     ├── data/                      # Seed data
@@ -138,7 +159,7 @@ taskflow/
     │   └── users.js               # Static user list (legacy fallback)
     │
     └── test/
-        └── setup.js               # Vitest + Testing Library setup
+        └── setup.js               # Vitest + Testing Library + jest-dom setup
 ```
 
 ---
@@ -147,19 +168,40 @@ taskflow/
 
 ### State management
 
-All app state lives in `App.jsx` — no Redux, no Zustand. This is intentional for an early-stage app. Four React Contexts handle cross-cutting concerns: toast notifications, undo, activity feed, and org user directory.
+`App.jsx` is a lightweight orchestrator (~220 LOC) that delegates all business logic to four custom hooks:
+
+- **`useAppBootstrap`** — auth state, MFA flow, org initialization, realtime subscriptions, data loading from Supabase with localStorage fallback
+- **`useTaskActions`** — task CRUD with optimistic UI and automatic revert on error
+- **`useProjectActions`** — project/portfolio CRUD with optimistic UI and revert
+- **`useUIState`** — navigation, URL sync, keyboard shortcuts, modal/filter state
+
+No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, and org user directory.
+
+### Data layer
+
+The data layer lives in `src/lib/db/` — eight focused modules instead of one monolithic file:
+
+- **`adapters.js`** — shape adapters mapping DB rows to client objects
+- **`tasks.js`** — task CRUD with a shared `_persistRelated()` helper for subtasks and comments
+- **`projects.js`** — project and portfolio CRUD
+- **`org.js`** — org directory, membership, join requests, with `rpcOrFallback()` for graceful RPC degradation
+- **`trash.js`** — soft delete, restore, permanent delete with cascading cleanup
+
+All mutations follow optimistic-update-then-persist: the UI updates instantly, and if the DB call fails, the change is reverted and the user gets an error toast.
+
+### Caching and sync
+
+Supabase Postgres is the source of truth. Data is also cached in `localStorage` (`tf_*` keys, org-namespaced) for instant UI on reload. The sync flow is: load from cache → display immediately → fetch from Supabase → update UI if different. `useLocalStorageSync` batches all cache writes via microtask to minimize serialization overhead.
+
+Realtime changes arrive via Supabase `postgres_changes` on the `tasks`, `projects`, and `comments` tables. Changes are debounced (800ms) and trigger a full org data reload. Targeted per-record patching is a planned improvement.
 
 ### Routing
 
-Uses `react-router-dom` v6 with full URL ↔ state sync. Route pattern: `/:nav/:pid/:view/:taskId`. Deep linking and browser back/forward work correctly. The `BrowserRouter` uses `/taskflow/` as base path for GitHub Pages.
-
-### Data persistence
-
-Supabase Postgres is the source of truth. Data is also cached in `localStorage` (`tf_*` keys) for instant UI on reload. The sync flow is: load from cache → display immediately → fetch from Supabase → update UI if different. All tables use `org_id` for multi-tenancy with Row Level Security.
+Uses `react-router-dom` v6 with full URL ↔ state sync. Route pattern: `/:nav/:pid/:view/:taskId`. Deep linking and browser back/forward work correctly. Routing logic is extracted to `src/utils/routing.js` (`parseRoute`, `buildPath`). The `BrowserRouter` uses `/taskflow/` as base path for GitHub Pages.
 
 ### AI integration
 
-`src/utils/ai.js` is a thin client that calls a Supabase Edge Function proxy (`supabase/functions/ai-proxy/`). The proxy holds the Anthropic API key server-side and adds rate limiting, input validation, and timeout handling. No API keys are exposed in the browser.
+`src/utils/ai.js` is a thin client that calls a Supabase Edge Function proxy (`supabase/functions/ai-proxy/`). The proxy holds the Anthropic API key server-side and adds rate limiting (20 req/min per IP), input validation, and 30s timeout handling. No API keys are exposed in the browser.
 
 If the proxy is not configured (`VITE_AI_PROXY_URL` is empty), AI features are gracefully disabled — the UI never breaks.
 
