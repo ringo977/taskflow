@@ -10,20 +10,67 @@
 
 const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || ''
 
+// ── Error classification ────────────────────────────────────────
+
+/**
+ * Structured AI error with a machine-readable `code` for UI branching.
+ *
+ * Codes:
+ *   NOT_CONFIGURED  - proxy URL is empty / missing
+ *   NETWORK         - fetch threw (offline, DNS, CORS)
+ *   TIMEOUT         - 408 or proxy 504/Gateway Timeout
+ *   RATE_LIMIT      - 429 Too Many Requests
+ *   AUTH            - 401/403 from proxy or provider
+ *   PROVIDER        - 5xx from the upstream AI provider
+ *   PARSE           - response body was not valid JSON
+ *   UNKNOWN         - anything else
+ */
+export class AIError extends Error {
+  /** @param {string} message @param {string} code @param {number|null} status */
+  constructor(message, code, status = null) {
+    super(message)
+    this.name = 'AIError'
+    this.code = code
+    this.status = status
+  }
+}
+
+function classifyStatus(status, serverMsg) {
+  if (status === 408 || status === 504) return 'TIMEOUT'
+  if (status === 429) return 'RATE_LIMIT'
+  if (status === 401 || status === 403) return 'AUTH'
+  if (status >= 500) return 'PROVIDER'
+  return 'UNKNOWN'
+}
+
+// ── Public helpers ──────────────────────────────────────────────
+
 /** True when the AI proxy is configured and available */
 export const isAIEnabled = () => Boolean(AI_PROXY_URL)
 
+/** User-friendly message keyed by error code (IT). */
+export const AI_ERROR_MESSAGES = {
+  NOT_CONFIGURED: 'Le funzioni AI non sono disponibili — proxy non configurato.',
+  NETWORK: 'Impossibile raggiungere il servizio AI. Controlla la connessione.',
+  TIMEOUT: 'La richiesta AI è scaduta — riprova tra qualche secondo.',
+  RATE_LIMIT: 'Troppe richieste AI — attendi un momento e riprova.',
+  AUTH: 'Errore di autenticazione con il servizio AI.',
+  PROVIDER: 'Il provider AI ha restituito un errore — riprova più tardi.',
+  PARSE: 'Risposta AI non valida — riprova.',
+  UNKNOWN: 'Errore AI imprevisto.',
+}
+
 /**
- * Call the AI proxy.
+ * Call the AI proxy with structured error handling.
  * @param {string} system  System prompt
  * @param {string} user    User message
  * @param {number} maxTokens
  * @returns {Promise<string>} The assistant's text response
- * @throws {Error} with a user-friendly message
+ * @throws {AIError} with a categorised `code`
  */
 export async function callAI(system, user, maxTokens = 1000) {
   if (!AI_PROXY_URL) {
-    throw new Error('AI features are not available — proxy is not configured.')
+    throw new AIError(AI_ERROR_MESSAGES.NOT_CONFIGURED, 'NOT_CONFIGURED')
   }
 
   let response
@@ -33,22 +80,33 @@ export async function callAI(system, user, maxTokens = 1000) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system, user, maxTokens }),
     })
-  } catch (err) {
-    throw new Error('Cannot reach the AI service. Check your connection and try again.')
+  } catch (_err) {
+    throw new AIError(AI_ERROR_MESSAGES.NETWORK, 'NETWORK')
   }
 
   if (!response.ok) {
-    let message = `AI request failed (${response.status})`
+    let serverMsg = ''
     try {
       const body = await response.json()
-      if (body.error) message = body.error
+      if (body.error) serverMsg = body.error
     } catch { /* ignore parse errors */ }
-    throw new Error(message)
+
+    const code = classifyStatus(response.status, serverMsg)
+    const friendlyMsg = AI_ERROR_MESSAGES[code] || serverMsg || `AI request failed (${response.status})`
+    throw new AIError(friendlyMsg, code, response.status)
   }
 
-  const data = await response.json()
+  let data
+  try {
+    data = await response.json()
+  } catch {
+    throw new AIError(AI_ERROR_MESSAGES.PARSE, 'PARSE')
+  }
+
   return data.text ?? ''
 }
+
+// ── Domain helpers ──────────────────────────────────────────────
 
 /** Generate 3-5 subtasks for a given task */
 export async function generateSubtasks(task) {
@@ -56,7 +114,11 @@ export async function generateSubtasks(task) {
     'Return ONLY a JSON array of 3-5 short subtask strings. No markdown, no explanation.',
     `Generate subtasks for: "${task.title}". Context: ${task.desc || 'none'}`
   )
-  return JSON.parse(raw.trim())
+  try {
+    return JSON.parse(raw.trim())
+  } catch {
+    throw new AIError(AI_ERROR_MESSAGES.PARSE, 'PARSE')
+  }
 }
 
 /** Create a task object from a natural-language description */
@@ -65,7 +127,11 @@ export async function createTaskFromText(input) {
     'Extract task info. Return ONLY JSON: {"title":"...","desc":"...","pri":"high|medium|low","subs":[]}. No markdown.',
     `Extract task from: "${input}"`
   )
-  return JSON.parse(raw.replace(/```json|```/g, '').trim())
+  try {
+    return JSON.parse(raw.replace(/```json|```/g, '').trim())
+  } catch {
+    throw new AIError(AI_ERROR_MESSAGES.PARSE, 'PARSE')
+  }
 }
 
 /** Summarise the status of a project's tasks */

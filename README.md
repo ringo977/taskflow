@@ -87,7 +87,9 @@ taskflow/
     │   ├── useTaskActions.js      # Task CRUD with optimistic UI + revert on error
     │   ├── useProjectActions.js   # Project/portfolio CRUD with optimistic UI
     │   ├── useUIState.js          # Navigation, URL sync, keyboard shortcuts, modals
-    │   ├── useRealtimeSync.js     # Supabase realtime subscriptions (debounced)
+    │   ├── useAIActions.js         # AI subtask gen, task creation, project summary
+    │   ├── useSectionActions.js   # Kanban column (section) updates
+    │   ├── useRealtimeSync.js     # Supabase realtime: incremental sync (all event types)
     │   └── useLocalStorageSync.js # Batched localStorage writes via microtask
     │
     ├── context/                   # React contexts (cross-cutting concerns)
@@ -155,8 +157,7 @@ taskflow/
     ├── data/                      # Seed data
     │   ├── initialData.js         # PoliMi org seed
     │   ├── biomimxData.js         # BiomimX org seed
-    │   ├── orgs.js                # Organization definitions
-    │   └── users.js               # Static user list (legacy fallback)
+    │   └── orgs.js                # Organization definitions
     │
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
@@ -168,12 +169,14 @@ taskflow/
 
 ### State management
 
-`App.jsx` is a lightweight orchestrator (~220 LOC) that delegates all business logic to four custom hooks:
+`App.jsx` is a lightweight orchestrator (~190 LOC) that delegates all business logic to six custom hooks:
 
 - **`useAppBootstrap`** — auth state, MFA flow, org initialization, realtime subscriptions, data loading from Supabase with localStorage fallback
 - **`useTaskActions`** — task CRUD with optimistic UI and automatic revert on error
 - **`useProjectActions`** — project/portfolio CRUD with optimistic UI and revert
 - **`useUIState`** — navigation, URL sync, keyboard shortcuts, modal/filter state
+- **`useAIActions`** — AI-driven subtask generation, natural-language task creation, project summary
+- **`useSectionActions`** — Kanban column (section) rename/reorder with Supabase persistence
 
 No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, and org user directory.
 
@@ -181,11 +184,14 @@ No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast no
 
 The data layer lives in `src/lib/db/` — eight focused modules instead of one monolithic file:
 
-- **`adapters.js`** — shape adapters mapping DB rows to client objects
+- **`adapters.js`** — shape adapters mapping DB rows to client objects (`toTask`, `toProject`, `toPortfolio`)
 - **`tasks.js`** — task CRUD with a shared `_persistRelated()` helper for subtasks and comments
 - **`projects.js`** — project and portfolio CRUD
+- **`sections.js`** — section CRUD (Kanban columns per project)
 - **`org.js`** — org directory, membership, join requests, with `rpcOrFallback()` for graceful RPC degradation
 - **`trash.js`** — soft delete, restore, permanent delete with cascading cleanup
+- **`attachments.js`** — Supabase Storage upload/delete for file attachments
+- **`seed.js`** — bulk org seeding (portfolios, projects, sections, tasks, subtasks)
 
 All mutations follow optimistic-update-then-persist: the UI updates instantly, and if the DB call fails, the change is reverted and the user gets an error toast.
 
@@ -193,7 +199,7 @@ All mutations follow optimistic-update-then-persist: the UI updates instantly, a
 
 Supabase Postgres is the source of truth. Data is also cached in `localStorage` (`tf_*` keys, org-namespaced) for instant UI on reload. The sync flow is: load from cache → display immediately → fetch from Supabase → update UI if different. `useLocalStorageSync` batches all cache writes via microtask to minimize serialization overhead.
 
-Realtime changes arrive via Supabase `postgres_changes` on the `tasks`, `projects`, and `comments` tables. Changes are debounced (800ms) and trigger a full org data reload. Targeted per-record patching is a planned improvement.
+Realtime changes arrive via Supabase `postgres_changes` on the `tasks`, `projects`, and `comments` tables. `useRealtimeSync` handles every event type incrementally: UPDATE events merge DB scalars in-place via the `toTask`/`toProject` adapters (preserving local subs/cmts/deps), DELETE events remove the record from state directly, and INSERT events fetch the single new record with its relations (subtasks, comments, deps) and append it to state (with duplicate-guard for optimistic adds). Comment changes fetch the updated comment list for the parent task only. A debounced (800ms) full org data reload remains as last-resort fallback if any incremental fetch fails.
 
 ### Routing
 

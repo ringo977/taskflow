@@ -1,8 +1,6 @@
 import { LangCtx, translations } from '@/i18n'
-import { generateSubtasks, createTaskFromText, summariseProject } from '@/utils/ai'
 import { exportTasksCsv as exportCsv } from '@/utils/exportCsv'
 import { signOut } from '@/lib/auth'
-import { upsertSections, fetchSectionRows } from '@/lib/db'
 import { INITIAL_ORGS } from '@/data/orgs'
 import { PROJECT_TEMPLATES } from '@/constants'
 
@@ -11,6 +9,8 @@ import { useAppBootstrap } from '@/hooks/useAppBootstrap'
 import { useTaskActions } from '@/hooks/useTaskActions'
 import { useProjectActions } from '@/hooks/useProjectActions'
 import { useUIState } from '@/hooks/useUIState'
+import { useAIActions } from '@/hooks/useAIActions'
+import { useSectionActions } from '@/hooks/useSectionActions'
 
 // Components
 import LoadingScreen from '@/components/LoadingScreen'
@@ -22,7 +22,6 @@ import SummaryPanel from '@/components/SummaryPanel'
 import LoginPage from '@/pages/LoginPage'
 import MfaPage from '@/pages/MfaPage'
 import HomeDashboard from '@/pages/HomeDashboard'
-import BrowseProjects from '@/pages/BrowseProjects'
 import PortfoliosView from '@/pages/PortfoliosView'
 import PeopleView from '@/pages/PeopleView'
 import TaskPanel from '@/pages/TaskPanel'
@@ -96,34 +95,14 @@ function App() {
   const { addProject, addPortfolio, delProject, delPortfolio, archiveProject, archivePortfolio, updProj } =
     useProjectActions({ projs, setProjs, ports, setPorts, secs, setSecs, tasks, setTasks, activeOrgId, secRowsRef, user, pid, setPid, setNav, setSelId, myProjectRoles, setMyProjectRoles, toast, tr, inbox })
 
+  // ── Section actions ────────────────────────────────────────
+  const { handleUpdateSecs } = useSectionActions({ setSecs, pid, activeOrgId, secRowsRef })
+
   // ── AI actions ─────────────────────────────────────────────
-  const genSubs = async (task) => {
-    setAiLoad(true)
-    try {
-      const arr = await generateSubtasks(task)
-      const newSubs = [...task.subs, ...arr.map((text, i) => ({ id: `ai${Date.now()}${i}`, t: text, done: false }))]
-      await updTask(task.id, { subs: newSubs })
-      toast(tr.msgSubsGenerated(arr.length), 'success')
-    } catch (e) { console.error(e); toast(tr.msgAIError, 'error') }
-    setAiLoad(false)
-  }
-
-  const aiCreate = async (input, sec, who, startDate, due) => {
-    setAiLoad(true)
-    try {
-      const info = await createTaskFromText(input)
-      await addTask({ title: info.title, sec, who, startDate: startDate || null, due, pri: info.pri ?? 'medium' })
-      setShowAdd(false)
-    } catch (e) { console.error(e) }
-    setAiLoad(false)
-  }
-
-  const getSum = async () => {
-    setShowSum(true); setSummary(null); setAiLoad(true)
-    try { setSummary(await summariseProject(proj?.name, pTasks, lang)) }
-    catch { setSummary('Error.') }
-    setAiLoad(false)
-  }
+  const { genSubs, aiCreate, getSum } = useAIActions({
+    setAiLoad, setSummary, setShowSum, setShowAdd,
+    updTask, addTask, toast, tr, lang,
+  })
 
   // ── Derived data ───────────────────────────────────────────
   const proj = projs.find(p => p.id === pid)
@@ -140,20 +119,12 @@ function App() {
     setNeedsMfa(false)
   }} lang={lang} /></LangCtx.Provider>
 
-  // ── Section update handler ─────────────────────────────────
-  const handleUpdateSecs = async (names) => {
-    setSecs(s => ({ ...s, [pid]: names }))
-    try {
-      await upsertSections(activeOrgId, pid, names)
-      secRowsRef.current = await fetchSectionRows(activeOrgId)
-    } catch (e) { console.error('updateSecs:', e) }
-  }
-
   // ── Project content (shared between projects & portfolios) ─
   const projectContent = (
     <>
       <ProjectHeader proj={proj} view={view} setView={setView} tasks={pTasks}
-        onAddTask={() => { setAddDue(''); setShowAdd(true) }} onSummary={getSum}
+        onAddTask={() => { setAddDue(''); setShowAdd(true) }}
+        onSummary={() => getSum(proj?.name, pTasks)}
         onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports} />
       {view !== 'overview' && view !== 'timeline' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {orgLoading && <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>⟳ {tr.syncing}</div>}
