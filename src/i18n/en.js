@@ -85,6 +85,7 @@ const en = {
   // Timeline
   noStartDate: 'No start date set',
   timelineEmpty: 'No tasks with dates set.',
+  dragToMove: 'Drag to move · edges to resize',
   months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
   monthsShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   wdays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],

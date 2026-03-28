@@ -125,7 +125,7 @@ taskflow/
     │   ├── BoardView.jsx          # Kanban with drag & drop
     │   ├── ListView.jsx           # Sortable list with bulk actions
     │   ├── CalendarView.jsx       # Month/week calendar
-    │   ├── TimelineView.jsx       # Gantt chart with dependency arrows
+    │   ├── TimelineView.jsx       # Gantt chart with drag & drop, tooltips, dependency arrows
     │   ├── ProjectOverview.jsx    # Project settings, status, custom fields
     │   └── MyTasksView.jsx        # Personal cross-project tasks
     │
@@ -352,7 +352,7 @@ All tables are protected by org-scoped Row Level Security.
 
 ## Features
 
-- **5 project views**: Board (Kanban with card animations), List, Calendar (drag & drop date changes, hover previews), Timeline (Gantt), Overview
+- **5 project views**: Board (Kanban with card animations), List, Calendar (drag & drop date changes, hover previews), Timeline (Gantt with drag & drop scheduling, resize edges, hover tooltips, filter integration, interactive dependency arrows), Overview
 - **Task management**: CRUD, subtasks, comments, attachments, tags, custom fields, dependencies, recurrence
 - **AI-powered**: Subtask generation, natural-language task creation, project summaries (via Claude)
 - **Multi-org**: Organization switching, role-based access, member management

@@ -156,12 +156,12 @@ function App() {
         onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports}
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []} />
-      {view !== 'overview' && view !== 'timeline' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
+      {view !== 'overview' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {orgLoading && <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>⟳ {tr.syncing}</div>}
       {view === 'overview' && <ProjectOverview project={proj} tasks={tasks} sections={pSecs} onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />}
       {view === 'board' && <BoardView tasks={pTasks} secs={pSecs} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onReorder={reorderTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} />}
       {view === 'lista' && <ListView tasks={pTasks} secs={pSecs} project={proj} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} filters={filters} lang={lang} />}
-      {view === 'timeline' && <TimelineView tasks={pTasks} secs={pSecs} projects={projs} onOpen={setSelId} lang={lang} />}
+      {view === 'timeline' && <TimelineView tasks={pTasks} secs={pSecs} projects={projs} onOpen={setSelId} onUpd={updTask} filters={filters} lang={lang} />}
       {view === 'calendario' && <CalendarView tasks={tasks} projects={projs} onOpen={setSelId} onUpd={updTask} onAddTaskOnDate={openAddOnDate} filters={filters} lang={lang} />}
     </>
   )
