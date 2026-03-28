@@ -214,6 +214,27 @@ const it = {
   ruleTargetPriority: 'Imposta a',
   ruleMessage: 'Messaggio',
   ruleMessagePlaceholder: 'Testo notifica... (usa {task} e {who})',
+  // Nuovi trigger
+  ruleTrigPriorityChanged: 'Priorità cambiata',
+  ruleTrigCommentAdded: 'Commento aggiunto',
+  ruleTrigTaskCompleted: 'Task completata',
+  ruleTrigTagAdded: 'Tag aggiunto',
+  // Nuove azioni
+  ruleActAssign: 'Assegna a',
+  ruleActAddTag: 'Aggiungi tag',
+  ruleActSetDue: 'Imposta scadenza',
+  ruleActCreateSub: 'Crea subtask',
+  ruleAssignTo: 'Assegna a',
+  ruleTagPlaceholder: 'Nome tag…',
+  ruleOffsetDays: 'Giorni da oggi',
+  ruleSubtaskTitle: 'Titolo subtask',
+  ruleSubtaskPlaceholder: 'Revisiona task…',
+  ruleAnyTag: 'Qualsiasi tag (lascia vuoto)',
+  // Multi-azione & condizioni
+  ruleAddAction: 'Azione',
+  ruleAddCondition: 'Filtro',
+  ruleConditions: 'Solo se…',
+  ruleNoConditions: 'Nessuna condizione — la regola si applica a tutti i task.',
 
   // ── Dashboard extras ──────────────────────────────────────
   chartWorkload: 'Carico di lavoro',

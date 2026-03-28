@@ -214,6 +214,27 @@ const en = {
   ruleTargetPriority: 'Set to',
   ruleMessage: 'Message',
   ruleMessagePlaceholder: 'Notification text... (use {task} and {who})',
+  // New triggers
+  ruleTrigPriorityChanged: 'Priority changed',
+  ruleTrigCommentAdded: 'Comment added',
+  ruleTrigTaskCompleted: 'Task completed',
+  ruleTrigTagAdded: 'Tag added',
+  // New actions
+  ruleActAssign: 'Assign to',
+  ruleActAddTag: 'Add tag',
+  ruleActSetDue: 'Set due date',
+  ruleActCreateSub: 'Create subtask',
+  ruleAssignTo: 'Assign to',
+  ruleTagPlaceholder: 'Tag name…',
+  ruleOffsetDays: 'Days from now',
+  ruleSubtaskTitle: 'Subtask title',
+  ruleSubtaskPlaceholder: 'Review task…',
+  ruleAnyTag: 'Any tag (leave empty)',
+  // Multi-action & conditions
+  ruleAddAction: 'Action',
+  ruleAddCondition: 'Filter',
+  ruleConditions: 'Only if…',
+  ruleNoConditions: 'No conditions — rule applies to all tasks.',
 
   // ── Dashboard extras ──────────────────────────────────────
   chartWorkload: 'Workload',
