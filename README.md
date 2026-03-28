@@ -35,6 +35,7 @@ Login with any test account — password: `mimic2026`
 | Date utils | date-fns |
 | Charts | Recharts |
 | PWA | vite-plugin-pwa (offline shell, installable) |
+| Testing | Vitest + Testing Library (107 tests) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -44,7 +45,7 @@ Login with any test account — password: `mimic2026`
 ```
 taskflow/
 ├── index.html                     # SPA entry point
-├── vite.config.js                 # Vite 6 + PWA + path aliases (@/ → src/)
+├── vite.config.js                 # Vite 6 + PWA + path aliases + vendor chunk splitting
 ├── tailwind.config.js             # Tailwind config (mostly CSS vars)
 ├── eslint.config.js               # ESLint 9 flat config
 ├── .prettierrc                    # Prettier config
@@ -63,7 +64,7 @@ taskflow/
 │
 └── src/
     ├── main.jsx                   # React root + BrowserRouter
-    ├── App.jsx                    # Lightweight orchestrator (~220 LOC): hooks + rendering
+    ├── App.jsx                    # Lightweight orchestrator (~190 LOC): hooks + lazy loading + rendering
     ├── index.css                  # Design tokens, dark mode, base styles
     ├── constants.js               # Shared constants (filters, templates, org seeds)
     │
@@ -112,7 +113,6 @@ taskflow/
     │   ├── LoginPage.jsx          # Email/password auth
     │   ├── MfaPage.jsx            # TOTP enrollment/verification
     │   ├── HomeDashboard.jsx      # Stats, charts, quick links
-    │   ├── BrowseProjects.jsx     # Project table + create modal
     │   ├── PortfoliosView.jsx     # Portfolio management
     │   ├── PeopleView.jsx         # Team directory with task counts
     │   ├── TaskPanel.jsx          # Task detail side panel (editable)
@@ -161,6 +161,8 @@ taskflow/
     │
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
+
+Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for hooks (`useTaskActions.test.js`, `useProjectActions.test.js`).
 ```
 
 ---
@@ -169,7 +171,7 @@ taskflow/
 
 ### State management
 
-`App.jsx` is a lightweight orchestrator (~190 LOC) that delegates all business logic to six custom hooks:
+`App.jsx` is a lightweight orchestrator (~190 LOC) that uses `React.lazy` + `Suspense` to code-split 18 page/view/modal components into separate chunks, keeping the initial bundle small. It delegates all business logic to six custom hooks:
 
 - **`useAppBootstrap`** — auth state, MFA flow, org initialization, realtime subscriptions, data loading from Supabase with localStorage fallback
 - **`useTaskActions`** — task CRUD with optimistic UI and automatic revert on error
@@ -179,6 +181,10 @@ taskflow/
 - **`useSectionActions`** — Kanban column (section) rename/reorder with Supabase persistence
 
 No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, and org user directory.
+
+### Code splitting
+
+`vite.config.js` uses `manualChunks` to separate heavy vendor libraries into dedicated bundles: `vendor-charts` (recharts), `vendor-supabase` (@supabase/supabase-js), `vendor-router` (react-router-dom), and `vendor-date` (date-fns). Combined with `React.lazy`, this splits the former single ~1 MB bundle into a 112 KB core chunk plus on-demand page chunks (0.3–21 KB each). Recharts (432 KB) only loads when the user opens a chart-bearing view.
 
 ### Data layer
 
