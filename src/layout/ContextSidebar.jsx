@@ -2,13 +2,8 @@ import { useState, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { getInitials } from '@/utils/initials'
+import { sidebarStorage } from '@/utils/storage'
 import ConfirmModal from '@/components/ConfirmModal'
-
-const COLLAPSE_KEY = 'taskflow-sidebar-collapsed'
-
-function loadCollapsed() {
-  try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY) ?? '{}') } catch { return {} }
-}
 
 export default function ContextSidebar({
   navId, projects, portfolios, selPid,
@@ -22,7 +17,7 @@ export default function ContextSidebar({
   const isAdmin = me?.role === 'admin'
   const isManager = me?.role === 'manager'
   const canManageProject = (projectId) => isAdmin || (isManager && myProjectRoles[projectId] === 'owner')
-  const [collapsed, setCollapsed] = useState(loadCollapsed)
+  const [collapsed, setCollapsed] = useState(sidebarStorage.get)
   const [showArchived, setShowArchived] = useState(false)
   const [actionMenu, setActionMenu] = useState(null)
   const [confirmModal, setConfirmModal] = useState(null)
@@ -33,7 +28,7 @@ export default function ContextSidebar({
   const toggleCollapse = key => {
     setCollapsed(prev => {
       const next = { ...prev, [key]: !prev[key] }
-      localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next))
+      sidebarStorage.set(next)
       return next
     })
   }

@@ -1,14 +1,12 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import { storage } from '@/utils/storage'
+import { oget, oset } from '@/constants'
 
 const InboxCtx = createContext(null)
 
-const STORAGE_KEY = 'taskflow_inbox'
 const MAX_ITEMS = 100
 
 export function InboxProvider({ orgId, children }) {
-  const key = `${orgId}_${STORAGE_KEY}`
-  const [items, setItems] = useState(() => storage.get(key, []))
+  const [items, setItems] = useState(() => oget(orgId, 'inbox', []))
   const [unread, setUnread] = useState(() => items.filter(i => !i.read).length)
 
   const push = useCallback((item) => {
@@ -20,29 +18,29 @@ export function InboxProvider({ orgId, children }) {
     }
     setItems(prev => {
       const next = [entry, ...prev].slice(0, MAX_ITEMS)
-      storage.set(key, next)
+      oset(orgId, 'inbox', next)
       return next
     })
     setUnread(n => n + 1)
-  }, [key])
+  }, [orgId])
 
   const markRead = useCallback((id) => {
     setItems(prev => {
       const next = prev.map(i => i.id === id ? { ...i, read: true } : i)
-      storage.set(key, next)
+      oset(orgId, 'inbox', next)
       return next
     })
     setUnread(n => Math.max(0, n - 1))
-  }, [key])
+  }, [orgId])
 
   const markAllRead = useCallback(() => {
     setItems(prev => {
       const next = prev.map(i => ({ ...i, read: true }))
-      storage.set(key, next)
+      oset(orgId, 'inbox', next)
       return next
     })
     setUnread(0)
-  }, [key])
+  }, [orgId])
 
   return (
     <InboxCtx.Provider value={{ items, unread, push, markRead, markAllRead }}>

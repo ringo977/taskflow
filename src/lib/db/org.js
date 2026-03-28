@@ -1,4 +1,5 @@
 import { supabase } from '../supabase'
+import { signupOrgStorage } from '@/utils/storage'
 
 // ── RPC-with-fallback helper ────────────────────────────────────
 // Many org operations use an RPC that may not exist yet in all
@@ -89,14 +90,14 @@ export async function ensureOrgMembership(userId) {
   const { data, error } = await supabase.rpc('ensure_org_membership')
   const rpcRows = normalizeMembershipRows(data)
   if (!error && rpcRows.length) {
-    localStorage.removeItem('taskflow-signup-org')
+    signupOrgStorage.clear()
     return rpcRows
   }
   if (error) console.warn('ensure_org_membership RPC failed:', error.message)
   // Fallback to client-side logic
   const memberships = await fetchUserOrgIds()
   if (memberships.length > 0) return memberships
-  let orgId = localStorage.getItem('taskflow-signup-org')
+  let orgId = signupOrgStorage.get()
   if (!orgId) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -104,7 +105,7 @@ export async function ensureOrgMembership(userId) {
     } catch {}
   }
   orgId = orgId || 'polimi'
-  localStorage.removeItem('taskflow-signup-org')
+  signupOrgStorage.clear()
   const { error: insErr } = await supabase.from('org_members').insert({
     org_id: orgId, user_id: userId, role: 'member',
   })

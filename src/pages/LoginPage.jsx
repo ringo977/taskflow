@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { signIn, signUp } from '@/lib/auth'
 import { INITIAL_ORGS } from '@/data/orgs'
+import { signupOrgStorage } from '@/utils/storage'
 
 const inputStyle = { width: '100%', fontSize: '14px', padding: '10px 14px', borderRadius: 'var(--r1)' }
 const labelStyle = { fontSize: 11, color: 'var(--tx3)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }
@@ -43,7 +44,7 @@ export default function LoginPage({ lang, setLang }) {
     try {
       await signUp(email.trim(), pass, { firstName: firstName.trim(), lastName: lastName.trim(), orgId })
       if (orgId) {
-        localStorage.setItem('taskflow-signup-org', orgId)
+        signupOrgStorage.set(orgId)
       }
       setInfo(isIt
         ? 'Account creato. Controlla la tua email per il link di conferma, poi torna qui ad accedere.'

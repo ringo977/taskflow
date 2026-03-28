@@ -161,7 +161,7 @@ taskflow/
     │   ├── format.js              # fmtDate(), todayStr()
     │   ├── highlight.jsx          # Search term highlighting
     │   ├── initials.js            # User initials extraction
-    │   ├── storage.js             # localStorage wrapper (tf_ prefix)
+    │   ├── storage.js             # localStorage wrapper (tf_ prefix) + well-known key helpers
     │   ├── routing.js             # parseRoute(), buildPath(), deferAuthWork()
     │   └── exportCsv.js           # CSV export
     │
@@ -308,6 +308,10 @@ The project deploys automatically to **GitHub Pages** via GitHub Actions.
 - **Deploy pipeline** (`.github/workflows/deploy.yml`): builds and deploys to GitHub Pages on push to `main`.
 
 Live at: `https://ringo977.github.io/taskflow/`
+
+### Environment configuration
+
+Copy `.env.example` to `.env.local` to override defaults. The three variables are `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_AI_PROXY_URL` (optional — leave empty to disable AI features). The GitHub Actions deploy uses the baked-in defaults for the shared demo instance.
 
 ---
 

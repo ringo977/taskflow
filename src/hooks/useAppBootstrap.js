@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { storage } from '@/utils/storage'
+import { storage, seedStorage } from '@/utils/storage'
 import { supabase } from '@/lib/supabase'
 import { getMfaLevel, getFactors } from '@/lib/auth'
 import {
@@ -57,17 +57,16 @@ export function useAppBootstrap() {
     setDbStatus('syncing')
     try {
       const data = await fetchOrgData(orgId)
-      const seededKey = `taskflow-${orgId}-seeded`
-      if (data.projs.length === 0 && !localStorage.getItem(seededKey)) {
+      if (data.projs.length === 0 && !seedStorage.isDone(orgId)) {
         const seed = seedFor(orgId)
         await seedOrg(orgId, seed)
-        localStorage.setItem(seededKey, '1')
+        seedStorage.markDone(orgId)
         const seeded = await fetchOrgData(orgId)
         setProjs(seeded.projs); setPorts(seeded.ports)
         setSecs(seeded.secs);   setTasks(seeded.tasks)
         setMyProjectRoles(seeded.myProjectRoles ?? {})
       } else {
-        localStorage.setItem(seededKey, '1')
+        seedStorage.markDone(orgId)
         setProjs(data.projs); setPorts(data.ports)
         setSecs(data.secs);   setTasks(data.tasks)
         setMyProjectRoles(data.myProjectRoles ?? {})
