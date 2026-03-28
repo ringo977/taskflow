@@ -48,8 +48,7 @@ export default function CommandPalette({ tasks, projects, onOpenTask, onOpenProj
     }
 
     return items
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, tasks, projects])
+  }, [query, tasks, projects, onOpenTask, onOpenProject, onNavigate, t])
 
   useEffect(() => { setIdx(0) }, [query])
 

@@ -33,8 +33,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const t = useLang()
   const USERS = useOrgUsers()
   const [burndownPid, setBurndownPid] = useState('__all__')
-  const now    = new Date()
-  const ts     = now.toISOString().slice(0, 10)
+  const todayKey = new Date().toISOString().slice(0, 10)
+  // Stable Date object that only changes when the calendar date rolls over
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now    = useMemo(() => new Date(), [todayKey])
+  const ts     = todayKey
   const weEnd  = new Date(now); weEnd.setDate(now.getDate() + 7)
   const weStr  = weEnd.toISOString().slice(0, 10)
   const greeting = now.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -100,8 +103,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       points.push({ date: label, [t.chartRemaining]: total - doneByDate, [t.chartIdeal]: Math.round(total * (1 - (30 - i) / 30)) })
     }
     return points
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, burndownPid, t])
+  }, [tasks, burndownPid, t, lang, now])
 
   // 6. Status distribution: tasks by section name
   const statusData = useMemo(() => {
@@ -131,8 +133,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       weeks.push({ week: label, [t.chartCompleted]: count })
     }
     return weeks
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, t])
+  }, [tasks, t, lang, now])
 
   // 8. Overdue by project: horizontal bar
   const overdueByProj = useMemo(() => {

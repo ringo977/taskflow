@@ -18,21 +18,27 @@ export function useLocalStorageSync(global, orgData, orgId) {
   const pending = useRef(null)
 
   // ── Global keys (no org namespace) ─────────────────────────────
+  const { lang, theme, orgs, activeOrgId } = global
   useEffect(() => {
     scheduleBatch(pending, () => {
-      for (const [k, v] of Object.entries(global)) storage.set(k, v)
+      storage.set('lang', lang)
+      storage.set('theme', theme)
+      storage.set('orgs', orgs)
+      storage.set('activeOrgId', activeOrgId)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [global.lang, global.theme, global.orgs, global.activeOrgId])
+  }, [lang, theme, orgs, activeOrgId])
 
   // ── Org-namespaced keys ────────────────────────────────────────
+  const { projs, ports, secs, tasks } = orgData
   useEffect(() => {
     if (!orgId) return
     scheduleBatch(pending, () => {
-      for (const [k, v] of Object.entries(orgData)) oset(orgId, k, v)
+      oset(orgId, 'projs', projs)
+      oset(orgId, 'ports', ports)
+      oset(orgId, 'secs', secs)
+      oset(orgId, 'tasks', tasks)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, orgData.projs, orgData.ports, orgData.secs, orgData.tasks])
+  }, [orgId, projs, ports, secs, tasks])
 
   // ── Theme side-effect (data-theme attribute) ───────────────────
   useEffect(() => {

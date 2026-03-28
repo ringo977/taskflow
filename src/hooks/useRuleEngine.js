@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 
 /**
  * useRuleEngine
@@ -184,11 +184,14 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
   }, [tasks, getProjectRules, executeAction, inbox, _tr])
 
   // ── Reset deadline tracking when rules change ──────────
+  const rulesFingerprint = useMemo(
+    () => projects.map(p => JSON.stringify(p.rules ?? [])).join(),
+    [projects]
+  )
 
   useEffect(() => {
     firedDeadlineRef.current = new Set()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects.map(p => JSON.stringify(p.rules ?? [])).join()])
+  }, [rulesFingerprint])
 
   return { evaluateTaskChange }
 }

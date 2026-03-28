@@ -184,6 +184,22 @@ export const useProjectActions = ({
     [projs, ports, setPorts, setProjs, activeOrgId, toast, tr]
   )
 
+  const updProj = useCallback(
+    async (id, patch) => {
+      const prev = projs.find(p => p.id === id)
+      setProjs(p => p.map(proj => (proj.id === id ? { ...proj, ...patch } : proj)))
+      try {
+        if (prev) await upsertProject(activeOrgId, { ...prev, ...patch })
+      } catch (e) {
+        console.error('updProj:', e)
+        // Revert optimistic update
+        if (prev) setProjs(p => p.map(proj => (proj.id === id ? prev : proj)))
+        toast(tr.msgSaveError, 'error')
+      }
+    },
+    [projs, setProjs, activeOrgId, toast, tr]
+  )
+
   const archiveProject = useCallback(
     async (id) => {
       const p = projs.find(p => p.id === id)
@@ -196,8 +212,7 @@ export const useProjectActions = ({
         'success'
       )
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projs, toast, tr]
+    [projs, toast, tr, updProj]
   )
 
   const archivePortfolio = useCallback(
@@ -220,22 +235,6 @@ export const useProjectActions = ({
       }
     },
     [ports, setPorts, activeOrgId, toast, tr]
-  )
-
-  const updProj = useCallback(
-    async (id, patch) => {
-      const prev = projs.find(p => p.id === id)
-      setProjs(p => p.map(proj => (proj.id === id ? { ...proj, ...patch } : proj)))
-      try {
-        if (prev) await upsertProject(activeOrgId, { ...prev, ...patch })
-      } catch (e) {
-        console.error('updProj:', e)
-        // Revert optimistic update
-        if (prev) setProjs(p => p.map(proj => (proj.id === id ? prev : proj)))
-        toast(tr.msgSaveError, 'error')
-      }
-    },
-    [projs, setProjs, activeOrgId, toast, tr]
   )
 
   return {
