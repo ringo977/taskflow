@@ -68,6 +68,7 @@ const en = {
   month: 'Month', weekView: 'Week',
   wdaysFull: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
   logout: 'Sign out',
+  manual: 'Manual',
   // Overview
   projectDescription: 'Project description',
   descPlaceholder: 'What is this project about?',

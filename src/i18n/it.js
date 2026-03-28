@@ -68,6 +68,7 @@ const it = {
   month: 'Mese', weekView: 'Settimana',
   wdaysFull: ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'],
   logout: 'Esci',
+  manual: 'Manuale',
   // Overview
   projectDescription: 'Descrizione progetto',
   descPlaceholder: 'A cosa serve questo progetto?',

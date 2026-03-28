@@ -113,7 +113,6 @@ function App() {
             lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
             orgs={orgs} activeOrgId={activeOrgId}
             onSwitchOrg={(id) => { switchOrg(id); setMobileSidebar(false) }} onAddOrg={addOrg}
-            onSetup2FA={() => setNeedsMfa(true)}
           />
         </div>
         {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'var(--overlay)' }} />}

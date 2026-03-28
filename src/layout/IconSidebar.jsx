@@ -42,7 +42,7 @@ const DB_CFG = {
   error:    { color: 'var(--c-danger)',  tip: { it: 'DB offline', en: 'DB offline' } },
 }
 
-export default function IconSidebar({ active, onNav, currentUser, onLogout, lang, setLang, theme, setTheme, orgs, activeOrgId, onSwitchOrg, onAddOrg, onSetup2FA, dbStatus }) {
+export default function IconSidebar({ active, onNav, currentUser, onLogout, lang, setLang, theme, setTheme, orgs, activeOrgId, onSwitchOrg, onAddOrg, dbStatus }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const { unread } = useInbox()
@@ -83,12 +83,16 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '10px 0' }}>
         <button
-          onClick={() => onSetup2FA()}
-          aria-label="2FA"
+          onClick={() => window.open('/taskflow/manual', '_blank')}
+          aria-label={t.manual ?? 'Manual'}
+          title={t.manual ?? 'Manual'}
           className="hoverable"
           style={{ width: 36, height: 36, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, padding: 0 }}
         >
-          🔐
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 2.5A1.5 1.5 0 013.5 1H6c.8 0 1.5.3 2 .8.5-.5 1.2-.8 2-.8h2.5A1.5 1.5 0 0114 2.5v9a1.5 1.5 0 01-1.5 1.5H10c-.6 0-1.1.2-1.5.6l-.5.5-.5-.5c-.4-.4-.9-.6-1.5-.6H3.5A1.5 1.5 0 012 11.5v-9z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+            <path d="M8 2.5V13" stroke="currentColor" strokeWidth="1.1"/>
+          </svg>
         </button>
         <button
           aria-label="Toggle language"
