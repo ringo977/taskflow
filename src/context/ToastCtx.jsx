@@ -81,7 +81,7 @@ function ToastContainer({ toasts, onDismiss }) {
               }}>
               <span style={{ fontSize: 14, color: s.color, fontWeight: 600, flexShrink: 0, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${s.color}15`, borderRadius: '50%' }}>{s.icon}</span>
               <span style={{ fontSize: 13, color: 'var(--tx1)', flex: 1, lineHeight: 1.4 }}>{t.message}</span>
-              <button onClick={() => onDismiss(t.id)} style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
+              <button aria-label="Dismiss notification" onClick={() => onDismiss(t.id)} style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
               {!t.exiting && (
                 <div className="toast-progress"
                   style={{ background: s.color, opacity: 0.4, animation: `toast-progress ${t.duration ?? 3500}ms linear forwards` }} />

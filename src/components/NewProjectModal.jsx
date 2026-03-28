@@ -13,7 +13,7 @@ export default function NewProjectModal({ templates, portfolios, onAdd, onClose,
       <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 420, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', overflow: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>{t.newProject ?? 'New project'}</span>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--tx3)', lineHeight: 1 }}>✕</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--tx3)', lineHeight: 1 }}>✕</button>
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 11, color: 'var(--tx3)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.projectName ?? 'Name'}</label>

@@ -4,6 +4,7 @@ import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
+import { WidgetErrorBoundary } from '@/components/ErrorBoundary'
 import { useState, useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -268,6 +269,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Upcoming deadlines */}
+        <WidgetErrorBoundary name="Deadlines">
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionTitle>{t.upcomingDeadlines ?? 'Upcoming deadlines'}</SectionTitle>
@@ -297,7 +299,10 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
           }
         </div>
 
+        </WidgetErrorBoundary>
+
         {/* Recent activity feed */}
+        <WidgetErrorBoundary name="Activity">
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
           <SectionTitle>{t.recentActivityFeed ?? 'Recent activity'}</SectionTitle>
           {recentActivity.length === 0
@@ -334,10 +339,12 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
             )
           }
         </div>
+        </WidgetErrorBoundary>
       </div>
 
       {/* Project health scores */}
       {projects.length > 0 && (
+        <WidgetErrorBoundary name="Project health">
         <div style={{ marginBottom: 16 }}>
           <SectionTitle>{t.projectHealth ?? 'Project health'}</SectionTitle>
           <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -370,6 +377,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
             })}
           </div>
         </div>
+        </WidgetErrorBoundary>
       )}
 
       {/* Charts row 1 */}

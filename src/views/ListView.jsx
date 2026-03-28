@@ -70,7 +70,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
             {secs.map(s => (
               <button key={s} onClick={() => bulkMove(s)} style={{ fontSize: 11, padding: '3px 8px' }}>→ {s}</button>
             ))}
-            <button onClick={clearSel} style={{ fontSize: 12, padding: '3px 8px', color: 'var(--tx3)' }}>✕</button>
+            <button aria-label="Clear selection" onClick={clearSel} style={{ fontSize: 12, padding: '3px 8px', color: 'var(--tx3)' }}>✕</button>
           </div>
         )}
       </div>
@@ -82,7 +82,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
 
         return (
           <div key={sec} style={{ marginBottom: 16 }}>
-            <div onClick={() => setCollapsed(c => ({ ...c, [sec]: !c[sec] }))}
+            <div aria-label="Toggle section" onClick={() => setCollapsed(c => ({ ...c, [sec]: !c[sec] }))}
               style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: '1px solid var(--bd3)', marginBottom: 4, cursor: 'pointer' }}>
               <span style={{ fontSize: 12, color: 'var(--tx3)', display: 'inline-block', transform: isC ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.12s' }}>▼</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{sec}</span>
@@ -135,7 +135,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                       style={{ flex: 1, fontSize: 14 }} autoFocus
                       onKeyDown={e => { if (e.key === 'Enter') commitAdd(sec); if (e.key === 'Escape') { setAddIn(null); setNewTitle('') } }} />
                     <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
-                    <button onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
+                    <button aria-label="Cancel" onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
                   </div>
                 ) : (
                   <div onClick={() => setAddIn(sec)}

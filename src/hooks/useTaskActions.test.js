@@ -149,6 +149,78 @@ describe('useTaskActions', () => {
       expect(params.toast).toHaveBeenCalledWith('Save error', 'error')
     })
 
+    it('sends assignment notification when who changes', async () => {
+      const params = makeParams()
+      params.tr.msgDidAssign = (title, who) => `assigned "${title}" to ${who}`
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.updTask('t1', { who: 'Bob' })
+      })
+
+      expect(params.inbox.push).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'task_assigned', taskId: 't1' })
+      )
+    })
+
+    it('sends comment notification for new comments', async () => {
+      const params = makeParams()
+      params.tr.msgDidComment = (title) => `commented on "${title}"`
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.updTask('t1', {
+          cmts: [{ who: 'Marco', txt: 'Looks good', date: new Date().toISOString() }],
+        })
+      })
+
+      expect(params.inbox.push).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'comment_added', taskId: 't1' })
+      )
+    })
+
+    it('sends mention notification for @mentions in comments', async () => {
+      const params = makeParams()
+      params.tr.msgDidMention = (title, mentions) => `mentioned ${mentions} in "${title}"`
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.updTask('t1', {
+          cmts: [{ who: 'Marco', txt: 'Hey @Alice please review', date: new Date().toISOString() }],
+        })
+      })
+
+      expect(params.inbox.push).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'task_mentioned', taskId: 't1' })
+      )
+    })
+
+    it('tracks tag changes in activity', async () => {
+      const params = makeParams()
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.updTask('t1', { tags: [{ name: 'urgent' }] })
+      })
+
+      const updater = params.setTasks.mock.calls[0][0]
+      const patched = updater([TASK_A])
+      const tagEntry = patched[0].activity.find(e => e.field === 'tags')
+      expect(tagEntry).toBeDefined()
+      expect(tagEntry.to).toBe('urgent')
+    })
+
+    it('uses upsertTask when subs are in patch', async () => {
+      const params = makeParams()
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.updTask('t1', { subs: [{ id: 's1', title: 'Sub', done: false }] })
+      })
+
+      expect(upsertTask).toHaveBeenCalled()
+    })
+
     it('uses updateTaskDeps when deps are in patch', async () => {
       const { updateTaskDeps } = await import('@/lib/db')
       const params = makeParams()
@@ -202,6 +274,22 @@ describe('useTaskActions', () => {
       // optimistic + revert = 2 calls
       expect(params.setTasks).toHaveBeenCalledTimes(2)
       expect(params.toast).toHaveBeenCalledWith('Save error', 'error')
+    })
+
+    it('notifies blocked tasks when completing a dependency', async () => {
+      const taskWithDep = { ...TASK_B, deps: ['t1'] }
+      const params = makeParams([TASK_A, taskWithDep])
+      params.tr.msgDepResolved = (done, blocked) => `"${done}" completed — "${blocked}" unblocked`
+      const { result } = renderHook(() => useTaskActions(params))
+
+      await act(async () => {
+        await result.current.togTask('t1')
+      })
+
+      // Should have task_completed + dep_resolved notifications
+      const depNotif = params.inbox.push.mock.calls.find(c => c[0].type === 'dep_resolved')
+      expect(depNotif).toBeDefined()
+      expect(depNotif[0].taskId).toBe('t2')
     })
 
     it('does nothing for unknown task ID', async () => {

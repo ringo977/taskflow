@@ -40,12 +40,14 @@ export function useAppActions({
   const updTask = (id, patch) => {
     const prev = tasks.find(t => t.id === id)
     rawUpdTask(id, patch)
-    if (prev) evaluateTaskChange(id, patch, prev)
+    try { if (prev) evaluateTaskChange(id, patch, prev) }
+    catch (e) { console.error('[RuleEngine] updTask eval error:', e) }
   }
   const moveTask = (id, sec) => {
     const prev = tasks.find(t => t.id === id)
     rawMoveTask(id, sec)
-    if (prev && prev.sec !== sec) evaluateTaskChange(id, { sec }, prev)
+    try { if (prev && prev.sec !== sec) evaluateTaskChange(id, { sec }, prev) }
+    catch (e) { console.error('[RuleEngine] moveTask eval error:', e) }
   }
 
   // ── Section actions ───────────────────────────────────────

@@ -283,9 +283,9 @@ function FieldEditor({ field, idx, total, t, USERS: _USERS, inputStyle, selectSt
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {/* Move arrows */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
-          <button onClick={() => onMove(-1)} disabled={idx === 0}
+          <button onClick={() => onMove(-1)} disabled={idx === 0} aria-label="Move field up"
             style={{ fontSize: 9, color: idx === 0 ? 'var(--bd3)' : 'var(--tx3)', background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: 0, lineHeight: 1 }}>▲</button>
-          <button onClick={() => onMove(1)} disabled={idx === total - 1}
+          <button onClick={() => onMove(1)} disabled={idx === total - 1} aria-label="Move field down"
             style={{ fontSize: 9, color: idx === total - 1 ? 'var(--bd3)' : 'var(--tx3)', background: 'none', border: 'none', cursor: idx === total - 1 ? 'default' : 'pointer', padding: 0, lineHeight: 1 }}>▼</button>
         </div>
 
@@ -305,13 +305,13 @@ function FieldEditor({ field, idx, total, t, USERS: _USERS, inputStyle, selectSt
         </label>
 
         {/* Expand toggle */}
-        <button onClick={() => setExpanded(!expanded)}
+        <button onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'Collapse field' : 'Expand field'}
           style={{ fontSize: 10, color: 'var(--tx3)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>
           {expanded ? '▾' : '▸'}
         </button>
 
         {/* Delete */}
-        <button onClick={onRemove}
+        <button onClick={onRemove} aria-label="Delete field"
           style={{ fontSize: 14, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', lineHeight: 1, opacity: 0.6 }}>×</button>
       </div>
 

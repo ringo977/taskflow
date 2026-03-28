@@ -296,7 +296,7 @@ export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove,
 
           {/* Navigation bar */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <button onClick={prevNav} style={{ fontSize: 16, padding: '8px 14px' }}>‹</button>
+            <button aria-label="Previous" onClick={prevNav} style={{ fontSize: 16, padding: '8px 14px' }}>‹</button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em' }}>{navLabel}</span>
               <button onClick={goToday} style={{ fontSize: 12, padding: '5px 12px', color: 'var(--tx3)' }}>{t.today}</button>
@@ -312,7 +312,7 @@ export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove,
                 ))}
               </div>
             </div>
-            <button onClick={nextNav} style={{ fontSize: 16, padding: '8px 14px' }}>›</button>
+            <button aria-label="Next" onClick={nextNav} style={{ fontSize: 16, padding: '8px 14px' }}>›</button>
           </div>
 
           {/* Project legend — month only */}

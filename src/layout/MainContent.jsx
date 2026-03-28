@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import FilterBar from '@/components/FilterBar'
 
 const HomeDashboard = lazy(() => import('@/pages/HomeDashboard'))
@@ -103,6 +104,15 @@ export default function MainContent({
   )
 
   return (
+    <ErrorBoundary fallback={(error, reset) => (
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--tx2)' }}>
+        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Something went wrong</div>
+        <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 16 }}>{error?.message}</div>
+        <button onClick={reset} style={{ padding: '6px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontSize: 12 }}>
+          Reload view
+        </button>
+      </div>
+    )}>
     <Suspense fallback={<ChunkFallback />}>
       <div className="mobile-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
         {nav === 'home' && <HomeDashboard tasks={tasks} projects={projs} secs={secs} currentUser={user} onOpen={setSelId} onNav={ui.goNav} lang={lang} />}
@@ -127,5 +137,6 @@ export default function MainContent({
         {ui.showSum && <SummaryPanel summary={ui.summary} loading={ui.aiLoad && !ui.summary} onClose={() => ui.setShowSum(false)} />}
       </div>
     </Suspense>
+    </ErrorBoundary>
   )
 }

@@ -75,7 +75,7 @@ export default function ContextSidebar({
       </div>
       {project.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
       {canManageProject(project.id) && (
-        <button onClick={e => openContextMenu(e, 'project', project)}
+        <button aria-label="More options" onClick={e => openContextMenu(e, 'project', project)}
           style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>
           ⋯
         </button>
@@ -116,7 +116,7 @@ export default function ContextSidebar({
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx1)', letterSpacing: '-0.01em', flex: 1, opacity: po.status === 'archived' ? 0.5 : 1 }}>{po.name}</span>
                       {po.status === 'archived' && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{t.archived}</span>}
                       {isAdmin && (
-                        <button onClick={e => openContextMenu(e, 'portfolio', po)}
+                        <button aria-label="More options" onClick={e => openContextMenu(e, 'portfolio', po)}
                           style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1 }}>
                           ⋯
                         </button>

@@ -137,7 +137,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                   {q ? `${filtered.length}/${total}` : total}
                 </span>
                 {secs.length > 1 && (
-                  <button onClick={() => deleteSec(sec)} title={t.deleteSection}
+                  <button aria-label="Delete section" onClick={() => deleteSec(sec)} title={t.deleteSection}
                     style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontSize: 13, padding: '2px 4px', lineHeight: 1, opacity: 0.5 }}>✕</button>
                 )}
               </div>
@@ -180,7 +180,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                   onKeyDown={e => { if (e.key === 'Enter') commitAdd(sec); if (e.key === 'Escape') { setAddIn(null); setNewTitle('') } }} />
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
-                  <button onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
+                  <button aria-label="Cancel" onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
                 </div>
               </div>
             ) : (
@@ -202,7 +202,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
             onKeyDown={e => { if (e.key === 'Enter') commitAddSec(); if (e.key === 'Escape') { setAddingSec(false); setNewSecName('') } }} />
           <div style={{ display: 'flex', gap: 4 }}>
             <button onClick={commitAddSec} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
-            <button onClick={() => { setAddingSec(false); setNewSecName('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
+            <button aria-label="Cancel" onClick={() => { setAddingSec(false); setNewSecName('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
           </div>
         </div>
       ) : (

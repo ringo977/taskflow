@@ -91,6 +91,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
           🔐
         </button>
         <button
+          aria-label="Toggle language"
           onClick={() => setLang(l => l === 'it' ? 'en' : 'it')}
           style={{ fontSize: 11, fontWeight: 600, padding: '4px 8px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', color: 'var(--tx3)', background: 'transparent', cursor: 'pointer' }}
         >
