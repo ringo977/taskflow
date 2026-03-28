@@ -45,6 +45,14 @@ export default function NewProjectModal({ templates, portfolios, onAdd, onClose,
                 style={{ padding: '8px 12px', borderRadius: 'var(--r1)', border: `1.5px solid ${selTpl === tpl.id ? 'var(--c-brand)' : 'var(--bd3)'}`, cursor: 'pointer', fontSize: 12, background: selTpl === tpl.id ? 'color-mix(in srgb, var(--c-brand) 8%, transparent)' : 'transparent' }}>
                 <div style={{ fontWeight: 500 }}>{tpl.icon} {tpl.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tpl.sections.join(' → ')}</div>
+                {(tpl.customFields?.length || tpl.rules?.length || tpl.forms?.length || tpl.goals?.length) ? (
+                  <div style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 3, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {tpl.customFields?.length > 0 && <span>{tpl.customFields.length} {t.tplFields ?? 'fields'}</span>}
+                    {tpl.rules?.length > 0 && <span>{tpl.rules.length} {t.tplRules ?? 'rules'}</span>}
+                    {tpl.forms?.length > 0 && <span>{tpl.forms.length} {t.tplForms ?? 'forms'}</span>}
+                    {tpl.goals?.length > 0 && <span>{tpl.goals.length} {t.tplGoals ?? 'goals'}</span>}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

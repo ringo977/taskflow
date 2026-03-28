@@ -102,7 +102,7 @@ taskflow/
     │
     ├── i18n/                      # Bilingual IT/EN
     │   ├── index.js               # LangCtx + useLang() hook
-    │   ├── it.js                  # Italian strings (~150 keys)
+    │   ├── it.js                  # Italian strings (~220 keys)
     │   └── en.js                  # English strings
     │
     ├── layout/                    # Shell components
@@ -143,6 +143,11 @@ taskflow/
     │   ├── NewProjectModal.jsx    # New project creation modal
     │   ├── ProjectHeader.jsx      # Project header with view switcher
     │   ├── RulesPanel.jsx          # Automation rules editor (per-project)
+    │   ├── FormsPanel.jsx          # Form builder (per-project)
+    │   ├── FormSubmitModal.jsx     # Form submission modal → creates task
+    │   ├── GoalsPanel.jsx          # Goals with automatic roll-up from linked tasks
+    │   ├── TimeTracker.jsx         # Per-task time tracking (timer + manual entry)
+    │   ├── ApprovalSection.jsx     # Task approval workflow (request → approve/reject)
     │   ├── SummaryPanel.jsx       # AI summary side panel
     │   └── index.js               # Barrel export
     │
@@ -223,6 +228,22 @@ If the proxy is not configured (`VITE_AI_PROXY_URL` is empty), AI features are g
 ### Automation rules
 
 Per-project automation rules are stored in `project.rules` JSONB (no extra DB table or migration needed). Each rule has a trigger, an action, and an enabled flag. The `useRuleEngine` hook evaluates rules after every task mutation and runs a periodic deadline check (every 60s). Supported triggers: task moves to section, deadline approaching (configurable N days), all subtasks completed, task assigned. Supported actions: move to section, send notification (toast + inbox), set priority, mark as completed. Rule actions use raw (unwrapped) task functions to prevent infinite loops — only user-initiated mutations trigger rule evaluation.
+
+### Forms
+
+Per-project forms are stored in `project.forms` JSONB. Each form defines a set of fields (text, textarea, select, date) with optional mapping to task properties (`title`, `desc`, `who`, `due`, `pri`). Unmapped fields are appended to the task description as `**Label**: value`. The `FormsPanel` component provides a form builder in the project overview; `FormSubmitModal` renders the form for submission and creates a task from the filled values.
+
+### Goals
+
+Per-project goals are stored in `project.goals` JSONB. Each goal can have sub-goals (key results), and each sub-goal links to specific tasks. Progress is computed automatically by counting linked tasks that are marked done, with sub-goal progress rolling up into the parent goal percentage. The `GoalsPanel` component displays progress bars and provides a goal/sub-goal editor with task linking.
+
+### Time tracking
+
+Time entries are stored in `task.timeEntries` JSONB array. Each entry has `{ id, who, start, end, duration, note }` where duration is in minutes. The `TimeTracker` component provides a live start/stop timer (ticking every second) and manual time entry. Total logged time is displayed in the task panel.
+
+### Approval workflow
+
+Approval state is stored in `task.approval` JSONB: `{ status, requestedBy, approver, requestedAt, resolvedAt, comment }`. Status transitions: none → pending → approved/rejected/changes_requested. The `ApprovalSection` component in the task panel handles request submission and resolution. Approval status icons are shown on task cards in board/list views.
 
 ### Multi-tenancy
 
@@ -315,11 +336,13 @@ All tables are protected by org-scoped Row Level Security.
 // Task
 { id, pid, sec, title, desc, who, pri, startDate, due, done,
   recurrence, attachments, tags, activity, position,
-  customValues, subs, cmts, deps }
+  customValues, subs, cmts, deps,
+  timeEntries, approval }
 
 // Project
 { id, name, color, status, statusLabel, portfolio,
-  description, resources, members, customFields, rules }
+  description, resources, members, customFields,
+  rules, forms, goals }
 
 // Portfolio
 { id, name, color, desc, status }
@@ -344,4 +367,8 @@ All tables are protected by org-scoped Row Level Security.
 - **PWA**: Installable, offline shell
 - **Automation rules**: Per-project trigger→action rules (section change, deadline, subtasks done, assignment)
 - **Dashboard**: 12 widgets including burndown, velocity, workload capacity, section completion, priority/status breakdown
-- **Project templates**: Kanban, Sprint, Research, Product Launch
+- **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
+- **Forms**: Per-project form builder with configurable fields that map to task properties (title, description, assignee, etc.)
+- **Goals**: Per-project goals with automatic progress roll-up from linked tasks; supports sub-goals (key results)
+- **Time tracking**: Per-task start/stop timer and manual time entry with duration logging
+- **Approval workflow**: Request, approve, reject, or request changes on any task — visible status badges on task cards

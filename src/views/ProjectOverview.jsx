@@ -9,6 +9,8 @@ import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
+import FormsPanel from '@/components/FormsPanel'
+import GoalsPanel from '@/components/GoalsPanel'
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
@@ -116,6 +118,12 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
 
         {/* Automation rules */}
         <RulesPanel project={proj} sections={sections ?? []} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
+
+        {/* Forms */}
+        <FormsPanel project={proj} sections={sections ?? []} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
+
+        {/* Goals */}
+        <GoalsPanel project={proj} tasks={tasks} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
       </div>
 
       {/* Right column */}

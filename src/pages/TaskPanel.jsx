@@ -8,6 +8,8 @@ import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
 import ConfirmModal from '@/components/ConfirmModal'
 import Checkbox from '@/components/Checkbox'
+import TimeTracker from '@/components/TimeTracker'
+import ApprovalSection from '@/components/ApprovalSection'
 
 export default function TaskPanel({ task, projects, allTasks = [], currentUser, orgId, myProjectRoles = {}, onClose, onUpd, onDelete, onGenSubs, aiLoad, lang }) {
   const t    = useLang()
@@ -223,6 +225,12 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
 
         {/* Activity log */}
         <ActivityLog activity={task.activity ?? []} sectionTitle={sectionTitle} t={t} />
+
+        {/* Time tracking */}
+        <TimeTracker task={task} currentUser={currentUser} onUpd={onUpd} sectionTitle={sectionTitle} />
+
+        {/* Approval */}
+        <ApprovalSection task={task} currentUser={currentUser} onUpd={onUpd} sectionTitle={sectionTitle} />
 
         {/* Subtasks */}
         <div style={{ marginBottom: 20 }}>

@@ -39,6 +39,11 @@ export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked }) {
             {task.due && <span style={{ fontSize: 12, color: ov ? 'var(--c-danger)' : 'var(--tx3)' }}>{fmtDate(task.due, lang)}{ov ? ' ⚠' : ''}</span>}
             {task.subs.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✓ {doneSubs}/{task.subs.length}</span>}
             {task.cmts.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✉ {task.cmts.length}</span>}
+            {task.approval?.status === 'pending' && <span style={{ fontSize: 11, color: 'var(--c-warning)', fontWeight: 500 }}>⏳</span>}
+            {task.approval?.status === 'approved' && <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 500 }}>✓</span>}
+            {task.approval?.status === 'rejected' && <span style={{ fontSize: 11, color: 'var(--c-danger)', fontWeight: 500 }}>✕</span>}
+            {task.approval?.status === 'changes_requested' && <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>↻</span>}
+            {(task.timeEntries?.length > 0) && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>⏱</span>}
           </div>
         </div>
         <Avatar name={task.who} size={26} />

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState as useLocalState } from 'react'
 import { LangCtx, translations } from '@/i18n'
 import { exportTasksCsv as exportCsv } from '@/utils/exportCsv'
 import { signOut } from '@/lib/auth'
@@ -44,6 +44,7 @@ const SummaryPanel = lazy(() => import('@/components/SummaryPanel'))
 const NewProjectModal = lazy(() => import('@/components/NewProjectModal'))
 const CommandPalette = lazy(() => import('@/components/CommandPalette'))
 const ContextSidebar = lazy(() => import('@/layout/ContextSidebar'))
+const FormSubmitModal = lazy(() => import('@/components/FormSubmitModal'))
 
 // Minimal fallback while lazy chunks load
 const ChunkFallback = () => (
@@ -128,6 +129,9 @@ function App() {
     updTask, addTask, toast, tr, lang,
   })
 
+  // ── Form submission state ─────────────────────────────────
+  const [activeForm, setActiveForm] = useLocalState(null)
+
   // ── Derived data ───────────────────────────────────────────
   const proj = projs.find(p => p.id === pid)
   const pSecs = secs[pid] ?? ['To Do', 'In Progress', 'Done']
@@ -149,7 +153,9 @@ function App() {
       <ProjectHeader proj={proj} view={view} setView={setView} tasks={pTasks}
         onAddTask={() => { setAddDue(''); setShowAdd(true) }}
         onSummary={() => getSum(proj?.name, pTasks)}
-        onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports} />
+        onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports}
+        onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
+        forms={proj?.forms ?? []} />
       {view !== 'overview' && view !== 'timeline' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {orgLoading && <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>⟳ {tr.syncing}</div>}
       {view === 'overview' && <ProjectOverview project={proj} tasks={tasks} sections={pSecs} onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />}
@@ -210,6 +216,7 @@ function App() {
         {showAdd && <AddModal secs={pSecs} onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }} aiLoad={aiLoad} onAICreate={aiCreate} currentUser={user} defaultDue={addDue} />}
         {showCmdK && <CommandPalette tasks={tasks} projects={projs} onOpenTask={id => { setSelId(id) }} onOpenProject={id => { selProj(id) }} onNavigate={n => { goNav(n) }} onClose={() => setShowCmdK(false)} />}
         {showNewProj && <NewProjectModal templates={PROJECT_TEMPLATES} portfolios={ports} onAdd={(name, color, portfolio, tpl) => { addProject(name, color, portfolio, tpl); setShowNewProj(false) }} onClose={() => setShowNewProj(false)} lang={lang} />}
+        {activeForm && <FormSubmitModal form={activeForm} sections={pSecs} onClose={() => setActiveForm(null)} onSubmit={(task) => { addTask({ ...task, startDate: null }); setActiveForm(null) }} />}
         </Suspense>
       </div>
     </LangCtx.Provider>

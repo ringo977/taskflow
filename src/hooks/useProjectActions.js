@@ -47,7 +47,11 @@ export const useProjectActions = ({
         statusLabel: 'on_track',
         portfolio,
         description: tpl?.description ?? '',
-        resources: []
+        resources: [],
+        customFields: tpl?.customFields ?? [],
+        rules: tpl?.rules ?? [],
+        forms: tpl?.forms ?? [],
+        goals: tpl?.goals ?? [],
       }
       setProjs(p => [...p, newProj])
       setSecs(s => ({ ...s, [id]: secNames }))

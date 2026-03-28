@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useLang } from '@/i18n'
 import AvatarGroup from '@/components/AvatarGroup'
 
-export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, onSummary, onExport, portfolios }) {
+export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, onSummary, onExport, portfolios, onSubmitForm, forms = [] }) {
   const t  = useLang()
   const po = portfolios.find(x => x.id === proj?.portfolio)
   const done = tasks.filter(t => t.done).length
@@ -30,6 +30,15 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
           }}>{lb}</button>
         ))}
       </div>
+      {onSubmitForm && forms.length > 0 && (
+        forms.length === 1
+          ? <button onClick={() => onSubmitForm(forms[0])} style={{ fontSize: 12, padding: '5px 12px', color: 'var(--c-purple, var(--accent))', borderColor: 'var(--c-purple, var(--accent))' }}>📋 {forms[0].name}</button>
+          : <select onChange={e => { const f = forms.find(f => f.id === e.target.value); if (f) onSubmitForm(f); e.target.value = '' }}
+              defaultValue="" style={{ fontSize: 12, padding: '5px 8px', color: 'var(--c-purple, var(--accent))', borderColor: 'var(--c-purple, var(--accent))', borderRadius: 'var(--r1)', background: 'transparent', cursor: 'pointer' }}>
+              <option value="" disabled>📋 {t.formSubmit ?? 'Forms'}...</option>
+              {forms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+      )}
       <button onClick={onExport} title={t.exportCsv ?? 'Export CSV'} style={{ fontSize: 12, padding: '5px 10px', color: 'var(--tx3)', borderColor: 'var(--bd3)' }}>↓ CSV</button>
       <button onClick={onSummary} style={{ fontSize: 12, padding: '5px 12px', color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>{t.aiSummary}</button>
       <button onClick={onAddTask} style={{ fontSize: 13, padding: '6px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 600 }}>{t.addTask}</button>
