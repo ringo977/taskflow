@@ -25,5 +25,8 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Test coverage (>70% threshold)
+        run: npx vitest run --coverage
+
       - name: Build
         run: npm run build

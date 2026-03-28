@@ -9,6 +9,28 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
     include: ['src/**/*.{test,spec}.{js,jsx}'],
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: '/tmp/taskflow-coverage',
+      reporter: ['text', 'text-summary', 'json-summary'],
+      include: [
+        'src/hooks/useRuleEngine.js',
+        'src/hooks/useProjectActions.js',
+        'src/hooks/useTaskActions.js',
+        'src/utils/*.{js,jsx}',
+        'src/components/FormSubmitModal.jsx',
+        'src/data/**/*.{js,jsx}',
+        'src/lib/db/adapters.js',
+        'src/constants.js',
+      ],
+      exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.spec.*', 'src/utils/highlight.jsx'],
+      thresholds: {
+        statements: 70,
+        branches: 55,
+        functions: 70,
+        lines: 70,
+      },
+    },
   },
   base: '/taskflow/',
   plugins: [

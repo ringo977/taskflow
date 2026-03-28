@@ -29,8 +29,16 @@ import { useCallback, useRef, useEffect, useMemo } from 'react'
  * Multi-action:  rule.actions[] array (fallback: single rule.action)
  * Conditions:    rule.conditions[] — optional filters (priority, assignee, tag)
  */
+// ── Loop guard constants (exported for testing) ───────────
+export const MAX_RULE_DEPTH = 3          // max cascading rule evaluations
+export const DEDUP_WINDOW_MS = 500       // ignore same rule+task within this window
+export const MAX_FIRES_PER_TICK = 20     // circuit breaker: max rule fires per evaluation batch
+
 export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, moveTask }) {
   const firedDeadlineRef = useRef(new Set())
+  const depthRef = useRef(0)                    // current cascade depth
+  const firesThisTickRef = useRef(0)            // fires in current evaluation batch
+  const recentFiresRef = useRef(new Map())      // Map<"ruleId:taskId", timestamp> for dedup
 
   // ── Execute a single action ──────────────────────────────
 
@@ -151,12 +159,21 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
 
   const evaluateTaskChange = useCallback((taskId, patch, prevTask) => {
     if (!prevTask) return
+
+    // ── Loop guard: depth check ──
+    if (depthRef.current >= MAX_RULE_DEPTH) return
+    // ── Loop guard: circuit breaker ──
+    if (firesThisTickRef.current >= MAX_FIRES_PER_TICK) return
+
     const rules = getProjectRules(prevTask.pid)
     if (!rules.length) return
 
     const currentTask = { ...prevTask, ...patch }
 
     for (const rule of rules) {
+      // Circuit breaker re-check inside loop
+      if (firesThisTickRef.current >= MAX_FIRES_PER_TICK) break
+
       const { trigger } = rule
       let shouldFire = false
 
@@ -224,7 +241,33 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
       }
 
       if (shouldFire && matchesConditions(rule.conditions, currentTask)) {
-        setTimeout(() => executeRuleActions(rule, currentTask), 0)
+        // ── Loop guard: dedup (same rule+task within window) ──
+        const dedupKey = `${rule.id}:${taskId}`
+        const lastFired = recentFiresRef.current.get(dedupKey)
+        if (lastFired && Date.now() - lastFired < DEDUP_WINDOW_MS) continue
+        recentFiresRef.current.set(dedupKey, Date.now())
+
+        firesThisTickRef.current++
+        depthRef.current++
+        setTimeout(() => {
+          try {
+            executeRuleActions(rule, currentTask)
+          } finally {
+            depthRef.current = Math.max(0, depthRef.current - 1)
+          }
+        }, 0)
+      }
+    }
+
+    // Reset tick counter at end of synchronous evaluation
+    // (next microtask will have a fresh budget via setTimeout)
+    setTimeout(() => { firesThisTickRef.current = 0 }, 0)
+
+    // Periodically clean stale dedup entries (keep map small)
+    if (recentFiresRef.current.size > 100) {
+      const now = Date.now()
+      for (const [k, ts] of recentFiresRef.current) {
+        if (now - ts > DEDUP_WINDOW_MS * 2) recentFiresRef.current.delete(k)
       }
     }
   }, [getProjectRules, executeRuleActions, matchesConditions])

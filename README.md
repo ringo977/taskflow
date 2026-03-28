@@ -35,7 +35,7 @@ Login with any test account — password: `mimic2026`
 | Date utils | date-fns |
 | Charts | Recharts |
 | PWA | vite-plugin-pwa (offline shell, installable) |
-| Testing | Vitest + Testing Library (107 tests) |
+| Testing | Vitest + Testing Library (179 tests, >80% coverage) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -374,7 +374,7 @@ All tables are protected by org-scoped Row Level Security.
 - **Soft delete**: Trash view with restore and permanent delete
 - **CSV export**: Download project tasks as spreadsheet
 - **PWA**: Installable, offline shell
-- **Automation rules**: 8 triggers × 8 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask
+- **Automation rules**: 8 triggers × 8 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask. Loop guard: cascade depth limit (3), dedup window (500ms), circuit breaker (20 fires/tick)
 - **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards)
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Visual form builder with 8 field types (text, textarea, select, date, number, checkbox, url, email), drag reorder, live preview, placeholder/default values, and task property mapping

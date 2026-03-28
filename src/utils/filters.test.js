@@ -45,6 +45,51 @@ describe('applyFilters', () => {
     expect(applyFilters(makeTasks(), { tag: 'all' })).toHaveLength(3)
   })
 
+  it('filters by due=overdue', () => {
+    // Task 1 has due 2026-01-10 which is overdue by now (we're in March 2026)
+    const result = applyFilters(makeTasks(), { due: 'overdue' })
+    expect(result.length).toBeGreaterThanOrEqual(1)
+    result.forEach(t => expect(t.due).toBeTruthy())
+  })
+
+  it('filters by due=today', () => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const tasks = [
+      ...makeTasks(),
+      { id: '4', title: 'Today task', desc: '', pri: 'low', who: 'bob', done: false, due: todayStr, sec: 'To Do', tags: [] },
+    ]
+    const result = applyFilters(tasks, { due: 'today' })
+    expect(result).toHaveLength(1)
+    expect(result[0].due).toBe(todayStr)
+  })
+
+  it('filters by due=week', () => {
+    const now = new Date()
+    const inThreeDays = new Date(now)
+    inThreeDays.setDate(now.getDate() + 3)
+    const dueStr = inThreeDays.toISOString().slice(0, 10)
+    const tasks = [
+      { id: '1', title: 'Soon', desc: '', pri: 'low', who: 'alice', done: false, due: dueStr, sec: 'To Do', tags: [] },
+      { id: '2', title: 'Far', desc: '', pri: 'low', who: 'alice', done: false, due: '2099-01-01', sec: 'To Do', tags: [] },
+    ]
+    const result = applyFilters(tasks, { due: 'week' })
+    expect(result).toHaveLength(1)
+    expect(result[0].title).toBe('Soon')
+  })
+
+  it('filters by due excludes tasks with no due date', () => {
+    const tasks = [
+      { id: '1', title: 'No due', desc: '', pri: 'low', who: 'alice', done: false, due: null, sec: 'To Do', tags: [] },
+    ]
+    expect(applyFilters(tasks, { due: 'overdue' })).toHaveLength(0)
+    expect(applyFilters(tasks, { due: 'today' })).toHaveLength(0)
+    expect(applyFilters(tasks, { due: 'week' })).toHaveLength(0)
+  })
+
+  it('due=all passes all tasks', () => {
+    expect(applyFilters(makeTasks(), { due: 'all' })).toHaveLength(3)
+  })
+
   it('combines multiple filters', () => {
     const result = applyFilters(makeTasks(), { who: 'alice', done: 'open' })
     expect(result).toHaveLength(2)

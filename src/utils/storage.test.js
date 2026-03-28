@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { storage } from './storage'
+import { storage, sidebarStorage, seedStorage, signupOrgStorage } from './storage'
 
 beforeEach(() => localStorage.clear())
 
@@ -70,5 +70,44 @@ describe('storage', () => {
       expect(localStorage.getItem('tf_test')).toBe('"value"')
       expect(localStorage.getItem('test')).toBeNull()
     })
+  })
+})
+
+describe('sidebarStorage', () => {
+  it('defaults to empty object', () => {
+    expect(sidebarStorage.get()).toEqual({})
+  })
+
+  it('round-trips collapsed state', () => {
+    sidebarStorage.set({ sec1: true, sec2: false })
+    expect(sidebarStorage.get()).toEqual({ sec1: true, sec2: false })
+  })
+})
+
+describe('seedStorage', () => {
+  it('returns false for unseeded org', () => {
+    expect(seedStorage.isDone('org1')).toBe(false)
+  })
+
+  it('returns true after marking done', () => {
+    seedStorage.markDone('org1')
+    expect(seedStorage.isDone('org1')).toBe(true)
+  })
+})
+
+describe('signupOrgStorage', () => {
+  it('defaults to null', () => {
+    expect(signupOrgStorage.get()).toBeNull()
+  })
+
+  it('stores and retrieves org id', () => {
+    signupOrgStorage.set('org123')
+    expect(signupOrgStorage.get()).toBe('org123')
+  })
+
+  it('clears org id', () => {
+    signupOrgStorage.set('org123')
+    signupOrgStorage.clear()
+    expect(signupOrgStorage.get()).toBeNull()
   })
 })
