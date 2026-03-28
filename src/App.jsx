@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { LangCtx, translations } from '@/i18n'
 import { exportTasksCsv as exportCsv } from '@/utils/exportCsv'
 import { signOut } from '@/lib/auth'
@@ -12,36 +13,41 @@ import { useUIState } from '@/hooks/useUIState'
 import { useAIActions } from '@/hooks/useAIActions'
 import { useSectionActions } from '@/hooks/useSectionActions'
 
-// Components
+// Eagerly loaded (needed at boot / on every render)
 import LoadingScreen from '@/components/LoadingScreen'
-import NewProjectModal from '@/components/NewProjectModal'
-import ProjectHeader from '@/components/ProjectHeader'
-import SummaryPanel from '@/components/SummaryPanel'
-
-// Pages & Views
 import LoginPage from '@/pages/LoginPage'
 import MfaPage from '@/pages/MfaPage'
-import HomeDashboard from '@/pages/HomeDashboard'
-import PortfoliosView from '@/pages/PortfoliosView'
-import PeopleView from '@/pages/PeopleView'
-import TaskPanel from '@/pages/TaskPanel'
-import AddModal from '@/pages/AddModal'
-import MyTasksView from '@/views/MyTasksView'
-import InboxView from '@/pages/InboxView'
-import TrashView from '@/pages/TrashView'
-import BoardView from '@/views/BoardView'
-import ListView from '@/views/ListView'
-import CalendarView from '@/views/CalendarView'
-import TimelineView from '@/views/TimelineView'
-import ProjectOverview from '@/views/ProjectOverview'
-import FilterBar from '@/components/FilterBar'
-import CommandPalette from '@/components/CommandPalette'
 import IconSidebar from '@/layout/IconSidebar'
-import ContextSidebar from '@/layout/ContextSidebar'
+import FilterBar from '@/components/FilterBar'
 import { OrgUsersProvider } from '@/context/OrgUsersCtx'
 import { ToastProvider, useToast } from '@/context/ToastCtx'
 import { InboxProvider, useInbox } from '@/context/InboxCtx'
 import { UndoProvider, useUndo } from '@/context/UndoCtx'
+
+// Lazy-loaded pages & views (code-split into separate chunks)
+const HomeDashboard = lazy(() => import('@/pages/HomeDashboard'))
+const PortfoliosView = lazy(() => import('@/pages/PortfoliosView'))
+const PeopleView = lazy(() => import('@/pages/PeopleView'))
+const TaskPanel = lazy(() => import('@/pages/TaskPanel'))
+const AddModal = lazy(() => import('@/pages/AddModal'))
+const InboxView = lazy(() => import('@/pages/InboxView'))
+const TrashView = lazy(() => import('@/pages/TrashView'))
+const MyTasksView = lazy(() => import('@/views/MyTasksView'))
+const BoardView = lazy(() => import('@/views/BoardView'))
+const ListView = lazy(() => import('@/views/ListView'))
+const CalendarView = lazy(() => import('@/views/CalendarView'))
+const TimelineView = lazy(() => import('@/views/TimelineView'))
+const ProjectOverview = lazy(() => import('@/views/ProjectOverview'))
+const ProjectHeader = lazy(() => import('@/components/ProjectHeader'))
+const SummaryPanel = lazy(() => import('@/components/SummaryPanel'))
+const NewProjectModal = lazy(() => import('@/components/NewProjectModal'))
+const CommandPalette = lazy(() => import('@/components/CommandPalette'))
+const ContextSidebar = lazy(() => import('@/layout/ContextSidebar'))
+
+// Minimal fallback while lazy chunks load
+const ChunkFallback = () => (
+  <div style={{ padding: 24, color: 'var(--tx3)', fontSize: 13 }}>Loading...</div>
+)
 
 // ── App wrapper (providers) ──────────────────────────────────
 export default function AppWrapper() {
@@ -164,6 +170,7 @@ function App() {
         </div>
         {mobileSidebar && <div onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', inset: 0, zIndex: 49, background: 'var(--overlay)' }} />}
 
+        <Suspense fallback={<ChunkFallback />}>
         {showCtx && <div className={`context-sidebar${mobileSidebar ? ' mobile-open' : ''}`}><ContextSidebar navId={nav} projects={projs} portfolios={ports} selPid={pid} onSelProj={(id) => { selProj(id); setMobileSidebar(false) }} onAddProject={() => { setShowNewProj(true); setMobileSidebar(false) }} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} onDeletePortfolio={delPortfolio} onArchivePortfolio={archivePortfolio} /></div>}
 
         <div className="mobile-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
@@ -185,6 +192,7 @@ function App() {
         {showAdd && <AddModal secs={pSecs} onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }} aiLoad={aiLoad} onAICreate={aiCreate} currentUser={user} defaultDue={addDue} />}
         {showCmdK && <CommandPalette tasks={tasks} projects={projs} onOpenTask={id => { setSelId(id) }} onOpenProject={id => { selProj(id) }} onNavigate={n => { goNav(n) }} onClose={() => setShowCmdK(false)} />}
         {showNewProj && <NewProjectModal templates={PROJECT_TEMPLATES} portfolios={ports} onAdd={(name, color, portfolio, tpl) => { addProject(name, color, portfolio, tpl); setShowNewProj(false) }} onClose={() => setShowNewProj(false)} lang={lang} />}
+        </Suspense>
       </div>
     </LangCtx.Provider>
     </OrgUsersProvider>
