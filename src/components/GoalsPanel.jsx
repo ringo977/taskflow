@@ -72,19 +72,13 @@ export default function GoalsPanel({ project, tasks = [], onUpdProj, sectionTitl
         const subs = goal.subGoals ?? []
         return (
           <div key={goal.id} style={{ padding: '8px 10px', background: 'var(--bg2)', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setEditId(goal.id)}>
-              <span style={{ fontSize: 14 }}>🎯</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setEditId(goal.id)}>
+              <ProgressRing pct={pct} size={34} stroke={3.5} color={pct >= 100 ? 'var(--c-success)' : project?.color ?? 'var(--accent)'} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{goal.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 1 }}>{done}/{total} {t.goalTasks ?? 'tasks'}</div>
               </div>
-              <span style={{ fontSize: 12, fontWeight: 500, color: pct >= 100 ? 'var(--c-success)' : pct > 50 ? 'var(--c-warning)' : 'var(--tx3)' }}>
-                {pct}%
-              </span>
             </div>
-            <div style={{ height: 5, background: 'var(--bg1)', borderRadius: 'var(--r1)', overflow: 'hidden', marginTop: 6 }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? 'var(--c-success)' : project?.color ?? 'var(--accent)', borderRadius: 'var(--r1)', transition: 'width 0.4s' }} />
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 3 }}>{done}/{total} {t.goalTasks ?? 'tasks'}</div>
             {subs.length > 0 && (
               <div style={{ marginTop: 6, paddingLeft: 16 }}>
                 {subs.map(sub => {
@@ -117,6 +111,26 @@ export default function GoalsPanel({ project, tasks = [], onUpdProj, sectionTitl
 
       {adding && <GoalEditor goal={null} pTasks={pTasks} t={t} onSave={saveGoal} onCancel={() => setAdding(false)} />}
     </div>
+  )
+}
+
+// ── Progress ring ────────────────────────────────────────────
+
+function ProgressRing({ pct, size = 34, stroke = 3.5, color = 'var(--accent)' }) {
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const offset = c - (Math.min(pct, 100) / 100) * c
+  return (
+    <svg width={size} height={size} style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--bg1)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+        strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+      <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="central"
+        style={{ fontSize: size * 0.28, fontWeight: 600, fill: 'var(--tx2)', transform: 'rotate(90deg)', transformOrigin: 'center' }}>
+        {pct}%
+      </text>
+    </svg>
   )
 }
 

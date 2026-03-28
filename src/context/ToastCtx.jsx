@@ -10,7 +10,7 @@ export function ToastProvider({ children }) {
 
   const addToast = useCallback((message, type = 'info', duration = 3500) => {
     const id = ++toastId
-    setToasts(prev => [...prev, { id, message, type, exiting: false }])
+    setToasts(prev => [...prev, { id, message, type, exiting: false, duration }])
     timers.current[id] = setTimeout(() => dismiss(id), duration)
     return id
   }, [])
@@ -47,6 +47,17 @@ function ToastContainer({ toasts, onDismiss }) {
       <style>{`
         @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.96) } to { opacity: 1; transform: none } }
         @keyframes toast-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) scale(0.96) } }
+        @keyframes toast-progress {
+          from { transform: scaleX(1); }
+          to { transform: scaleX(0); }
+        }
+        .toast-item { position: relative; overflow: hidden; }
+        .toast-item:hover .toast-progress { animation-play-state: paused; }
+        .toast-progress {
+          position: absolute; bottom: 0; left: 0; right: 0; height: 2.5px;
+          transform-origin: left;
+          border-radius: 0 0 var(--r2) var(--r2);
+        }
       `}</style>
       <div style={{
         position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
@@ -56,6 +67,7 @@ function ToastContainer({ toasts, onDismiss }) {
           const s = TYPE_STYLES[t.type] ?? TYPE_STYLES.info
           return (
             <div key={t.id}
+              className="toast-item"
               style={{
                 pointerEvents: 'auto',
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -65,9 +77,13 @@ function ToastContainer({ toasts, onDismiss }) {
                 animation: `${t.exiting ? 'toast-out' : 'toast-in'} 0.25s var(--ease) both`,
                 minWidth: 220, maxWidth: 360,
               }}>
-              <span style={{ fontSize: 14, color: s.color, fontWeight: 600, flexShrink: 0 }}>{s.icon}</span>
+              <span style={{ fontSize: 14, color: s.color, fontWeight: 600, flexShrink: 0, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${s.color}15`, borderRadius: '50%' }}>{s.icon}</span>
               <span style={{ fontSize: 13, color: 'var(--tx1)', flex: 1, lineHeight: 1.4 }}>{t.message}</span>
               <button onClick={() => onDismiss(t.id)} style={{ background: 'transparent', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
+              {!t.exiting && (
+                <div className="toast-progress"
+                  style={{ background: s.color, opacity: 0.4, animation: `toast-progress ${t.duration ?? 3500}ms linear forwards` }} />
+              )}
             </div>
           )
         })}

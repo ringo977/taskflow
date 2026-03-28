@@ -352,7 +352,7 @@ All tables are protected by org-scoped Row Level Security.
 
 ## Features
 
-- **5 project views**: Board (Kanban), List, Calendar, Timeline (Gantt), Overview
+- **5 project views**: Board (Kanban with card animations), List, Calendar (drag & drop date changes, hover previews), Timeline (Gantt), Overview
 - **Task management**: CRUD, subtasks, comments, attachments, tags, custom fields, dependencies, recurrence
 - **AI-powered**: Subtask generation, natural-language task creation, project summaries (via Claude)
 - **Multi-org**: Organization switching, role-based access, member management
@@ -369,6 +369,7 @@ All tables are protected by org-scoped Row Level Security.
 - **Dashboard**: 12 widgets including burndown, velocity, workload capacity, section completion, priority/status breakdown
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Per-project form builder with configurable fields that map to task properties (title, description, assignee, etc.)
-- **Goals**: Per-project goals with automatic progress roll-up from linked tasks; supports sub-goals (key results)
+- **Goals**: Per-project goals with animated SVG progress rings and automatic roll-up from linked tasks; supports sub-goals (key results)
 - **Time tracking**: Per-task start/stop timer and manual time entry with duration logging
 - **Approval workflow**: Request, approve, reject, or request changes on any task — visible status badges on task cards
+- **Visual polish**: Skeleton loading screen, card slide-in animations on Board, rich toasts with progress bar, calendar hover previews

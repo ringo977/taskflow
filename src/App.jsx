@@ -162,7 +162,7 @@ function App() {
       {view === 'board' && <BoardView tasks={pTasks} secs={pSecs} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onReorder={reorderTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} />}
       {view === 'lista' && <ListView tasks={pTasks} secs={pSecs} project={proj} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} filters={filters} lang={lang} />}
       {view === 'timeline' && <TimelineView tasks={pTasks} secs={pSecs} projects={projs} onOpen={setSelId} lang={lang} />}
-      {view === 'calendario' && <CalendarView tasks={tasks} projects={projs} onOpen={setSelId} onAddTaskOnDate={openAddOnDate} filters={filters} lang={lang} />}
+      {view === 'calendario' && <CalendarView tasks={tasks} projects={projs} onOpen={setSelId} onUpd={updTask} onAddTaskOnDate={openAddOnDate} filters={filters} lang={lang} />}
     </>
   )
 

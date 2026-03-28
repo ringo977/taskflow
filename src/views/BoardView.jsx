@@ -86,6 +86,13 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
   }
 
   return (
+    <>
+    <style>{`
+      @keyframes cardSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+      .board-card { animation: cardSlideIn 0.2s var(--ease) both; }
+      .board-card[draggable]:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+      .board-col { transition: background 0.15s var(--ease), border-color 0.15s var(--ease); }
+    `}</style>
     <div style={{ display: 'flex', gap: 14, padding: 18, overflow: 'auto', flex: 1, alignItems: 'flex-start' }}>
       {secs.map(sec => {
         const filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
@@ -104,12 +111,12 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
             }}
             onDragLeave={() => { setOver(null); setDropIdx(null) }}
             onDrop={e => handleDrop(sec, e)}
+            className="board-col"
             style={{
               minWidth: 280, width: 280, flexShrink: 0, padding: 10,
               background: isOver ? 'var(--bg-info)' : 'var(--bg2)',
               borderRadius: 'var(--r2)',
               border: `1px solid ${isOver ? 'var(--bd-info)' : 'var(--bd3)'}`,
-              transition: 'all 0.1s',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -142,8 +149,9 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                   <div style={{ height: 3, background: 'var(--c-brand)', borderRadius: 2, margin: '2px 0', transition: 'all 0.1s' }} />
                 )}
                 <div ref={el => { if (el) cardRefs.current[sec][i] = el }}
+                  className="board-card"
                   draggable onDragStart={() => setDrag(task.id)} onDragEnd={() => { setDrag(null); setOver(null); setDropIdx(null) }}
-                  style={{ opacity: drag === task.id ? 0.4 : 1, cursor: 'grab' }}>
+                  style={{ opacity: drag === task.id ? 0.4 : 1, cursor: 'grab', animationDelay: `${i * 30}ms` }}>
                   <TaskCard
                     task={task}
                     onOpen={onOpen}
@@ -205,5 +213,6 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
         </div>
       )}
     </div>
+    </>
   )
 }

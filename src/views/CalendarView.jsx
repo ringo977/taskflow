@@ -1,31 +1,32 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, isOverdue } from '@/utils/filters'
-import { fmtDate } from '@/utils/format'
 
 const PRI_DOTS = { high: 'var(--c-danger)', medium: 'var(--c-warning)', low: 'var(--c-lime)' }
+const PRI_LABELS = { high: '🔴', medium: '🟡', low: '🟢' }
 
-function toDS(d) {
-  return d.toISOString().slice(0, 10)
-}
+function toDS(d) { return d.toISOString().slice(0, 10) }
 
 function getMonday(d) {
   const copy = new Date(d)
   const day = copy.getDay()
-  const diff = (day === 0 ? -6 : 1) - day
-  copy.setDate(copy.getDate() + diff)
+  copy.setDate(copy.getDate() + ((day === 0 ? -6 : 1) - day))
   return copy
 }
 
-export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate, filters, lang }) {
+export default function CalendarView({ tasks, projects, onOpen, onMove, onUpd, onAddTaskOnDate, filters, lang }) {
   const t = useLang()
   const today = new Date()
   const todayStr = toDS(today)
   const [viewMode, setViewMode] = useState('month')
   const [cur, setCur] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
   const [weekStart, setWeekStart] = useState(() => getMonday(today))
+  const [hover, setHover] = useState(null)       // { taskId, x, y }
+  const [dragTask, setDragTask] = useState(null)  // task id being dragged
+  const [dropTarget, setDropTarget] = useState(null) // date string
+  const hoverTimer = useRef(null)
 
-  const filtered = applyFilters(tasks, filters)
+  const filtered = useMemo(() => applyFilters(tasks, filters), [tasks, filters])
 
   const byDate = useMemo(() => {
     const map = {}
@@ -72,14 +73,15 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
     return cells
   }, [y, m])
 
-  const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
+  const weekDays = useMemo(() =>
+    Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart)
       d.setDate(d.getDate() + i)
       return { date: d, ds: toDS(d) }
-    })
-  }, [weekStart])
+    }),
+  [weekStart])
 
+  // ── Navigation ─────────────────────────────────────────
   const prevNav = () => {
     if (viewMode === 'month') setCur(new Date(y, m - 1, 1))
     else setWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() - 7); return n })
@@ -103,16 +105,60 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
         return `${weekStart.getDate()} ${t.monthsShort[weekStart.getMonth()]} – ${end.getDate()} ${t.monthsShort[end.getMonth()]} ${end.getFullYear()}`
       })()
 
+  // ── Drag & drop ────────────────────────────────────────
+  const handleChipDragStart = useCallback((e, taskId) => {
+    setDragTask(taskId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', taskId)
+  }, [])
+
+  const handleCellDragOver = useCallback((e, ds) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDropTarget(ds)
+  }, [])
+
+  const handleCellDrop = useCallback((e, ds) => {
+    e.preventDefault()
+    if (dragTask && onUpd) {
+      onUpd(dragTask, { due: ds })
+    }
+    setDragTask(null)
+    setDropTarget(null)
+  }, [dragTask, onUpd])
+
+  const handleCellDragLeave = useCallback(() => {
+    setDropTarget(null)
+  }, [])
+
+  // ── Hover preview ──────────────────────────────────────
+  const showPreview = useCallback((taskId, e) => {
+    clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => {
+      setHover({ taskId, x: e.clientX, y: e.clientY })
+    }, 350)
+  }, [])
+
+  const hidePreview = useCallback(() => {
+    clearTimeout(hoverTimer.current)
+    setHover(null)
+  }, [])
+
+  // ── Day cell renderer ──────────────────────────────────
   const renderDayCell = (d, ds, isWeek) => {
     const dayTasks = byDate[ds] ?? []
     const isToday = ds === todayStr
     const isPast = ds < todayStr
+    const isDrop = dropTarget === ds
     const maxChips = isWeek ? 10 : 4
 
     return (
       <div key={ds}
-        className={`cal-cell hoverable${isToday ? ' cal-cell--today' : ''}`}
+        className={`cal-cell hoverable${isToday ? ' cal-cell--today' : ''}${isDrop ? ' cal-cell--drop' : ''}`}
         style={{ minHeight: isWeek ? 320 : 108 }}
+        onDragOver={e => handleCellDragOver(e, ds)}
+        onDragLeave={handleCellDragLeave}
+        onDrop={e => handleCellDrop(e, ds)}
       >
         {!isWeek && (
           <div className="cal-cell__head">
@@ -120,6 +166,9 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
               style={{ color: isToday ? 'var(--bg1)' : isPast ? 'var(--tx3)' : 'var(--tx1)' }}>
               {d}
             </div>
+            {dayTasks.length > 0 && (
+              <span className="cal-cell__count">{dayTasks.length}</span>
+            )}
           </div>
         )}
 
@@ -128,14 +177,25 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
             const p = getProj(task.pid)
             const ov = isOverdue(task.due) && !task.done
             return (
-              <div key={task.id} onClick={() => onOpen(task.id)} title={task.title}
+              <div key={task.id}
+                draggable
+                onDragStart={e => handleChipDragStart(e, task.id)}
+                onDragEnd={() => { setDragTask(null); setDropTarget(null) }}
+                onClick={() => onOpen(task.id)}
+                onMouseEnter={e => showPreview(task.id, e)}
+                onMouseLeave={hidePreview}
+                title={task.title}
                 className="cal-chip"
                 style={{
                   background: ov ? 'color-mix(in srgb, var(--c-danger) 15%, transparent)' : (p?.color ? `${p.color}20` : 'color-mix(in srgb, var(--tx3) 12%, transparent)'),
                   color: ov ? 'var(--c-danger)' : (p?.color ?? 'var(--tx2)'),
                   borderLeftColor: ov ? 'var(--c-danger)' : (p?.color ?? 'var(--tx3)'),
                   textDecoration: task.done ? 'line-through' : 'none',
+                  opacity: dragTask === task.id ? 0.35 : 1,
+                  cursor: 'grab',
                 }}>
+                {task.done && <span className="cal-chip__done">✓</span>}
+                {task.approval?.status === 'pending' && <span className="cal-chip__badge" style={{ color: 'var(--c-warning)' }}>⏳</span>}
                 {task.title}
               </div>
             )
@@ -146,11 +206,15 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
         </div>
 
         {onAddTaskOnDate && (
-          <div className="cal-cell__add" onClick={() => onAddTaskOnDate(ds)}>+ {isWeek ? t.addTask.replace('+ ', '') : ''}</div>
+          <div className="cal-cell__add" onClick={() => onAddTaskOnDate(ds)}>+ {isWeek ? (t.addTask ?? '').replace('+ ', '') : ''}</div>
         )}
       </div>
     )
   }
+
+  // ── Hover preview tooltip ──────────────────────────────
+  const hoverTask = hover ? tasks.find(tk => tk.id === hover.taskId) : null
+  const hoverProj = hoverTask ? getProj(hoverTask.pid) : null
 
   const showSidebar = viewMode === 'month'
 
@@ -164,9 +228,10 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
           padding: 6px 8px;
           display: flex; flex-direction: column;
           overflow: hidden;
-          transition: background var(--duration-fast) var(--ease);
+          transition: background 0.15s var(--ease), border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
         }
         .cal-cell--today { border-color: var(--c-brand); border-left: 3px solid var(--c-brand); background: color-mix(in srgb, var(--c-brand) 6%, transparent); }
+        .cal-cell--drop { border-color: var(--c-brand); background: color-mix(in srgb, var(--c-brand) 12%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c-brand) 30%, transparent); }
         .cal-cell.hoverable:hover { background: var(--bg2); }
         .cal-cell__head {
           display: flex; align-items: center; justify-content: space-between;
@@ -177,6 +242,10 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
           display: flex; align-items: center; justify-content: center;
         }
         .cal-cell__num--today { background: var(--c-brand); font-weight: 600; }
+        .cal-cell__count {
+          font-size: 10px; color: var(--tx3); background: var(--bg2);
+          padding: 0 5px; border-radius: 8px; line-height: 1.6;
+        }
         .cal-cell__body {
           flex: 1; display: flex; flex-direction: column; gap: 2px;
           overflow: hidden; min-height: 0;
@@ -185,17 +254,30 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
           font-size: 12px; padding: 3px 8px; border-radius: var(--r1);
           cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
           border-left: 3px solid; line-height: 1.5; flex-shrink: 0;
+          transition: transform 0.12s var(--ease), opacity 0.15s var(--ease), box-shadow 0.12s var(--ease);
+          display: flex; align-items: center; gap: 4px;
         }
-        .cal-chip:hover { filter: brightness(0.95); }
+        .cal-chip:hover { filter: brightness(0.95); transform: translateX(2px); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .cal-chip:active { cursor: grabbing; }
+        .cal-chip__done { font-size: 10px; flex-shrink: 0; }
+        .cal-chip__badge { font-size: 10px; flex-shrink: 0; }
         .cal-cell__add {
           opacity: 0; pointer-events: none;
           font-size: 12px; color: var(--tx3); cursor: pointer;
           padding: 4px 4px; text-align: center;
-          transition: opacity var(--duration-fast) var(--ease);
+          transition: opacity 0.15s var(--ease);
           flex-shrink: 0; margin-top: auto;
         }
         .cal-cell:hover .cal-cell__add { opacity: 1; pointer-events: auto; }
         .cal-cell__add:hover { color: var(--c-brand); }
+
+        .cal-preview {
+          position: fixed; z-index: 999; pointer-events: none;
+          background: var(--bg1); border: 1px solid var(--bd2); border-radius: var(--r2);
+          box-shadow: var(--shadow-lg); padding: 10px 14px; width: 220px;
+          animation: calPreviewIn 0.15s var(--ease) both;
+        }
+        @keyframes calPreviewIn { from { opacity: 0; transform: translateY(4px) scale(0.97); } to { opacity: 1; transform: none; } }
       `}</style>
       <div style={{ flex: 1, overflow: 'auto', padding: '14px 18px', display: 'flex', gap: 0 }}>
 
@@ -285,7 +367,7 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
           )}
         </div>
 
-        {/* Upcoming sidebar — always present for layout stability */}
+        {/* Upcoming sidebar */}
         <div style={{ width: 220, flexShrink: 0, paddingLeft: 16, borderLeft: '1px solid var(--bd3)', marginLeft: 16 }}>
           {showSidebar ? (
             <>
@@ -330,6 +412,29 @@ export default function CalendarView({ tasks, projects, onOpen, onAddTaskOnDate,
           )}
         </div>
       </div>
+
+      {/* Hover preview tooltip */}
+      {hoverTask && hover && (
+        <div className="cal-preview" style={{ left: Math.min(hover.x + 12, window.innerWidth - 240), top: Math.min(hover.y - 10, window.innerHeight - 140) }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            {hoverProj && <div style={{ width: 7, height: 7, borderRadius: '50%', background: hoverProj.color, flexShrink: 0 }} />}
+            <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{hoverProj?.name}</span>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)', marginBottom: 6, lineHeight: 1.4 }}>{hoverTask.title}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11, color: 'var(--tx3)' }}>
+            {hoverTask.pri && <span>{PRI_LABELS[hoverTask.pri] ?? ''} {hoverTask.pri}</span>}
+            {hoverTask.who && <span>👤 {hoverTask.who}</span>}
+            {hoverTask.subs?.length > 0 && <span>✓ {hoverTask.subs.filter(s => s.done).length}/{hoverTask.subs.length}</span>}
+            {hoverTask.approval?.status && <span style={{ textTransform: 'capitalize' }}>{hoverTask.approval.status.replace('_', ' ')}</span>}
+            {hoverTask.timeEntries?.length > 0 && <span>⏱ {hoverTask.timeEntries.reduce((s, e) => s + (e.duration ?? 0), 0)}m</span>}
+          </div>
+          {hoverTask.desc && (
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.4, maxHeight: 32, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {hoverTask.desc.slice(0, 100)}{hoverTask.desc.length > 100 ? '…' : ''}
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
 }
