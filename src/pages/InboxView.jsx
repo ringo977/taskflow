@@ -3,15 +3,21 @@ import { useInbox } from '@/context/InboxCtx'
 import Avatar from '@/components/Avatar'
 
 const ICONS = {
-  task_created:   { icon: '+',  color: 'var(--c-success)' },
-  task_completed: { icon: '✓',  color: 'var(--c-success)' },
-  task_reopened:  { icon: '↺',  color: 'var(--c-brand)' },
-  task_updated:   { icon: '✎',  color: 'var(--c-brand)' },
-  comment_added:  { icon: '✉',  color: 'var(--c-purple)' },
-  dep_added:      { icon: '⊘',  color: 'var(--c-warning)' },
-  dep_resolved:   { icon: '✓',  color: 'var(--c-success)' },
-  project_created:{ icon: '◆',  color: 'var(--c-brand)' },
-  ai_generated:   { icon: '✦',  color: 'var(--c-success)' },
+  task_created:       { icon: '+',  color: 'var(--c-success)' },
+  task_completed:     { icon: '✓',  color: 'var(--c-success)' },
+  task_reopened:      { icon: '↺',  color: 'var(--c-brand)' },
+  task_updated:       { icon: '✎',  color: 'var(--c-brand)' },
+  task_assigned:      { icon: '→',  color: 'var(--c-brand)' },
+  task_mentioned:     { icon: '@',  color: 'var(--c-purple)' },
+  comment_added:      { icon: '✉',  color: 'var(--c-purple)' },
+  approval_requested: { icon: '⏳', color: 'var(--c-warning)' },
+  approval_resolved:  { icon: '✓',  color: 'var(--c-success)' },
+  due_approaching:    { icon: '⏰', color: 'var(--c-danger)' },
+  dep_added:          { icon: '⊘',  color: 'var(--c-warning)' },
+  dep_resolved:       { icon: '🔓', color: 'var(--c-success)' },
+  rule_triggered:     { icon: '⚡', color: 'var(--c-warning)' },
+  project_created:    { icon: '◆',  color: 'var(--c-brand)' },
+  ai_generated:       { icon: '✦',  color: 'var(--c-success)' },
 }
 
 function relativeTime(ts, lang) {

@@ -113,6 +113,16 @@ const it = {
   msgTaskMoved: (t, s) => `"${t}" → ${s}`,
   msgTaskCreated: t => `Task "${t}" creato`, msgDidCreate: t => `ha creato "${t}"`,
   msgSaveError: 'Errore nel salvataggio',
+  msgDidAssign: (t, who) => `ha assegnato "${t}" a ${who}`,
+  msgDidComment: t => `ha commentato "${t}"`,
+  msgDidMention: (t, who) => `ha menzionato ${who} in "${t}"`,
+  msgDidRequestApproval: t => `ha richiesto approvazione per "${t}"`,
+  msgDidResolveApproval: (t, status) => {
+    const labels = { approved: 'ha approvato', rejected: 'ha rifiutato', changes_requested: 'ha richiesto modifiche su' }
+    return `${labels[status] ?? status} "${t}"`
+  },
+  msgDepResolved: (blocker, task) => `"${blocker}" completato — "${task}" sbloccato`,
+  msgDueApproaching: t => `"${t}" scade domani`,
   msgProjectCreated: n => `Progetto "${n}" creato`, msgDidCreateProject: n => `ha creato il progetto "${n}"`,
   msgPortfolioCreated: n => `Portfolio "${n}" creato`,
   msgSubsGenerated: n => `${n} sottoattività generate`, msgAIError: 'Errore AI',

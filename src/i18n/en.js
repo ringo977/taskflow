@@ -113,6 +113,16 @@ const en = {
   msgTaskMoved: (t, s) => `"${t}" → ${s}`,
   msgTaskCreated: t => `Task "${t}" created`, msgDidCreate: t => `created "${t}"`,
   msgSaveError: 'Failed to save',
+  msgDidAssign: (t, who) => `assigned "${t}" to ${who}`,
+  msgDidComment: t => `commented on "${t}"`,
+  msgDidMention: (t, who) => `mentioned ${who} in "${t}"`,
+  msgDidRequestApproval: t => `requested approval on "${t}"`,
+  msgDidResolveApproval: (t, status) => {
+    const labels = { approved: 'approved', rejected: 'rejected', changes_requested: 'requested changes on' }
+    return `${labels[status] ?? status} "${t}"`
+  },
+  msgDepResolved: (blocker, task) => `"${blocker}" completed — "${task}" unblocked`,
+  msgDueApproaching: t => `"${t}" is due tomorrow`,
   msgProjectCreated: n => `Project "${n}" created`, msgDidCreateProject: n => `created project "${n}"`,
   msgPortfolioCreated: n => `Portfolio "${n}" created`,
   msgSubsGenerated: n => `${n} subtasks generated`, msgAIError: 'AI error',

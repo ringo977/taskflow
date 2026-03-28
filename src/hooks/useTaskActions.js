@@ -94,6 +94,39 @@ export function useTaskActions({
         }
         if ('who' in patch && patch.who && prev) {
           autoAddAssigneeToProject(prev.pid, patch.who)
+          // Notification: task assigned
+          if (patch.who !== prev.who) {
+            inbox.push({
+              type: 'task_assigned',
+              actor: user?.name ?? 'System',
+              message: tr.msgDidAssign?.(prev.title, patch.who) ?? `assigned "${prev.title}" to ${patch.who}`,
+              taskId: id,
+            })
+          }
+        }
+        // Notification: comment with @mentions
+        if ('cmts' in patch && prev) {
+          const newCmts = (patch.cmts ?? []).slice((prev.cmts ?? []).length)
+          for (const c of newCmts) {
+            const mentions = (c.txt ?? '').match(/@(\S+)/g) ?? []
+            if (mentions.length > 0) {
+              inbox.push({
+                type: 'task_mentioned',
+                actor: c.who ?? user?.name ?? 'System',
+                message: tr.msgDidMention?.(prev.title, mentions.join(', ')) ?? `mentioned ${mentions.join(', ')} in "${prev.title}"`,
+                detail: c.txt?.slice(0, 80),
+                taskId: id,
+              })
+            } else {
+              inbox.push({
+                type: 'comment_added',
+                actor: c.who ?? user?.name ?? 'System',
+                message: tr.msgDidComment?.(prev.title) ?? `commented on "${prev.title}"`,
+                detail: c.txt?.slice(0, 80),
+                taskId: id,
+              })
+            }
+          }
         }
       } catch (e) {
         console.error('updTask:', e)
@@ -127,6 +160,18 @@ export function useTaskActions({
           message: done ? tr.msgDidComplete(task.title) : tr.msgDidReopen(task.title),
           taskId: id,
         })
+        // Notification: dependency resolved — notify tasks blocked by this one
+        if (done) {
+          const blocked = tasks.filter(t => (t.deps ?? []).includes(id) && !t.done)
+          for (const bt of blocked) {
+            inbox.push({
+              type: 'dep_resolved',
+              actor: user.name,
+              message: tr.msgDepResolved?.(task.title, bt.title) ?? `"${task.title}" completed — "${bt.title}" unblocked`,
+              taskId: bt.id,
+            })
+          }
+        }
       } catch (e) {
         console.error('togTask:', e)
         // Revert optimistic update

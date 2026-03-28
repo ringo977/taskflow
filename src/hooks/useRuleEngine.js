@@ -138,15 +138,31 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
 
       for (const task of tasks) {
         if (task.done || !task.due) continue
+
+        // ── Global due-date-approaching notification (1 day) ──
+        const dueDate = new Date(task.due + 'T23:59:59')
+        const diffMs = dueDate - now
+        const diffDays = diffMs / (1000 * 60 * 60 * 24)
+        if (diffDays >= 0 && diffDays <= 1) {
+          const globalKey = `due_soon:${task.id}`
+          if (!firedDeadlineRef.current.has(globalKey)) {
+            firedDeadlineRef.current.add(globalKey)
+            inbox?.push?.({
+              type: 'due_approaching',
+              actor: 'System',
+              message: _tr?.msgDueApproaching?.(task.title) ?? `"${task.title}" is due soon`,
+              taskId: task.id,
+            })
+          }
+        }
+
+        // ── Project-level deadline rules ──
         const rules = getProjectRules(task.pid)
 
         for (const rule of rules) {
           if (rule.trigger.type !== 'deadline_approaching') continue
 
           const days = rule.trigger.config?.days ?? 1
-          const dueDate = new Date(task.due + 'T23:59:59')
-          const diffMs = dueDate - now
-          const diffDays = diffMs / (1000 * 60 * 60 * 24)
 
           if (diffDays >= 0 && diffDays <= days) {
             const key = `${rule.id}:${task.id}`
@@ -165,7 +181,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
     // Periodic check
     const interval = setInterval(checkDeadlines, 60_000)
     return () => clearInterval(interval)
-  }, [tasks, getProjectRules, executeAction])
+  }, [tasks, getProjectRules, executeAction, inbox, _tr])
 
   // ── Reset deadline tracking when rules change ──────────
 

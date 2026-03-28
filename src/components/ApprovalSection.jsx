@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLang } from '@/i18n'
+import { useInbox } from '@/context/InboxCtx'
 import Avatar from '@/components/Avatar'
 
 /**
@@ -18,6 +19,7 @@ const STATUS_STYLES = {
 
 export default function ApprovalSection({ task, currentUser, onUpd, sectionTitle }) {
   const t = useLang()
+  const inbox = useInbox()
   const approval = task.approval ?? null
   const [comment, setComment] = useState('')
   const [showRequest, setShowRequest] = useState(false)
@@ -33,6 +35,12 @@ export default function ApprovalSection({ task, currentUser, onUpd, sectionTitle
         comment: comment.trim() || null,
       }
     })
+    inbox.push({
+      type: 'approval_requested',
+      actor: currentUser?.name ?? 'User',
+      message: t.msgDidRequestApproval?.(task.title) ?? `requested approval on "${task.title}"`,
+      taskId: task.id,
+    })
     setComment('')
     setShowRequest(false)
   }
@@ -46,6 +54,13 @@ export default function ApprovalSection({ task, currentUser, onUpd, sectionTitle
         resolvedAt: new Date().toISOString(),
         comment: comment.trim() || approval?.comment || null,
       }
+    })
+    const statusLabels = { approved: 'approved', rejected: 'rejected', changes_requested: 'requested changes on' }
+    inbox.push({
+      type: 'approval_resolved',
+      actor: currentUser?.name ?? 'User',
+      message: t.msgDidResolveApproval?.(task.title, status) ?? `${statusLabels[status] ?? status} "${task.title}"`,
+      taskId: task.id,
     })
     setComment('')
   }
