@@ -12,6 +12,7 @@ import { useProjectActions } from '@/hooks/useProjectActions'
 import { useUIState } from '@/hooks/useUIState'
 import { useAIActions } from '@/hooks/useAIActions'
 import { useSectionActions } from '@/hooks/useSectionActions'
+import { useRuleEngine } from '@/hooks/useRuleEngine'
 
 // Eagerly loaded (needed at boot / on every render)
 import LoadingScreen from '@/components/LoadingScreen'
@@ -93,13 +94,30 @@ function App() {
     selProj, goNav, openAddOnDate,
   } = ui
 
-  // ── Task actions ───────────────────────────────────────────
-  const { updTask, togTask, moveTask, reorderTask, addTask, delTask } =
+  // ── Task actions (raw — used by rule engine for action execution) ──
+  const { updTask: rawUpdTask, togTask, moveTask: rawMoveTask, reorderTask, addTask, delTask } =
     useTaskActions({ tasks, setTasks, activeOrgId, secRowsRef, user, pid, toast, tr, inbox, pushUndo })
 
   // ── Project & portfolio actions ────────────────────────────
   const { addProject, addPortfolio, delProject, delPortfolio, archiveProject, archivePortfolio, updProj } =
     useProjectActions({ projs, setProjs, ports, setPorts, secs, setSecs, tasks, setTasks, activeOrgId, secRowsRef, user, pid, setPid, setNav, setSelId, myProjectRoles, setMyProjectRoles, toast, tr, inbox })
+
+  // ── Rule engine (deadline checks + evaluateTaskChange) ─────
+  const { evaluateTaskChange } = useRuleEngine({
+    projects: projs, tasks, updTask: rawUpdTask, toast, inbox, _tr: tr, moveTask: rawMoveTask,
+  })
+
+  // Wrap updTask and moveTask to trigger rule evaluation after mutation
+  const updTask = (id, patch) => {
+    const prev = tasks.find(t => t.id === id)
+    rawUpdTask(id, patch)
+    if (prev) evaluateTaskChange(id, patch, prev)
+  }
+  const moveTask = (id, sec) => {
+    const prev = tasks.find(t => t.id === id)
+    rawMoveTask(id, sec)
+    if (prev && prev.sec !== sec) evaluateTaskChange(id, { sec }, prev)
+  }
 
   // ── Section actions ────────────────────────────────────────
   const { handleUpdateSecs } = useSectionActions({ setSecs, pid, activeOrgId, secRowsRef })
@@ -134,7 +152,7 @@ function App() {
         onExport={() => exportCsv(pTasks, proj?.name, proj?.customFields)} portfolios={ports} />
       {view !== 'overview' && view !== 'timeline' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {orgLoading && <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>⟳ {tr.syncing}</div>}
-      {view === 'overview' && <ProjectOverview project={proj} tasks={tasks} onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />}
+      {view === 'overview' && <ProjectOverview project={proj} tasks={tasks} sections={pSecs} onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user} myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />}
       {view === 'board' && <BoardView tasks={pTasks} secs={pSecs} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onReorder={reorderTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} />}
       {view === 'lista' && <ListView tasks={pTasks} secs={pSecs} project={proj} onOpen={setSelId} onToggle={togTask} onMove={moveTask} onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })} filters={filters} lang={lang} />}
       {view === 'timeline' && <TimelineView tasks={pTasks} secs={pSecs} projects={projs} onOpen={setSelId} lang={lang} />}

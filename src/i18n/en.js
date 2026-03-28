@@ -179,5 +179,37 @@ const en = {
   restore: 'Restore', deletePermanently: 'Delete permanently',
   trashEmpty: 'Trash is empty', trashItems: 'items',
   cannotUndo: 'This cannot be undone.',
+
+  // ── Rules ─────────────────────────────────────────────────
+  rules: 'Rules',
+  noRules: 'No rules yet. Add one to automate your workflow.',
+  ruleName: 'Rule name',
+  ruleNamePlaceholder: 'e.g. Auto-close completed tasks',
+  ruleWhen: 'When...',
+  ruleThen: 'Then...',
+  ruleTrigSectionChange: 'Task moves to section',
+  ruleTrigDeadline: 'Deadline approaching',
+  ruleTrigSubtasksDone: 'All subtasks completed',
+  ruleTrigAssigned: 'Task is assigned',
+  ruleActMove: 'Move to section',
+  ruleActNotify: 'Send notification',
+  ruleActPriority: 'Set priority',
+  ruleActComplete: 'Mark as completed',
+  ruleSection: 'Target section',
+  ruleAnySection: 'Any section',
+  ruleDays: 'Days before deadline',
+  ruleTargetSection: 'Move to',
+  ruleSelectSection: 'Select section...',
+  ruleTargetPriority: 'Set to',
+  ruleMessage: 'Message',
+  ruleMessagePlaceholder: 'Notification text... (use {task} and {who})',
+
+  // ── Dashboard extras ──────────────────────────────────────
+  chartWorkload: 'Workload',
+  chartSectionCompletion: 'Completion by section',
+  workloadCapacity: 'Capacity',
+  overloaded: 'Overloaded',
+  balanced: 'Balanced',
+  light: 'Light',
 }
 export default en

@@ -179,5 +179,37 @@ const it = {
   restore: 'Ripristina', deletePermanently: 'Elimina definitivamente',
   trashEmpty: 'Il cestino è vuoto', trashItems: 'elementi',
   cannotUndo: 'Questa azione è irreversibile.',
+
+  // ── Rules ─────────────────────────────────────────────────
+  rules: 'Regole',
+  noRules: 'Nessuna regola. Aggiungine una per automatizzare il workflow.',
+  ruleName: 'Nome regola',
+  ruleNamePlaceholder: 'es. Chiudi task completate automaticamente',
+  ruleWhen: 'Quando...',
+  ruleThen: 'Allora...',
+  ruleTrigSectionChange: 'Task spostata in sezione',
+  ruleTrigDeadline: 'Scadenza in avvicinamento',
+  ruleTrigSubtasksDone: 'Tutti i subtask completati',
+  ruleTrigAssigned: 'Task assegnata',
+  ruleActMove: 'Sposta in sezione',
+  ruleActNotify: 'Invia notifica',
+  ruleActPriority: 'Imposta priorità',
+  ruleActComplete: 'Segna come completata',
+  ruleSection: 'Sezione target',
+  ruleAnySection: 'Qualsiasi sezione',
+  ruleDays: 'Giorni prima della scadenza',
+  ruleTargetSection: 'Sposta in',
+  ruleSelectSection: 'Seleziona sezione...',
+  ruleTargetPriority: 'Imposta a',
+  ruleMessage: 'Messaggio',
+  ruleMessagePlaceholder: 'Testo notifica... (usa {task} e {who})',
+
+  // ── Dashboard extras ──────────────────────────────────────
+  chartWorkload: 'Carico di lavoro',
+  chartSectionCompletion: 'Completamento per sezione',
+  workloadCapacity: 'Capacità',
+  overloaded: 'Sovraccarico',
+  balanced: 'Bilanciato',
+  light: 'Leggero',
 }
 export default it

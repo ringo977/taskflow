@@ -8,6 +8,7 @@ import { getInitials } from '@/utils/initials'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import ConfirmModal from '@/components/ConfirmModal'
+import RulesPanel from '@/components/RulesPanel'
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
@@ -15,7 +16,7 @@ const STATUS_CFG = {
   off_track: { label: 'off_track', color: 'var(--c-danger)', bg: 'color-mix(in srgb, var(--c-danger) 10%, transparent)' },
 }
 
-export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
+export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const me = USERS.find(u => u.email === currentUser?.email)
@@ -112,6 +113,9 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
             </div>
           ))}
         </div>
+
+        {/* Automation rules */}
+        <RulesPanel project={proj} sections={sections ?? []} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
       </div>
 
       {/* Right column */}

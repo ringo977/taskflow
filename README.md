@@ -90,6 +90,7 @@ taskflow/
     │   ├── useUIState.js          # Navigation, URL sync, keyboard shortcuts, modals
     │   ├── useAIActions.js         # AI subtask gen, task creation, project summary
     │   ├── useSectionActions.js   # Kanban column (section) updates
+    │   ├── useRuleEngine.js       # Automation rules: trigger detection + action execution
     │   ├── useRealtimeSync.js     # Supabase realtime: incremental sync (all event types)
     │   └── useLocalStorageSync.js # Batched localStorage writes via microtask
     │
@@ -101,7 +102,7 @@ taskflow/
     │
     ├── i18n/                      # Bilingual IT/EN
     │   ├── index.js               # LangCtx + useLang() hook
-    │   ├── it.js                  # Italian strings (~120 keys)
+    │   ├── it.js                  # Italian strings (~150 keys)
     │   └── en.js                  # English strings
     │
     ├── layout/                    # Shell components
@@ -141,6 +142,7 @@ taskflow/
     │   ├── LoadingScreen.jsx      # Boot loading screen
     │   ├── NewProjectModal.jsx    # New project creation modal
     │   ├── ProjectHeader.jsx      # Project header with view switcher
+    │   ├── RulesPanel.jsx          # Automation rules editor (per-project)
     │   ├── SummaryPanel.jsx       # AI summary side panel
     │   └── index.js               # Barrel export
     │
@@ -171,7 +173,7 @@ Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for 
 
 ### State management
 
-`App.jsx` is a lightweight orchestrator (~190 LOC) that uses `React.lazy` + `Suspense` to code-split 18 page/view/modal components into separate chunks, keeping the initial bundle small. It delegates all business logic to six custom hooks:
+`App.jsx` is a lightweight orchestrator (~190 LOC) that uses `React.lazy` + `Suspense` to code-split 18 page/view/modal components into separate chunks, keeping the initial bundle small. It delegates all business logic to seven custom hooks:
 
 - **`useAppBootstrap`** — auth state, MFA flow, org initialization, realtime subscriptions, data loading from Supabase with localStorage fallback
 - **`useTaskActions`** — task CRUD with optimistic UI and automatic revert on error
@@ -179,6 +181,7 @@ Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for 
 - **`useUIState`** — navigation, URL sync, keyboard shortcuts, modal/filter state
 - **`useAIActions`** — AI-driven subtask generation, natural-language task creation, project summary
 - **`useSectionActions`** — Kanban column (section) rename/reorder with Supabase persistence
+- **`useRuleEngine`** — automation rules engine: evaluates per-project rules on task mutations and runs periodic deadline checks
 
 No Redux or Zustand. Four React Contexts handle cross-cutting concerns: toast notifications, undo (8-sec rollback), activity feed, and org user directory.
 
@@ -216,6 +219,10 @@ Uses `react-router-dom` v6 with full URL ↔ state sync. Route pattern: `/:nav/:
 `src/utils/ai.js` is a thin client that calls a Supabase Edge Function proxy (`supabase/functions/ai-proxy/`). The proxy holds the Anthropic API key server-side and adds rate limiting (20 req/min per IP), input validation, and 30s timeout handling. No API keys are exposed in the browser.
 
 If the proxy is not configured (`VITE_AI_PROXY_URL` is empty), AI features are gracefully disabled — the UI never breaks.
+
+### Automation rules
+
+Per-project automation rules are stored in `project.rules` JSONB (no extra DB table or migration needed). Each rule has a trigger, an action, and an enabled flag. The `useRuleEngine` hook evaluates rules after every task mutation and runs a periodic deadline check (every 60s). Supported triggers: task moves to section, deadline approaching (configurable N days), all subtasks completed, task assigned. Supported actions: move to section, send notification (toast + inbox), set priority, mark as completed. Rule actions use raw (unwrapped) task functions to prevent infinite loops — only user-initiated mutations trigger rule evaluation.
 
 ### Multi-tenancy
 
@@ -312,7 +319,7 @@ All tables are protected by org-scoped Row Level Security.
 
 // Project
 { id, name, color, status, statusLabel, portfolio,
-  description, resources, members, customFields }
+  description, resources, members, customFields, rules }
 
 // Portfolio
 { id, name, color, desc, status }
@@ -335,4 +342,6 @@ All tables are protected by org-scoped Row Level Security.
 - **Soft delete**: Trash view with restore and permanent delete
 - **CSV export**: Download project tasks as spreadsheet
 - **PWA**: Installable, offline shell
+- **Automation rules**: Per-project trigger→action rules (section change, deadline, subtasks done, assignment)
+- **Dashboard**: 12 widgets including burndown, velocity, workload capacity, section completion, priority/status breakdown
 - **Project templates**: Kanban, Sprint, Research, Product Launch

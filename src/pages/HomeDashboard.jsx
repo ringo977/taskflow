@@ -140,6 +140,31 @@ export default function HomeDashboard({ tasks, projects, secs = {}, currentUser,
     }).filter(d => d.overdue > 0).sort((a, b) => b.overdue - a.overdue).slice(0, 6)
   }, [tasks, projects])
 
+  // 9. Workload capacity: open tasks per person with threshold indicator
+  const WORKLOAD_THRESHOLD = 8
+  const workloadData = useMemo(() => {
+    return USERS.map(u => {
+      const open = tasks.filter(tk => tk.who === u.name && !tk.done).length
+      const level = open > WORKLOAD_THRESHOLD ? 'overloaded' : open > WORKLOAD_THRESHOLD / 2 ? 'balanced' : 'light'
+      return { name: u.name.split(' ')[0], open, color: u.color, level }
+    }).filter(d => d.open > 0).sort((a, b) => b.open - a.open)
+  }, [tasks, USERS])
+
+  // 10. Section completion: stacked bars per project showing section distribution
+  const sectionCompletionData = useMemo(() => {
+    return projects.slice(0, 6).map(p => {
+      const pt = tasks.filter(tk => tk.pid === p.id)
+      const secCounts = {}
+      for (const tk of pt) {
+        const sec = tk.sec ?? 'Other'
+        if (!secCounts[sec]) secCounts[sec] = { total: 0, done: 0 }
+        secCounts[sec].total++
+        if (tk.done) secCounts[sec].done++
+      }
+      return { project: p, sections: secCounts, total: pt.length }
+    }).filter(d => d.total > 0)
+  }, [tasks, projects])
+
   const StatCard = ({ label, value, color, onClick }) => (
     <div onClick={onClick} className="row-interactive"
       style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, borderRadius: 'var(--r2)', border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`, padding: '18px 18px', cursor: 'pointer' }}>
@@ -367,6 +392,74 @@ export default function HomeDashboard({ tasks, projects, secs = {}, currentUser,
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            )
+          }
+        </div>
+      </div>
+
+      {/* Charts row 5: workload capacity + section completion */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Workload capacity */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.chartWorkload ?? 'Workload'}</SectionTitle>
+          {workloadData.length === 0
+            ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>—</div>
+            : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {workloadData.map(d => {
+                  const levelColor = d.level === 'overloaded' ? 'var(--c-danger)' : d.level === 'balanced' ? 'var(--c-warning)' : 'var(--c-success)'
+                  const levelLabel = d.level === 'overloaded' ? (t.overloaded ?? 'Overloaded') : d.level === 'balanced' ? (t.balanced ?? 'Balanced') : (t.light ?? 'Light')
+                  const pct = Math.min(100, Math.round((d.open / WORKLOAD_THRESHOLD) * 100))
+                  return (
+                    <div key={d.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                        <span style={{ fontSize: 12, color: 'var(--tx1)', fontWeight: 500 }}>{d.name}</span>
+                        <span style={{ fontSize: 11, color: levelColor, fontWeight: 500 }}>{d.open} task — {levelLabel}</span>
+                      </div>
+                      <div style={{ height: 6, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: levelColor, borderRadius: 'var(--r1)', transition: 'width 0.4s' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+                <div style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 2 }}>
+                  {t.workloadCapacity ?? 'Capacity'}: {WORKLOAD_THRESHOLD} task / {t.team?.toLowerCase?.() ?? 'person'}
+                </div>
+              </div>
+            )
+          }
+        </div>
+
+        {/* Section completion per project */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
+          <SectionTitle>{t.chartSectionCompletion ?? 'Completion by section'}</SectionTitle>
+          {sectionCompletionData.length === 0
+            ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>—</div>
+            : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {sectionCompletionData.map(({ project: p, sections: secCounts }) => (
+                  <div key={p.id}>
+                    <div style={{ fontSize: 12, color: 'var(--tx1)', fontWeight: 500, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: p.color }} />
+                      {p.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {Object.entries(secCounts).map(([sec, { total, done }]) => {
+                        const pct = total ? Math.round(done / total * 100) : 0
+                        return (
+                          <div key={sec} style={{ flex: total, minWidth: 0 }} title={`${sec}: ${done}/${total} (${pct}%)`}>
+                            <div style={{ height: 14, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: p.color, opacity: 0.7, borderRadius: 2 }} />
+                            </div>
+                            <div style={{ fontSize: 9, color: 'var(--tx3)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sec}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )
           }
         </div>
