@@ -117,7 +117,7 @@ taskflow/
     ├── pages/                     # Full-page screens
     │   ├── LoginPage.jsx          # Email/password auth
     │   ├── MfaPage.jsx            # TOTP enrollment/verification
-    │   ├── HomeDashboard.jsx      # Stats, charts, quick links
+    │   ├── HomeDashboard.jsx      # 15-widget dashboard: stats, charts, deadlines, activity feed, project health
     │   ├── PortfoliosView.jsx     # Portfolio management
     │   ├── PeopleView.jsx         # Team directory with task counts
     │   ├── TaskPanel.jsx          # Task detail side panel (editable)
@@ -375,7 +375,7 @@ All tables are protected by org-scoped Row Level Security.
 - **CSV export**: Download project tasks as spreadsheet
 - **PWA**: Installable, offline shell
 - **Automation rules**: Per-project trigger→action rules (section change, deadline, subtasks done, assignment)
-- **Dashboard**: 12 widgets including burndown, velocity, workload capacity, section completion, priority/status breakdown
+- **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards)
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Per-project form builder with configurable fields that map to task properties (title, description, assignee, etc.)
 - **Goals**: Per-project goals with animated SVG progress rings and automatic roll-up from linked tasks; supports sub-goals (key results)

@@ -98,20 +98,18 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
     return acts.sort((a, b) => b.time - a.time).slice(0, 8)
   }, [tasks])
 
-  // Project health scores
+  // Project health scores (always show, even with 0 tasks)
   const projectHealthData = useMemo(() => {
     return projects.map(p => {
       const pt = tasks.filter(tk => tk.pid === p.id)
       const total = pt.length
-      if (total === 0) return null
       const done = pt.filter(tk => tk.done).length
       const od = pt.filter(tk => !tk.done && isOverdue(tk.due)).length
-      const pct = Math.round(done / total * 100)
+      const pct = total > 0 ? Math.round(done / total * 100) : 0
       const odPct = total > 0 ? od / total : 0
-      // Health: critical if >25% overdue, warning if >10%, good otherwise
-      const health = odPct > 0.25 ? 'critical' : odPct > 0.10 ? 'warning' : 'good'
+      const health = total === 0 ? 'good' : odPct > 0.25 ? 'critical' : odPct > 0.10 ? 'warning' : 'good'
       return { ...p, total, done, pct, overdue: od, health }
-    }).filter(Boolean).slice(0, 6)
+    }).slice(0, 6)
   }, [tasks, projects])
 
   // ── Chart data ────────────────────────────────────────────────
@@ -339,7 +337,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       </div>
 
       {/* Project health scores */}
-      {projectHealthData.length > 0 && (
+      {projects.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <SectionTitle>{t.projectHealth ?? 'Project health'}</SectionTitle>
           <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
