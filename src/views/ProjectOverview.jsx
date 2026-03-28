@@ -13,6 +13,7 @@ import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
 import FormsPanel from '@/components/FormsPanel'
 import GoalsPanel from '@/components/GoalsPanel'
+// reportPdf is loaded lazily on button click to avoid bundling jsPDF (360KB) eagerly
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
@@ -163,6 +164,22 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
             {odCount > 0 && <span style={{ fontSize: 13, color: 'var(--c-danger)' }}>⚠ {t.expiredCount ? t.expiredCount(odCount) : `${odCount} overdue`}</span>}
           </div>
         </div>
+
+        {/* Report */}
+        <button
+          onClick={async () => {
+            const { generateProjectReport } = await import('@/utils/reportPdf')
+            generateProjectReport(proj, pTasks, sections, t, _lang)
+          }}
+          aria-label="Generate PDF report"
+          style={{
+            width: '100%', fontSize: 12, padding: '9px 14px', borderRadius: 'var(--r2)',
+            border: '1px solid var(--bd3)', background: 'var(--bg1)', color: 'var(--accent)',
+            cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+          <span style={{ fontSize: 14 }}>📄</span> {t.generateReport ?? 'Generate Report (PDF)'}
+        </button>
 
         {/* Members */}
         <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} canManage={isAdmin || (isManager && myProjectRoles[proj.id] === 'owner')} />

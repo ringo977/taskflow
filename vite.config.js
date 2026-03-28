@@ -76,6 +76,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-charts': ['recharts'],
+          'vendor-pdf': ['jspdf'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-date': ['date-fns'],
           'vendor-router': ['react-router-dom'],

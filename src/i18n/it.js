@@ -335,5 +335,20 @@ const it = {
   tplRules: 'regole',
   tplForms: 'form',
   tplGoals: 'obiettivi',
+
+  // ── Report PDF ────────────────────────────────────────────
+  generateReport: 'Genera Report (PDF)',
+  reportSubtitle: 'Report di stato progetto',
+  reportTotal: 'Task totali',
+  reportCompleted: 'Completati',
+  reportOpen: 'Aperti',
+  reportOverdue: 'In ritardo',
+  reportBySection: 'Task per sezione',
+  reportByPriority: 'Distribuzione priorità',
+  reportDeadlines: 'Scadenze prossime (14 giorni)',
+  reportTeam: 'Carico di lavoro team',
+  reportOpenLower: 'aperti',
+  reportDoneLower: 'completati',
+  reportOverdueLower: 'in ritardo',
 }
 export default it

@@ -35,7 +35,8 @@ Login with any test account — password: `mimic2026`
 | Date utils | date-fns |
 | Charts | Recharts |
 | PWA | vite-plugin-pwa (offline shell, installable) |
-| Testing | Vitest + Testing Library (179 tests, >80% coverage) |
+| PDF reports | jsPDF (lazy-loaded) |
+| Testing | Vitest + Testing Library (205 tests, >70% coverage) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -153,6 +154,7 @@ taskflow/
     │   ├── TimeTracker.jsx         # Per-task time tracking (timer + manual entry)
     │   ├── ApprovalSection.jsx     # Task approval workflow (request → approve/reject)
     │   ├── SummaryPanel.jsx       # AI summary side panel
+    │   ├── ErrorBoundary.jsx      # Error boundary + WidgetErrorBoundary for dashboard widgets
     │   └── index.js               # Barrel export
     │
     ├── utils/                     # Pure utility functions
@@ -163,6 +165,7 @@ taskflow/
     │   ├── initials.js            # User initials extraction
     │   ├── storage.js             # localStorage wrapper (tf_ prefix) + well-known key helpers
     │   ├── routing.js             # parseRoute(), buildPath(), deferAuthWork()
+    │   ├── reportPdf.js            # Project status PDF report (jsPDF, lazy-loaded)
     │   └── exportCsv.js           # CSV export
     │
     ├── data/                      # Seed data
@@ -173,7 +176,7 @@ taskflow/
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
 
-Tests: 107 total — 9 unit-test files for utils + 2 integration-test files for hooks (`useTaskActions.test.js`, `useProjectActions.test.js`).
+Tests: 205 total — unit tests for utils (ai, filters, storage) + integration tests for hooks (useTaskActions, useProjectActions, useRuleEngine) + component tests (FormSubmitModal, HomeDashboard).
 ```
 
 ---
@@ -197,7 +200,7 @@ No Redux or Zustand. Five React Contexts handle cross-cutting concerns: toast no
 
 ### Code splitting
 
-`vite.config.js` uses `manualChunks` to separate heavy vendor libraries into dedicated bundles: `vendor-charts` (recharts), `vendor-supabase` (@supabase/supabase-js), `vendor-router` (react-router-dom), and `vendor-date` (date-fns). Combined with `React.lazy`, this splits the former single ~1 MB bundle into a 112 KB core chunk plus on-demand page chunks (0.3–21 KB each). Recharts (432 KB) only loads when the user opens a chart-bearing view.
+`vite.config.js` uses `manualChunks` to separate heavy vendor libraries into dedicated bundles: `vendor-charts` (recharts, 432 KB), `vendor-pdf` (jsPDF, 391 KB), `vendor-supabase` (@supabase/supabase-js), `vendor-router` (react-router-dom), and `vendor-date` (date-fns). Combined with `React.lazy` and dynamic `import()`, this splits the former single ~1 MB bundle into a 137 KB core chunk plus on-demand page chunks. Recharts only loads when the user opens a chart-bearing view; jsPDF only loads when the user clicks "Generate Report".
 
 ### Data layer
 
@@ -249,6 +252,10 @@ Time entries are stored in `task.timeEntries` JSONB array. Each entry has `{ id,
 ### Approval workflow
 
 Approval state is stored in `task.approval` JSONB: `{ status, requestedBy, approver, requestedAt, resolvedAt, comment }`. Status transitions: none → pending → approved/rejected/changes_requested. The `ApprovalSection` component in the task panel handles request submission and resolution. Approval status icons are shown on task cards in board/list views.
+
+### Project reports
+
+The "Generate Report (PDF)" button in ProjectOverview produces a comprehensive A4 status report via `src/utils/reportPdf.js`. The report includes six sections: project header with status badge, progress overview with stat cards and progress bar, task breakdown by section (table), priority distribution (horizontal bars), upcoming deadlines (next 14 days), and team workload. jsPDF (~391 KB) is loaded lazily via dynamic `import()` on button click so it never impacts initial page load. Full i18n support (IT/EN).
 
 ### Multi-tenancy
 
