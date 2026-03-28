@@ -99,7 +99,7 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
 
         {/* Recent activity */}
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.activityLog}</div>
+          <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.recentActivity}</div>
           {recent.length === 0 && <div style={{ fontSize: 13, color: 'var(--tx3)' }}>{t.noActivity}</div>}
           {recent.map(task => (
             <div key={task.id} className="row-interactive" onClick={() => onOpen(task.id)}
@@ -145,7 +145,7 @@ export default function ProjectOverview({ project, tasks, onUpdProj, onOpen, lan
             <div style={{ height: '100%', width: `${pct}%`, background: proj.color, borderRadius: 'var(--r1)', transition: 'width 0.4s' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{pct}% {t.completed ?? 'completed'}</span>
+            <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{pct}% {t.completedLower ?? 'completed'}</span>
             {odCount > 0 && <span style={{ fontSize: 13, color: 'var(--c-danger)' }}>⚠ {t.expiredCount ? t.expiredCount(odCount) : `${odCount} overdue`}</span>}
           </div>
         </div>

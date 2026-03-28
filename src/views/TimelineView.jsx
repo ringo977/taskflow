@@ -23,21 +23,19 @@ export default function TimelineView({ tasks, secs, projects, onOpen, lang }) {
   const dw = Math.round(BASE_DAY_W * ZOOM_STEPS[zoomIdx])
 
   const hasDates = tasks.filter(task => task.due)
-  if (hasDates.length === 0) {
-    return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 14 }}>{t.timelineEmpty}</div>
-  }
 
   const allDates = hasDates.flatMap(task => [task.startDate, task.due].filter(Boolean))
-  const minMs = Math.min(...allDates.map(dateToMs)) - 7 * 86400000
-  const maxMs = Math.max(...allDates.map(dateToMs)) + 14 * 86400000
-  const startStr = msToDs(minMs)
-  const totalDays = Math.ceil((maxMs - minMs) / 86400000)
+  const minMs = allDates.length ? Math.min(...allDates.map(dateToMs)) - 7 * 86400000 : 0
+  const maxMs = allDates.length ? Math.max(...allDates.map(dateToMs)) + 14 * 86400000 : 0
+  const startStr = allDates.length ? msToDs(minMs) : ''
+  const totalDays = allDates.length ? Math.ceil((maxMs - minMs) / 86400000) : 0
   const totalW = totalDays * dw
 
   const today = new Date().toISOString().slice(0, 10)
-  const todayPx = Math.max(0, daysBetween(startStr, today)) * dw
+  const todayPx = startStr ? Math.max(0, daysBetween(startStr, today)) * dw : 0
 
   const months = useMemo(() => {
+    if (!allDates.length) return []
     const arr = []
     const cur = new Date(minMs)
     cur.setDate(1)
@@ -48,11 +46,12 @@ export default function TimelineView({ tasks, secs, projects, onOpen, lang }) {
       cur.setMonth(cur.getMonth() + 1)
     }
     return arr
-  }, [minMs, maxMs, dw, startStr, t.monthsShort])
+  }, [minMs, maxMs, dw, startStr, t.monthsShort, allDates.length])
 
   const activeSecs = secs.filter(s => hasDates.some(task => task.sec === s))
 
   const rowLayout = useMemo(() => {
+    if (!hasDates.length) return {}
     const layout = {}
     let y = HEADER_H
     for (const sec of activeSecs) {
@@ -72,6 +71,7 @@ export default function TimelineView({ tasks, secs, projects, onOpen, lang }) {
   }, [hasDates, activeSecs, dw, startStr])
 
   const depArrows = useMemo(() => {
+    if (!hasDates.length) return []
     const arrows = []
     for (const task of hasDates) {
       if (!task.deps?.length) continue
@@ -85,6 +85,11 @@ export default function TimelineView({ tasks, secs, projects, onOpen, lang }) {
     }
     return arrows
   }, [hasDates, rowLayout])
+
+  // Early return AFTER all hooks (React requires hooks to always run in the same order)
+  if (hasDates.length === 0) {
+    return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 14 }}>{t.timelineEmpty}</div>
+  }
 
   const chartH = HEADER_H + activeSecs.length * SEC_H + hasDates.length * ROW_H
 
