@@ -1,47 +1,53 @@
 /**
- * Thin wrapper around the Anthropic API.
+ * AI utility — thin client for the Supabase Edge Function proxy.
  *
- * ⚠️  SECURITY NOTE
- * Calling api.anthropic.com directly from the browser exposes your API key
- * in the network tab. This is acceptable for local/offline use (python3 -m http.server)
- * but MUST be replaced with a backend proxy before any public deployment.
+ * All AI calls go through VITE_AI_PROXY_URL, which points to the
+ * `ai-proxy` Edge Function. No API keys are stored or sent from the browser.
  *
- * TODO: replace ANTHROPIC_API_KEY with a call to your Cloudflare Worker proxy:
- *   const res = await fetch('https://your-worker.workers.dev/ai', { ... })
+ * If the proxy is not configured (VITE_AI_PROXY_URL is empty), every
+ * function returns a graceful fallback so the UI never breaks.
  */
 
-const MODEL = 'claude-sonnet-4-20250514'
+const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || ''
+
+/** True when the AI proxy is configured and available */
+export const isAIEnabled = () => Boolean(AI_PROXY_URL)
 
 /**
- * Call the Anthropic messages API.
+ * Call the AI proxy.
  * @param {string} system  System prompt
  * @param {string} user    User message
  * @param {number} maxTokens
  * @returns {Promise<string>} The assistant's text response
+ * @throws {Error} with a user-friendly message
  */
 export async function callAI(system, user, maxTokens = 1000) {
-  // In production: point this to your Cloudflare Worker proxy instead
-  const endpoint = 'https://api.anthropic.com/v1/messages'
+  if (!AI_PROXY_URL) {
+    throw new Error('AI features are not available — proxy is not configured.')
+  }
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: user }],
-    }),
-  })
+  let response
+  try {
+    response = await fetch(AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system, user, maxTokens }),
+    })
+  } catch (err) {
+    throw new Error('Cannot reach the AI service. Check your connection and try again.')
+  }
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`AI API error ${response.status}: ${err}`)
+    let message = `AI request failed (${response.status})`
+    try {
+      const body = await response.json()
+      if (body.error) message = body.error
+    } catch { /* ignore parse errors */ }
+    throw new Error(message)
   }
 
   const data = await response.json()
-  const text = data.content?.[0]?.text ?? ''
-  return text
+  return data.text ?? ''
 }
 
 /** Generate 3-5 subtasks for a given task */
