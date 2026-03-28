@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { storage } from '@/utils/storage'
 import { supabase } from '@/lib/supabase'
 import { getMfaLevel, getFactors } from '@/lib/auth'
@@ -8,8 +8,9 @@ import {
   seedOrg,
 } from '@/lib/db'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync'
 import { INITIAL_ORGS } from '@/data/orgs'
-import { seedFor, oget, oset } from '@/constants'
+import { seedFor, oget } from '@/constants'
 import { deferAuthWork } from '@/utils/routing'
 
 /**
@@ -45,21 +46,10 @@ export function useAppBootstrap() {
   const activeOrgIdRef = useRef(activeOrgId)
   useEffect(() => { activeOrgIdRef.current = activeOrgId }, [activeOrgId])
 
-  // ── localStorage sync effects (lines 354-360) ──────────────────
-  useEffect(() => storage.set('lang', lang), [lang])
-  useEffect(() => storage.set('orgs', orgs), [orgs])
-  useEffect(() => storage.set('activeOrgId', activeOrgId), [activeOrgId])
-  useEffect(() => oset(activeOrgId, 'projs', projs), [activeOrgId, projs])
-  useEffect(() => oset(activeOrgId, 'ports', ports), [activeOrgId, ports])
-  useEffect(() => oset(activeOrgId, 'secs', secs), [activeOrgId, secs])
-  useEffect(() => oset(activeOrgId, 'tasks', tasks), [activeOrgId, tasks])
-
-  // ── Theme sync effect (lines 330-334) ─────────────────────────
-  useEffect(() => {
-    storage.set('theme', theme)
-    if (theme === 'auto') document.documentElement.removeAttribute('data-theme')
-    else document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
+  // ── Batched localStorage sync (replaces 8 separate effects) ────
+  const globalSync = useMemo(() => ({ lang, theme, orgs, activeOrgId }), [lang, theme, orgs, activeOrgId])
+  const orgSync = useMemo(() => ({ projs, ports, secs, tasks }), [projs, ports, secs, tasks])
+  useLocalStorageSync(globalSync, orgSync, activeOrgId)
 
   // ── Load org data from Supabase ──────────────────────────────
   const loadOrgData = useCallback(async (orgId) => {

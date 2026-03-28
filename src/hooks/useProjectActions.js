@@ -88,6 +88,10 @@ export const useProjectActions = ({
         })
       } catch (e) {
         console.error('addProject:', e)
+        // Revert optimistic add
+        setProjs(p => p.filter(proj => proj.id !== id))
+        setSecs(s => { const n = { ...s }; delete n[id]; return n })
+        if (tplTasks.length) setTasks(prev => prev.filter(t => t.pid !== id))
         toast(tr.msgSaveError, 'error')
       }
     },
@@ -128,32 +132,32 @@ export const useProjectActions = ({
 
   const delProject = useCallback(
     async (id) => {
-      const p = projs.find(p => p.id === id)
-      setProjs(prev => prev.filter(p => p.id !== id))
+      const p = projs.find(proj => proj.id === id)
+      const prevTasks = tasks.filter(t => t.pid === id)
+      const prevSecs = secs[id]
+      setProjs(prev => prev.filter(proj => proj.id !== id))
       setTasks(prev => prev.filter(t => t.pid !== id))
-      setSecs(prev => {
-        const n = { ...prev }
-        delete n[id]
-        return n
-      })
-      if (pid === id) {
-        setPid(null)
-        setSelId(null)
-      }
+      setSecs(prev => { const n = { ...prev }; delete n[id]; return n })
+      if (pid === id) { setPid(null); setSelId(null) }
       try {
         await dbDeleteProject(activeOrgId, id)
         toast(tr.msgDeleted(p?.name ?? 'Project'), 'success')
       } catch (e) {
         console.error('delProject:', e)
+        // Revert optimistic delete
+        if (p) setProjs(prev => [...prev, p])
+        if (prevTasks.length) setTasks(prev => [...prev, ...prevTasks])
+        if (prevSecs) setSecs(prev => ({ ...prev, [id]: prevSecs }))
         toast(tr.msgSaveError, 'error')
       }
     },
-    [projs, setProjs, setTasks, setSecs, pid, setPid, setSelId, activeOrgId, toast, tr]
+    [projs, tasks, secs, setProjs, setTasks, setSecs, pid, setPid, setSelId, activeOrgId, toast, tr]
   )
 
   const delPortfolio = useCallback(
     async (id) => {
       const po = ports.find(p => p.id === id)
+      const prevProjs = projs.filter(p => p.portfolio === id)
       setPorts(prev => prev.filter(p => p.id !== id))
       setProjs(prev =>
         prev.map(p => (p.portfolio === id ? { ...p, portfolio: null } : p))
@@ -163,10 +167,16 @@ export const useProjectActions = ({
         toast(tr.msgDeleted(po?.name ?? 'Portfolio'), 'success')
       } catch (e) {
         console.error('delPortfolio:', e)
+        // Revert optimistic delete
+        if (po) setPorts(prev => [...prev, po])
+        if (prevProjs.length) setProjs(prev => prev.map(p => {
+          const orig = prevProjs.find(pp => pp.id === p.id)
+          return orig ? { ...p, portfolio: id } : p
+        }))
         toast(tr.msgSaveError, 'error')
       }
     },
-    [ports, setPorts, setProjs, activeOrgId, toast, tr]
+    [projs, ports, setPorts, setProjs, activeOrgId, toast, tr]
   )
 
   const archiveProject = useCallback(
@@ -208,15 +218,18 @@ export const useProjectActions = ({
 
   const updProj = useCallback(
     async (id, patch) => {
+      const prev = projs.find(p => p.id === id)
       setProjs(p => p.map(proj => (proj.id === id ? { ...proj, ...patch } : proj)))
       try {
-        const updated = projs.find(p => p.id === id)
-        if (updated) await upsertProject(activeOrgId, { ...updated, ...patch })
+        if (prev) await upsertProject(activeOrgId, { ...prev, ...patch })
       } catch (e) {
         console.error('updProj:', e)
+        // Revert optimistic update
+        if (prev) setProjs(p => p.map(proj => (proj.id === id ? prev : proj)))
+        toast(tr.msgSaveError, 'error')
       }
     },
-    [projs, setProjs, activeOrgId]
+    [projs, setProjs, activeOrgId, toast, tr]
   )
 
   return {

@@ -97,9 +97,12 @@ export function useTaskActions({
         }
       } catch (e) {
         console.error('updTask:', e)
+        // Revert optimistic update
+        if (prev) setTasks(p => p.map(t => (t.id === id ? prev : t)))
+        toast(tr.msgSaveError, 'error')
       }
     },
-    [tasks, setTasks, activeOrgId, secRowsRef, user, autoAddAssigneeToProject]
+    [tasks, setTasks, activeOrgId, secRowsRef, user, autoAddAssigneeToProject, toast, tr]
   )
 
   const togTask = useCallback(
@@ -126,9 +129,12 @@ export function useTaskActions({
         })
       } catch (e) {
         console.error('togTask:', e)
+        // Revert optimistic update
+        setTasks(p => p.map(t => (t.id === id ? { ...t, done: prevDone } : t)))
+        toast(tr.msgSaveError, 'error')
       }
     },
-    [tasks, setTasks, activeOrgId, user, tr, inbox, pushUndo]
+    [tasks, setTasks, activeOrgId, user, tr, inbox, pushUndo, toast]
   )
 
   const moveTask = useCallback(
@@ -150,9 +156,12 @@ export function useTaskActions({
         await dbMoveTaskToSection(activeOrgId, id, sec, task.pid, secRowsRef.current)
       } catch (e) {
         console.error('moveTask:', e)
+        // Revert optimistic update
+        setTasks(p => p.map(t => (t.id === id ? { ...t, sec: prevSec } : t)))
+        toast(tr.msgSaveError, 'error')
       }
     },
-    [tasks, setTasks, activeOrgId, tr, secRowsRef, pushUndo]
+    [tasks, setTasks, activeOrgId, tr, secRowsRef, pushUndo, toast]
   )
 
   const reorderTask = useCallback(
@@ -202,6 +211,8 @@ export function useTaskActions({
         })
       } catch (e) {
         console.error('addTask:', e)
+        // Revert optimistic add
+        setTasks(p => p.filter(t => t.id !== newTask.id))
         toast(tr.msgSaveError, 'error')
       }
     },
@@ -217,6 +228,8 @@ export function useTaskActions({
         toast(tr.msgDeleted(task?.title ?? 'Task'), 'success')
       } catch (e) {
         console.error('delTask:', e)
+        // Revert optimistic delete
+        if (task) setTasks(p => [...p, task])
         toast(tr.msgSaveError, 'error')
       }
     },
