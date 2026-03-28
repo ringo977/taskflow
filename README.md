@@ -373,3 +373,4 @@ All tables are protected by org-scoped Row Level Security.
 - **Time tracking**: Per-task start/stop timer and manual time entry with duration logging
 - **Approval workflow**: Request, approve, reject, or request changes on any task — visible status badges on task cards
 - **Visual polish**: Skeleton loading screen, card slide-in animations on Board, rich toasts with progress bar, calendar hover previews
+- **Mobile responsive**: Full smartphone/tablet support — collapsible sidebar with hamburger menu, stacked dashboard grids, single-column overview, horizontal-scroll board, full-width task panel, responsive modals

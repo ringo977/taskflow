@@ -177,9 +177,31 @@ mark { background: color-mix(in srgb, var(--c-warning) 25%, transparent); color:
   .context-sidebar { position: absolute !important; left: 0 !important; top: 0 !important; width: 0 !important; height: 100% !important; z-index: 50; overflow: hidden !important; transition: width 0.15s var(--ease); }
   .context-sidebar.mobile-open { left: 60px !important; width: 220px !important; overflow-y: auto !important; background: var(--bg1) !important; border-right: 1px solid var(--bd3) !important; box-shadow: var(--shadow-md); }
   .mobile-toggle { display: flex !important; }
-  .mobile-main { overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+  .mobile-main { overflow-y: auto !important; -webkit-overflow-scrolling: touch; padding-top: 40px !important; }
   .project-header { flex-wrap: wrap; gap: 6px !important; padding: 10px 12px !important; }
   .project-header .view-tabs { order: 10; width: 100%; overflow-x: auto; }
+
+  /* Dashboard grids — stack on mobile */
+  .dash-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .dash-grid  { grid-template-columns: 1fr !important; }
+
+  /* Overview — stack columns */
+  .overview-layout { flex-direction: column !important; padding: 14px !important; }
+  .overview-sidebar { width: 100% !important; }
+
+  /* Board — reduce column width on small screens */
+  .board-container { padding: 10px !important; gap: 10px !important; }
+  .board-col { min-width: 260px !important; width: 260px !important; }
+
+  /* Calendar — smaller cells */
+  .cal-cell { min-height: 60px !important; padding: 2px !important; }
+  .cal-chip { font-size: 10px !important; }
+
+  /* Task panel — full width on mobile */
+  .task-panel { width: 100vw !important; max-width: 100% !important; }
+
+  /* Modals — fit screen on mobile */
+  .modal-content { width: calc(100vw - 32px) !important; max-width: 420px !important; padding: 16px !important; }
 }
 @media (min-width: 769px) {
   .mobile-toggle { display: none !important; }

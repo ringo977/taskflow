@@ -82,7 +82,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const sectionTitle = { fontSize: 11, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }
 
   return (
-    <div style={{ width: 'min(440px, 100vw - 40px)', maxWidth: 440, background: 'var(--bg1)', borderLeft: '1px solid var(--bd3)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+    <div className="task-panel" style={{ width: 'min(440px, 100vw - 40px)', maxWidth: 440, background: 'var(--bg1)', borderLeft: '1px solid var(--bd3)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
       {/* Header */}
       <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', gap: 8 }}>
         {proj && (

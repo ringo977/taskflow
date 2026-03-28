@@ -10,7 +10,7 @@ export default function NewProjectModal({ templates, portfolios, onAdd, onClose,
   const [selTpl, setSelTpl] = useState('')
   return (
     <div onClick={onClose} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 420, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', overflow: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', padding: 22, width: 420, border: '1px solid var(--bd2)', boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', overflow: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>{t.newProject ?? 'New project'}</span>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--tx3)', lineHeight: 1 }}>✕</button>

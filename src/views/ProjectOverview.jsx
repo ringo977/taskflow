@@ -54,7 +54,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
   const sectionTitleStyle = { fontSize: 12, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }
 
   return (
-    <div style={{ flex: 1, overflow: 'auto', display: 'flex', gap: 20, padding: '22px 26px', alignItems: 'flex-start' }}>
+    <div className="overview-layout" style={{ flex: 1, overflow: 'auto', display: 'flex', gap: 20, padding: '22px 26px', alignItems: 'flex-start' }}>
 
       {/* Left column */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -127,7 +127,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
       </div>
 
       {/* Right column */}
-      <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="overview-sidebar" style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Status */}
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>

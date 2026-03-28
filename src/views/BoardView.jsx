@@ -93,7 +93,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
       .board-card[draggable]:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
       .board-col { transition: background 0.15s var(--ease), border-color 0.15s var(--ease); }
     `}</style>
-    <div style={{ display: 'flex', gap: 14, padding: 18, overflow: 'auto', flex: 1, alignItems: 'flex-start' }}>
+    <div className="board-container" style={{ display: 'flex', gap: 14, padding: 18, overflow: 'auto', flex: 1, alignItems: 'flex-start' }}>
       {secs.map(sec => {
         const filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
         const total    = tasks.filter(t => t.sec === sec).length
