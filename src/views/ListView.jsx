@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useLang } from '@/i18n'
-import { applyFilters, isOverdue } from '@/utils/filters'
+import { applyFilters, isOverdue, applyVisibilityFilter } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'
 import { fmtDate } from '@/utils/format'
+import { canEditTasks } from '@/utils/permissions'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
@@ -28,8 +29,10 @@ function sortTasks(tasks, sortId) {
   return sorted
 }
 
-export default function ListView({ tasks, secs, project, onOpen, onToggle, onMove, onAddTask, filters, lang }) {
+export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang }) {
   const t = useLang()
+  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const readOnly = !canEditTasks(projectRole)
   const [addIn, setAddIn] = useState(null)
   const [newTitle, setNewTitle] = useState('')
   const [collapsed, setCollapsed] = useState({})
@@ -55,6 +58,8 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
   const bulkDone = () => { selected.forEach(id => onToggle(id)); clearSel() }
   const bulkMove = (sec) => { if (onMove) selected.forEach(id => onMove(id, sec)); clearSel() }
 
+  const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '14px 22px' }}>
       {/* Toolbar */}
@@ -64,7 +69,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
           {SORT_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label[lang] ?? o.label.en}</option>)}
         </select>
 
-        {selected.size > 0 && (
+        {selected.size > 0 && !readOnly && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'var(--bg2)', padding: '4px 12px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx1)' }}>{selected.size} {t.nSelected}</span>
             <button onClick={bulkDone} style={{ fontSize: 12, padding: '3px 8px', color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>✓ Toggle</button>
@@ -77,7 +82,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
       </div>
 
       {secs.map(sec => {
-        const all      = tasks.filter(task => task.sec === sec)
+        const all      = visibleTasks.filter(task => task.sec === sec)
         const filtered = sortTasks(applyFilters(all, filters), sortBy)
         const isC      = collapsed[sec]
 
@@ -104,10 +109,10 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                         borderRadius: 'var(--r1)', borderBottom: '1px solid var(--bd3)',
                         background: isSel ? 'color-mix(in srgb, var(--c-brand) 8%, transparent)' : undefined,
                       }}>
-                      <input type="checkbox" checked={isSel} onChange={e => toggleSel(task.id, e)}
+                      <input type="checkbox" checked={isSel} onChange={e => toggleSel(task.id, e)} disabled={readOnly}
                         onClick={e => e.stopPropagation()}
-                        style={{ width: 14, height: 14, accentColor: 'var(--c-brand)', cursor: 'pointer', flexShrink: 0 }} />
-                      <Checkbox done={task.done} onToggle={(e) => { e?.stopPropagation?.(); onToggle(task.id) }} size={15} />
+                        style={{ width: 14, height: 14, accentColor: 'var(--c-brand)', cursor: readOnly ? 'default' : 'pointer', flexShrink: 0, opacity: readOnly ? 0.5 : 1 }} />
+                      <Checkbox done={task.done} onToggle={(e) => { e?.stopPropagation?.(); onToggle(task.id) }} size={15} disabled={readOnly} />
                       <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: task.done ? 'var(--tx3)' : 'var(--tx1)', textDecoration: task.done ? 'line-through' : 'none' }}>
                         {highlight(task.title, q)}
                         {isBlocked && <span style={{ color: 'var(--c-warning)', fontSize: 12 }}>⊘</span>}
@@ -132,7 +137,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                   <div style={{ padding: '12px 10px', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>{t.emptySection ?? 'No tasks yet'}</div>
                 )}
 
-                {addIn === sec ? (
+                {!readOnly && (addIn === sec ? (
                   <div style={{ padding: '6px 10px', display: 'flex', gap: 5 }}>
                     <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t.addTaskTitle}
                       style={{ flex: 1, fontSize: 14 }} autoFocus
@@ -146,7 +151,7 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                     style={{ padding: '6px 10px', color: 'var(--tx3)', fontSize: 14 }}>
                     + {t.add}
                   </div>
-                )}
+                ))}
               </>
             )}
           </div>

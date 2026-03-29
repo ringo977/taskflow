@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
+import { canEditTasks } from '@/utils/permissions'
 
-export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, currentUser, defaultDue, templates = [] }) {
+export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, currentUser, defaultDue, templates = [], project, myProjectRoles = {} }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
+  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const canCreate = canEditTasks(projectRole)
   const [title,     setTitle]     = useState('')
   const [sec,       setSec]       = useState(secs[0] ?? '')
   const [who,       setWho]       = useState(() =>
@@ -28,6 +31,12 @@ export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, cur
   const applyTemplate = (template) => {
     setTitle(template.title || '')
     setPri(template.pri || 'medium')
+    // Apply description if available
+    // Note: No description state in AddModal, would need to be added if needed
+    // Clear dates between templates
+    setStartDate('')
+    setDue('')
+    // Note: Subtasks not supported in AddModal form
     setSelectedTemplate(template.id)
   }
 
@@ -94,9 +103,15 @@ export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, cur
           )}
         </div>
 
+        {!canCreate && (
+          <div style={{ padding: '10px 12px', background: 'color-mix(in srgb, var(--c-warning) 12%, transparent)', borderRadius: 'var(--r1)', border: '1px solid var(--c-warning)', color: 'var(--c-warning)', fontSize: 12 }}>
+            You don't have permission to create tasks in this project.
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 7, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ fontSize: 13, padding: '5px 14px' }}>{t.cancel}</button>
-          <button onClick={commit} style={{ fontSize: 13, padding: '8px 18px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 600 }}>
+          <button onClick={commit} disabled={!canCreate} style={{ fontSize: 13, padding: '8px 18px', background: canCreate ? 'var(--tx1)' : 'var(--tx3)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: canCreate ? 'pointer' : 'default', fontWeight: 600, opacity: canCreate ? 1 : 0.5 }}>
             {t.add}
           </button>
         </div>

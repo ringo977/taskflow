@@ -115,7 +115,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   }
 
   const cycleSize = (widgetId) => {
-    const sizeOrder = ['half', 'full', 'half']
+    const sizeOrder = ['half', 'full']
     setLayout(prev => prev.map(w => {
       if (w.id === widgetId) {
         const currentIdx = sizeOrder.indexOf(w.size)

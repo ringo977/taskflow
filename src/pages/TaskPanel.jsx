@@ -4,6 +4,7 @@ import { isOverdue } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { uploadAttachment, deleteAttachment } from '@/lib/db'
+import { canEditTasks } from '@/utils/permissions'
 import Avatar from '@/components/Avatar'
 // eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
@@ -29,6 +30,8 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const isManager = me?.role === 'manager'
   const canDelete = isAdmin || (isManager && myProjectRoles[task.pid] === 'owner')
   const ov   = isOverdue(task.due) && !task.done
+  const projectRole = myProjectRoles[task.pid] ?? 'viewer'
+  const readOnly = !canEditTasks(projectRole)
 
   const deps = (task.deps ?? []).map(id => allTasks.find(t => t.id === id)).filter(Boolean)
   const blockers = allTasks.filter(t => (t.deps ?? []).includes(task.id))
@@ -98,14 +101,19 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
             {t.blocked}
           </span>
         )}
+        {readOnly && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx3)', background: 'color-mix(in srgb, var(--tx3) 12%, transparent)', padding: '2px 8px', borderRadius: 'var(--r1)' }}>
+            View only
+          </span>
+        )}
         <Badge pri={task.pri} />
         <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--tx3)', padding: '4px 6px', lineHeight: 1, borderRadius: 'var(--r1)' }}>✕</button>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '18px 20px' }}>
         {/* Title */}
-        <div contentEditable suppressContentEditableWarning
-          style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx1)', marginBottom: 16, outline: 'none', lineHeight: 1.5, letterSpacing: '-0.01em' }}
+        <div contentEditable={!readOnly} suppressContentEditableWarning
+          style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx1)', marginBottom: 16, outline: 'none', lineHeight: 1.5, letterSpacing: '-0.01em', opacity: readOnly ? 0.7 : 1 }}
           onBlur={e => onUpd(task.id, { title: e.target.innerText.trim() })}>
           {task.title}
         </div>
@@ -121,7 +129,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
                 <button onClick={() => {
                   const arr = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
                   onUpd(task.id, { who: arr.filter(n => n !== name) })
-                }} style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', lineHeight: 1 }}>✕</button>
+                }} disabled={readOnly} style={{ border: 'none', background: 'transparent', color: readOnly ? 'var(--tx3)' : 'var(--tx3)', cursor: readOnly ? 'default' : 'pointer', fontSize: 12, padding: '0 2px', lineHeight: 1, opacity: readOnly ? 0.5 : 1 }}>✕</button>
               </span>
             ))}
             <select
@@ -132,7 +140,8 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
                 if (!arr.includes(e.target.value)) onUpd(task.id, { who: [...arr, e.target.value] })
                 e.target.value = ''
               }}
-              style={{ fontSize: 12, padding: '3px 6px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer' }}
+              disabled={readOnly}
+              style={{ fontSize: 12, padding: '3px 6px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'transparent', color: 'var(--tx2)', cursor: readOnly ? 'default' : 'pointer', opacity: readOnly ? 0.5 : 1 }}
             >
               <option value="">+</option>
               {orgUsers.filter(u => !(Array.isArray(task.who) ? task.who : task.who ? [task.who] : []).includes(u.name)).map(u => (
@@ -142,19 +151,19 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
           </div>
 
           <span style={{ color: 'var(--tx3)' }}>{t.startDate}</span>
-          <input type="date" value={task.startDate ?? ''} onChange={e => onUpd(task.id, { startDate: e.target.value || null })}
-            style={{ fontSize: 13, padding: '4px 8px', width: 'auto' }} />
+          <input type="date" value={task.startDate ?? ''} onChange={e => onUpd(task.id, { startDate: e.target.value || null })} disabled={readOnly}
+            style={{ fontSize: 13, padding: '4px 8px', width: 'auto', opacity: readOnly ? 0.5 : 1 }} />
 
           <span style={{ color: 'var(--tx3)' }}>{t.dueDate}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="date" value={task.due ?? ''} onChange={e => onUpd(task.id, { due: e.target.value || null })}
-              style={{ fontSize: 13, padding: '4px 8px', width: 'auto', color: ov ? 'var(--c-danger)' : 'var(--tx1)' }} />
+            <input type="date" value={task.due ?? ''} onChange={e => onUpd(task.id, { due: e.target.value || null })} disabled={readOnly}
+              style={{ fontSize: 13, padding: '4px 8px', width: 'auto', color: ov ? 'var(--c-danger)' : 'var(--tx1)', opacity: readOnly ? 0.5 : 1 }} />
             {ov && <span style={{ fontSize: 13, color: 'var(--c-danger)' }}>⚠</span>}
           </div>
 
           <span style={{ color: 'var(--tx3)' }}>{t.recurrence}</span>
-          <select value={task.recurrence ?? 'none'} onChange={e => onUpd(task.id, { recurrence: e.target.value === 'none' ? null : e.target.value })}
-            style={{ fontSize: 13, padding: '4px 8px' }}>
+          <select value={task.recurrence ?? 'none'} onChange={e => onUpd(task.id, { recurrence: e.target.value === 'none' ? null : e.target.value })} disabled={readOnly}
+            style={{ fontSize: 13, padding: '4px 8px', opacity: readOnly ? 0.5 : 1 }}>
             <option value="none">{t.recNone}</option>
             <option value="daily">{t.recDaily}</option>
             <option value="weekly">{t.recWeekly}</option>
@@ -162,9 +171,9 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
           </select>
 
           <span style={{ color: 'var(--tx3)' }}>{t.milestone ?? 'Milestone'}</span>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: readOnly ? 'default' : 'pointer', fontSize: 13, opacity: readOnly ? 0.5 : 1 }}>
             <input type="checkbox" checked={task.milestone ?? false}
-              onChange={e => onUpd(task.id, { milestone: e.target.checked })}
+              onChange={e => onUpd(task.id, { milestone: e.target.checked })} disabled={readOnly}
               style={{ accentColor: 'var(--c-brand)' }} />
             <span style={{ color: 'var(--tx2)' }}>{task.milestone ? (t.milestoneYes ?? 'Yes') : (t.milestoneNo ?? 'No')}</span>
           </label>
@@ -174,8 +183,8 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
 
           <span style={{ color: 'var(--tx3)' }}>{t.taskVisibility ?? 'Visibility'}</span>
           <select value={task.visibility ?? 'all'}
-            onChange={e => onUpd(task.id, { visibility: e.target.value })}
-            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)' }}>
+            onChange={e => onUpd(task.id, { visibility: e.target.value })} disabled={readOnly}
+            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)', opacity: readOnly ? 0.5 : 1 }}>
             <option value="all">{t.visibilityAll ?? 'Everyone'}</option>
             <option value="assignees">{t.visibilityAssignees ?? 'Assignees only'}</option>
           </select>
@@ -185,7 +194,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
         <TagsSection task={task} allTasks={allTasks} onUpd={onUpd} sectionTitle={sectionTitle} t={t} />
 
         {/* Custom fields */}
-        <CustomFieldsSection task={task} project={proj} onUpd={onUpd} sectionTitle={sectionTitle} t={t} />
+        <CustomFieldsSection task={task} project={proj} onUpd={onUpd} sectionTitle={sectionTitle} t={t} readOnly={readOnly} />
 
         {/* Dependencies */}
         <div style={{ marginBottom: 20 }}>
@@ -257,15 +266,15 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
         {/* Description */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ ...sectionTitle, marginBottom: 6 }}>{t.description}</div>
-          <div contentEditable suppressContentEditableWarning
-            style={{ fontSize: 14, color: task.desc ? 'var(--tx2)' : 'var(--tx3)', outline: 'none', lineHeight: 1.65, minHeight: 32 }}
+          <div contentEditable={!readOnly} suppressContentEditableWarning
+            style={{ fontSize: 14, color: task.desc ? 'var(--tx2)' : 'var(--tx3)', outline: 'none', lineHeight: 1.65, minHeight: 32, opacity: readOnly ? 0.7 : 1 }}
             onBlur={e => onUpd(task.id, { desc: e.target.innerText })}>
             {task.desc || t.addDesc}
           </div>
         </div>
 
         {/* Attachments */}
-        <AttachmentsSection task={task} orgId={orgId} onUpd={onUpd} sectionTitle={sectionTitle} t={t} />
+        <AttachmentsSection task={task} orgId={orgId} onUpd={onUpd} sectionTitle={sectionTitle} t={t} readOnly={readOnly} />
 
         {/* Activity log */}
         <ActivityLog activity={task.activity ?? []} sectionTitle={sectionTitle} t={t} />
@@ -294,9 +303,9 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
             </div>
           ))}
           <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <input value={ns} onChange={e => setNs(e.target.value)} placeholder={t.addSub}
-              style={{ flex: 1, fontSize: 13 }} onKeyDown={e => e.key === 'Enter' && addSub()} />
-            <button onClick={addSub} style={{ fontSize: 13, padding: '5px 10px' }}>+</button>
+            <input value={ns} onChange={e => setNs(e.target.value)} placeholder={t.addSub} disabled={readOnly}
+              style={{ flex: 1, fontSize: 13, opacity: readOnly ? 0.5 : 1 }} onKeyDown={e => e.key === 'Enter' && addSub()} />
+            <button onClick={addSub} disabled={readOnly} style={{ fontSize: 13, padding: '5px 10px', opacity: readOnly ? 0.5 : 1 }}>+</button>
           </div>
         </div>
 
@@ -318,12 +327,13 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
               <input ref={commentRef} value={nc}
                 onChange={e => { setNc(e.target.value); handleMentionInput(e.target.value, e.target.selectionStart) }}
                 placeholder={`${t.addComment} (@${t.mention})`}
-                style={{ flex: 1, fontSize: 13 }}
+                disabled={readOnly}
+                style={{ flex: 1, fontSize: 13, opacity: readOnly ? 0.5 : 1 }}
                 onKeyDown={e => {
                   if (mentionQuery !== null && e.key === 'Escape') { setMentionQuery(null); return }
                   if (e.key === 'Enter' && mentionQuery === null) addCmt()
                 }} />
-              <button onClick={addCmt} style={{ fontSize: 13, padding: '5px 12px' }}>{t.send}</button>
+              <button onClick={addCmt} disabled={readOnly} style={{ fontSize: 13, padding: '5px 12px', opacity: readOnly ? 0.5 : 1 }}>{t.send}</button>
             </div>
             {mentionQuery !== null && (
               <MentionPopup query={mentionQuery.text} users={orgUsers} onSelect={name => insertMention(name)} onClose={() => setMentionQuery(null)} />
@@ -353,7 +363,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   )
 }
 
-function AttachmentsSection({ task, orgId, onUpd, sectionTitle, t }) {
+function AttachmentsSection({ task, orgId, onUpd, sectionTitle, t, readOnly }) {
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const attachments = task.attachments ?? []
@@ -402,8 +412,8 @@ function AttachmentsSection({ task, orgId, onUpd, sectionTitle, t }) {
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={sectionTitle}>{t.attachments}{attachments.length > 0 ? ` (${attachments.length})` : ''}</div>
-        <button onClick={() => fileRef.current?.click()} disabled={uploading}
-          style={{ fontSize: 12, padding: '5px 10px', color: 'var(--c-brand)', borderColor: 'var(--c-brand)', opacity: uploading ? 0.5 : 1 }}>
+        <button onClick={() => fileRef.current?.click()} disabled={uploading || readOnly}
+          style={{ fontSize: 12, padding: '5px 10px', color: readOnly ? 'var(--tx3)' : 'var(--c-brand)', borderColor: readOnly ? 'var(--tx3)' : 'var(--c-brand)', opacity: uploading || readOnly ? 0.5 : 1 }}>
           {uploading ? '…' : `+ ${t.addAttachment}`}
         </button>
         <input ref={fileRef} type="file" multiple onChange={handleFiles} style={{ display: 'none' }} />
@@ -428,7 +438,7 @@ function AttachmentsSection({ task, orgId, onUpd, sectionTitle, t }) {
   )
 }
 
-function CustomFieldsSection({ task, project, onUpd, sectionTitle, t }) {
+function CustomFieldsSection({ task, project, onUpd, sectionTitle, t, readOnly }) {
   const fields = project?.customFields ?? []
   const values = task.customValues ?? {}
   if (!fields.length) return null
@@ -445,16 +455,16 @@ function CustomFieldsSection({ task, project, onUpd, sectionTitle, t }) {
           <div key={f.id} style={{ display: 'contents' }}>
             <span style={{ color: 'var(--tx3)', alignSelf: 'center' }}>{f.name}</span>
             {f.type === 'text' && (
-              <input value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)}
-                style={{ fontSize: 12, padding: '4px 8px' }} />
+              <input value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)} disabled={readOnly}
+                style={{ fontSize: 12, padding: '4px 8px', opacity: readOnly ? 0.5 : 1 }} />
             )}
             {f.type === 'number' && (
-              <input type="number" value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)}
-                style={{ fontSize: 12, padding: '4px 8px', width: 100 }} />
+              <input type="number" value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)} disabled={readOnly}
+                style={{ fontSize: 12, padding: '4px 8px', width: 100, opacity: readOnly ? 0.5 : 1 }} />
             )}
             {f.type === 'select' && (
-              <select value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)}
-                style={{ fontSize: 12, padding: '4px 8px' }}>
+              <select value={values[f.id] ?? ''} onChange={e => setVal(f.id, e.target.value)} disabled={readOnly}
+                style={{ fontSize: 12, padding: '4px 8px', opacity: readOnly ? 0.5 : 1 }}>
                 <option value="">—</option>
                 {(f.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
               </select>

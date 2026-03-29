@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useLang } from '@/i18n'
-import { applyFilters, isOverdue } from '@/utils/filters'
+import { applyFilters, isOverdue, applyVisibilityFilter } from '@/utils/filters'
 
 const PRI_DOTS = { high: 'var(--c-danger)', medium: 'var(--c-warning)', low: 'var(--c-lime)' }
 const PRI_LABELS = { high: '🔴', medium: '🟡', low: '🟢' }
@@ -14,7 +14,7 @@ function getMonday(d) {
   return copy
 }
 
-export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove, onUpd, onAddTaskOnDate, filters, lang: _lang }) {
+export default function CalendarView({ tasks, projects, project, currentUser, myProjectRoles: _myProjectRoles = {}, onOpen, onMove: _onMove, onUpd, onAddTaskOnDate, filters, lang: _lang }) {
   const t = useLang()
   const today = new Date()
   const todayStr = toDS(today)
@@ -26,7 +26,8 @@ export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove,
   const [dropTarget, setDropTarget] = useState(null) // date string
   const hoverTimer = useRef(null)
 
-  const filtered = useMemo(() => applyFilters(tasks, filters), [tasks, filters])
+  const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+  const filtered = useMemo(() => applyFilters(visibleTasks, filters), [visibleTasks, filters])
 
   const byDate = useMemo(() => {
     const map = {}
@@ -425,7 +426,7 @@ export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove,
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)', marginBottom: 6, lineHeight: 1.4 }}>{hoverTask.title}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11, color: 'var(--tx3)' }}>
             {hoverTask.pri && <span>{PRI_LABELS[hoverTask.pri] ?? ''} {hoverTask.pri}</span>}
-            {hoverTask.who && <span>👤 {hoverTask.who}</span>}
+            {hoverTask.who && <span>👤 {Array.isArray(hoverTask.who) ? hoverTask.who.join(', ') : hoverTask.who}</span>}
             {hoverTask.subs?.length > 0 && <span>✓ {hoverTask.subs.filter(s => s.done).length}/{hoverTask.subs.length}</span>}
             {hoverTask.approval?.status && <span style={{ textTransform: 'capitalize' }}>{hoverTask.approval.status.replace('_', ' ')}</span>}
             {hoverTask.timeEntries?.length > 0 && <span>⏱ {hoverTask.timeEntries.reduce((s, e) => s + (e.duration ?? 0), 0)}m</span>}

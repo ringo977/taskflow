@@ -42,7 +42,7 @@ function ProjectContent({
         onAddTask={() => { setAddDue(''); setShowAdd(true) }}
         onSummary={() => getSum(proj?.name, pTasks)}
         onExport={() => {
-          import('@/utils/exportCsv').then(m => m.exportTasksCsv(pTasks, proj?.name, proj?.customFields))
+          import('@/utils/exportCsv').then(m => m.exportTasksCsv(pTasks, proj?.name, proj?.customFields, proj, user?.name))
         }}
         portfolios={ports}
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
@@ -60,23 +60,23 @@ function ProjectContent({
           myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />
       )}
       {view === 'board' && (
-        <BoardView tasks={pTasks} secs={pSecs} onOpen={setSelId} onToggle={togTask}
+        <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
           onMove={moveTask} onReorder={reorderTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
           onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} />
       )}
       {view === 'lista' && (
-        <ListView tasks={pTasks} secs={pSecs} project={proj} onOpen={setSelId}
+        <ListView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}
           onToggle={togTask} onMove={moveTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
           filters={filters} lang={lang} />
       )}
       {view === 'timeline' && (
-        <TimelineView tasks={pTasks} secs={pSecs} projects={projs}
+        <TimelineView tasks={pTasks} secs={pSecs} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles}
           onOpen={setSelId} onUpd={updTask} filters={filters} lang={lang} />
       )}
       {view === 'calendario' && (
-        <CalendarView tasks={tasks} projects={projs} onOpen={setSelId}
+        <CalendarView tasks={tasks} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}
           onUpd={updTask} onAddTaskOnDate={openAddOnDate} filters={filters} lang={lang} />
       )}
     </>

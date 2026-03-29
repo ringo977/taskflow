@@ -237,6 +237,7 @@ const en = {
   ruleActEmail: 'Send email',
   ruleWebhookUrl: 'Webhook URL',
   ruleWebhookSecret: 'Secret header (optional)',
+  ruleWebhookLocalWarning: 'Warning: URL points to a local/private address',
   ruleEmailTo: 'Recipient email',
   ruleEmailSubject: 'Subject',
   ruleEmailBody: 'Body',

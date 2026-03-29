@@ -1,10 +1,13 @@
 import { useState, useRef, useCallback } from 'react'
 import { useLang } from '@/i18n'
-import { applyFilters } from '@/utils/filters'
+import { applyFilters, applyVisibilityFilter } from '@/utils/filters'
+import { canEditTasks } from '@/utils/permissions'
 import TaskCard from '@/components/TaskCard'
 
-export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang }) {
+export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang }) {
   const t = useLang()
+  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const readOnly = !canEditTasks(projectRole)
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)
   const [dropIdx, setDropIdx] = useState(null)
@@ -62,13 +65,15 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
     return refs.length
   }, [])
 
+  const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+
   const handleDrop = (sec, e) => {
     e.preventDefault()
-    if (!drag) return
-    const dragTask = tasks.find(t => t.id === drag)
+    if (!drag || readOnly) return
+    const dragTask = visibleTasks.find(t => t.id === drag)
     if (!dragTask) return
 
-    const _filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
+    const _filtered = applyFilters(visibleTasks.filter(t => t.sec === sec), filters)
     const idx = getDropIndex(sec, e.clientY)
 
     if (dragTask.sec !== sec) {
@@ -95,8 +100,8 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
     `}</style>
     <div className="board-container" style={{ display: 'flex', gap: 14, padding: 18, overflow: 'auto', flex: 1, alignItems: 'flex-start' }}>
       {secs.map(sec => {
-        const filtered = applyFilters(tasks.filter(t => t.sec === sec), filters)
-        const total    = tasks.filter(t => t.sec === sec).length
+        const filtered = applyFilters(visibleTasks.filter(t => t.sec === sec), filters)
+        const total    = visibleTasks.filter(t => t.sec === sec).length
         const isOver   = over === sec
 
         cardRefs.current[sec] = []
@@ -121,14 +126,14 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               {editingSec === sec ? (
-                <input value={editSecName} onChange={e => setEditSecName(e.target.value)} autoFocus
+                <input value={editSecName} onChange={e => setEditSecName(e.target.value)} autoFocus disabled={readOnly}
                   style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1, padding: '2px 4px' }}
                   onKeyDown={e => { if (e.key === 'Enter') renameSec(sec); if (e.key === 'Escape') setEditingSec(null) }}
                   onBlur={() => renameSec(sec)} />
               ) : (
-                <span onDoubleClick={() => { setEditingSec(sec); setEditSecName(sec) }}
-                  style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'default', flex: 1 }}
-                  title={t.dblClickRename}>
+                <span onDoubleClick={() => { if (!readOnly) { setEditingSec(sec); setEditSecName(sec) } }}
+                  style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.06em', cursor: readOnly ? 'default' : 'default', flex: 1 }}
+                  title={readOnly ? '' : t.dblClickRename}>
                   {sec}
                 </span>
               )}
@@ -137,8 +142,8 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                   {q ? `${filtered.length}/${total}` : total}
                 </span>
                 {secs.length > 1 && (
-                  <button aria-label="Delete section" onClick={() => deleteSec(sec)} title={t.deleteSection}
-                    style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontSize: 13, padding: '2px 4px', lineHeight: 1, opacity: 0.5 }}>✕</button>
+                  <button aria-label="Delete section" onClick={() => deleteSec(sec)} disabled={readOnly} title={readOnly ? '' : t.deleteSection}
+                    style={{ border: 'none', background: 'transparent', color: readOnly ? 'var(--tx3)' : 'var(--tx3)', cursor: readOnly ? 'default' : 'pointer', fontSize: 13, padding: '2px 4px', lineHeight: 1, opacity: readOnly ? 0.3 : 0.5 }}>✕</button>
                 )}
               </div>
             </div>
@@ -150,8 +155,8 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                 )}
                 <div ref={el => { if (el) cardRefs.current[sec][i] = el }}
                   className="board-card"
-                  draggable onDragStart={() => setDrag(task.id)} onDragEnd={() => { setDrag(null); setOver(null); setDropIdx(null) }}
-                  style={{ opacity: drag === task.id ? 0.4 : 1, cursor: 'grab', animationDelay: `${i * 30}ms` }}>
+                  draggable={!readOnly} onDragStart={() => setDrag(task.id)} onDragEnd={() => { setDrag(null); setOver(null); setDropIdx(null) }}
+                  style={{ opacity: drag === task.id ? 0.4 : 1, cursor: readOnly ? 'default' : 'grab', animationDelay: `${i * 30}ms` }}>
                   <TaskCard
                     task={task}
                     onOpen={onOpen}
@@ -173,7 +178,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
               </div>
             )}
 
-            {addIn === sec ? (
+            {addIn === sec && !readOnly ? (
               <div style={{ marginTop: 4 }}>
                 <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t.addTaskTitle}
                   style={{ width: '100%', fontSize: 14, marginBottom: 5 }} autoFocus
@@ -183,7 +188,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
                   <button aria-label="Cancel" onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
                 </div>
               </div>
-            ) : (
+            ) : !readOnly && (
               <div className="row-interactive" onClick={() => setAddIn(sec)}
                 style={{ padding: '6px 10px', borderRadius: 'var(--r1)', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--tx3)', fontSize: 14 }}>
                 <span style={{ fontSize: 17, lineHeight: 1 }}>+</span>{t.add}
@@ -194,7 +199,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
       })}
 
       {/* Add section column */}
-      {addingSec ? (
+      {!readOnly && (addingSec ? (
         <div style={{ minWidth: 280, width: 280, flexShrink: 0, padding: 10, background: 'var(--bg2)', borderRadius: 'var(--r2)', border: '1px dashed var(--bd3)' }}>
           <input value={newSecName} onChange={e => setNewSecName(e.target.value)} autoFocus
             placeholder={t.sectionNamePlaceholder}
@@ -211,7 +216,7 @@ export default function BoardView({ tasks, secs, onOpen, onToggle, onMove, onReo
           style={{ minWidth: 280, width: 280, flexShrink: 0, padding: '14px 10px', borderRadius: 'var(--r2)', border: '1px dashed var(--bd3)', textAlign: 'center', color: 'var(--tx3)', fontSize: 14, cursor: 'pointer' }}>
           + {t.addSectionLabel}
         </div>
-      )}
+      ))}
     </div>
     </>
   )

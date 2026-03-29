@@ -237,6 +237,7 @@ const it = {
   ruleActEmail: 'Invia email',
   ruleWebhookUrl: 'URL webhook',
   ruleWebhookSecret: 'Header segreto (opzionale)',
+  ruleWebhookLocalWarning: 'Attenzione: URL punta a un indirizzo locale/privato',
   ruleEmailTo: 'Email destinatario',
   ruleEmailSubject: 'Oggetto',
   ruleEmailBody: 'Corpo',

@@ -37,6 +37,7 @@ function SaveTemplateButton({ tasks, proj, onUpdProject, t }) {
       title: task.title,
       desc: task.desc ?? '',
       pri: task.pri,
+      milestone: task.milestone ?? false,
       subs: (task.subs ?? []).map(s => ({ t: s.t })),
       tags: task.tags ?? [],
     }
@@ -404,6 +405,14 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
             </div>
             <select
               value={m.role ?? 'viewer'}
+              onChange={async e => {
+                const newRole = e.target.value
+                setBusy(true)
+                try {
+                  await addProjectMember(projectId, m.user_id, newRole)
+                } catch {}
+                finally { setBusy(false) }
+              }}
               disabled={!canManage || m.role === 'owner'}
               style={{ fontSize: 11, padding: '2px 4px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: canManage && m.role !== 'owner' ? 'pointer' : 'not-allowed', opacity: canManage && m.role !== 'owner' ? 1 : 0.6 }}
             >

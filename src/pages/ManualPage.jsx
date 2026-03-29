@@ -1093,10 +1093,18 @@ export default function ManualPage() {
   const [activeSection, setActiveSection] = useState(keys[0])
 
   useEffect(() => {
-    const resolved = theme === 'auto'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : theme
-    document.documentElement.setAttribute('data-theme', resolved)
+    const apply = () => {
+      const resolved = theme === 'auto'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme
+      document.documentElement.setAttribute('data-theme', resolved)
+    }
+    apply()
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    if (theme === 'auto') {
+      mq.addEventListener('change', apply)
+      return () => mq.removeEventListener('change', apply)
+    }
   }, [theme])
 
   const cycleTheme = () => {

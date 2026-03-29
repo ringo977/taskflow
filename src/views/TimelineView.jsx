@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { useLang } from '@/i18n'
-import { isOverdue, applyFilters } from '@/utils/filters'
+import { isOverdue, applyFilters, applyVisibilityFilter } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
@@ -23,7 +23,7 @@ function addDays(dateStr, days) {
   return d.toISOString().slice(0, 10)
 }
 
-export default function TimelineView({ tasks, secs, projects, onOpen, onUpd, filters, lang }) {
+export default function TimelineView({ tasks, secs, projects, project, currentUser, myProjectRoles: _myProjectRoles = {}, onOpen, onUpd, filters, lang }) {
   const t = useLang()
   const scrollRef = useRef(null)
   const [zoomIdx, setZoomIdx] = useState(ZOOM_STEPS.indexOf(1))
@@ -43,8 +43,9 @@ export default function TimelineView({ tasks, secs, projects, onOpen, onUpd, fil
 
   const dw = Math.round(BASE_DAY_W * ZOOM_STEPS[zoomIdx])
 
-  // Apply filters
-  const filtered = useMemo(() => filters ? applyFilters(tasks, filters) : tasks, [tasks, filters])
+  // Apply visibility and filters
+  const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+  const filtered = useMemo(() => filters ? applyFilters(visibleTasks, filters) : visibleTasks, [visibleTasks, filters])
   const hasDates = filtered.filter(task => task.due)
 
   const allDates = hasDates.flatMap(task => [task.startDate, task.due].filter(Boolean))

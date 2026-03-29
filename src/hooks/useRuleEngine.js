@@ -130,11 +130,17 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
             task: { id: task.id, title: task.title, who: task.who, pri: task.pri, due: task.due, done: task.done, sec: task.sec },
             timestamp: new Date().toISOString(),
           }
+          const ctrl = new AbortController()
+          const timer = setTimeout(() => ctrl.abort(), 10_000)
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(action.config?.headers ?? {}) },
             body: JSON.stringify(payload),
-          }).catch(() => {/* fire-and-forget */})
+            signal: ctrl.signal,
+          }).catch(err => {
+            if (err.name !== 'AbortError') console.warn('[TaskFlow] Webhook failed:', url, err.message)
+            else console.warn('[TaskFlow] Webhook timeout:', url)
+          }).finally(() => clearTimeout(timer))
         }
         break
       }
@@ -150,12 +156,25 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         if (to) {
           const proxyUrl = import.meta.env.VITE_AI_PROXY_URL
           if (proxyUrl) {
-            const emailUrl = proxyUrl.replace(/\/ai-proxy\/?$/, '/send-email')
+            let emailUrl
+            try {
+              const u = new URL(proxyUrl)
+              u.pathname = u.pathname.replace(/\/ai-proxy\/?$/, '/send-email')
+              emailUrl = u.toString()
+            } catch {
+              emailUrl = proxyUrl.replace(/\/ai-proxy\/?$/, '/send-email')
+            }
+            const ctrl = new AbortController()
+            const timer = setTimeout(() => ctrl.abort(), 10_000)
             fetch(emailUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ to, subject, body }),
-            }).catch(() => {/* fire-and-forget */})
+              signal: ctrl.signal,
+            }).catch(err => {
+              if (err.name !== 'AbortError') console.warn('[TaskFlow] Email send failed:', to, err.message)
+              else console.warn('[TaskFlow] Email send timeout:', to)
+            }).finally(() => clearTimeout(timer))
           }
         }
         break

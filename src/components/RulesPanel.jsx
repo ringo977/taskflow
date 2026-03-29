@@ -538,11 +538,16 @@ function ActionEditor({ action, idx: _idx, sections, t, actLabels, inputStyle, s
             <input value={action.config?.url ?? ''}
               onChange={e => onUpdate({ config: { ...action.config, url: e.target.value } })}
               placeholder="https://hooks.example.com/..." style={inputStyle} />
+            {action.config?.url && /^https?:\/\/(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(action.config.url) && (
+              <div style={{ fontSize: 10, color: 'var(--c-warning)', marginTop: 2 }}>
+                ⚠ {t.ruleWebhookLocalWarning ?? 'Warning: URL points to a local/private address'}
+              </div>
+            )}
           </div>
           <div>
             <label style={labelStyle}>{t.ruleWebhookSecret ?? 'Secret header (optional)'}</label>
             <input value={action.config?.headers?.['X-Webhook-Secret'] ?? ''}
-              onChange={e => onUpdate({ config: { ...action.config, headers: { 'X-Webhook-Secret': e.target.value } } })}
+              onChange={e => onUpdate({ config: { ...action.config, headers: { ...(action.config?.headers ?? {}), 'X-Webhook-Secret': e.target.value } } })}
               placeholder="Bearer token or secret…" style={inputStyle} />
           </div>
         </div>
