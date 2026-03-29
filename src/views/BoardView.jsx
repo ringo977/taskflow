@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, applyVisibilityFilter } from '@/utils/filters'
-import { canEditTasks } from '@/utils/permissions'
+import { getProjectRole, canEditTasks } from '@/utils/permissions'
+import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
 
 export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang }) {
   const t = useLang()
-  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const orgUsers = useOrgUsers()
+  const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
   const readOnly = !canEditTasks(projectRole)
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)

@@ -38,4 +38,11 @@ describe('getInitials', () => {
     expect(getInitials(null)).toBe('?')
     expect(getInitials(undefined)).toBe('?')
   })
+
+  it('returns ? for non-string types (number, object, array)', () => {
+    expect(getInitials(42)).toBe('?')
+    expect(getInitials({})).toBe('?')
+    expect(getInitials(['a', 'b'])).toBe('?')
+    expect(getInitials(true)).toBe('?')
+  })
 })

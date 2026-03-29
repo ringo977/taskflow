@@ -8,12 +8,31 @@ const ROLE_LEVEL = { owner: 3, editor: 2, viewer: 1 }
 
 /**
  * Get the effective role for a user in a project.
- * Org admins are always treated as project owners.
+ *
+ * Resolution order:
+ *   1. Org admin  → always 'owner' (full control on every project)
+ *   2. Explicit project role in project_members → as stored
+ *   3. Org manager/member without explicit project role → 'editor'
+ *      (can work on tasks in any visible project)
+ *   4. Org guest without explicit project role → 'viewer'
+ *   5. Unknown / no org role → 'viewer'
  */
 export function getProjectRole(user, project, orgUsers, myProjectRoles) {
   const orgUser = orgUsers?.find(u => u.name === user?.name || u.email === user?.email)
-  if (orgUser?.role === 'admin') return 'owner'
-  return myProjectRoles?.[project?.id] ?? 'viewer'
+  const orgRole = orgUser?.role // 'admin' | 'manager' | 'member' | 'guest' | undefined
+
+  // 1. Org admins are owners everywhere
+  if (orgRole === 'admin') return 'owner'
+
+  // 2. Explicit project-level role takes precedence
+  const projRole = myProjectRoles?.[project?.id]
+  if (projRole) return projRole
+
+  // 3. Managers and members default to editor (can edit tasks)
+  if (orgRole === 'manager' || orgRole === 'member') return 'editor'
+
+  // 4. Guests default to viewer
+  return 'viewer'
 }
 
 /** Check if user can edit tasks in a project */

@@ -37,9 +37,21 @@ describe('getProjectRole', () => {
     expect(getProjectRole(BOB, PROJECT, orgUsers, { p1: 'editor' })).toBe('editor')
   })
 
-  it('defaults to viewer when no role set', () => {
+  it('org member defaults to editor when no project role set', () => {
     const orgUsers = mkOrgUsers()
-    expect(getProjectRole(BOB, PROJECT, orgUsers, {})).toBe('viewer')
+    expect(getProjectRole(BOB, PROJECT, orgUsers, {})).toBe('editor')
+  })
+
+  it('org manager defaults to editor when no project role set', () => {
+    const orgUsers = [{ name: 'Carol', email: 'carol@lab.it', role: 'manager' }]
+    const carol = mkUser('Carol', 'carol@lab.it')
+    expect(getProjectRole(carol, PROJECT, orgUsers, {})).toBe('editor')
+  })
+
+  it('org guest defaults to viewer when no project role set', () => {
+    const orgUsers = [{ name: 'Guest', email: 'guest@lab.it', role: 'guest' }]
+    const guest = mkUser('Guest', 'guest@lab.it')
+    expect(getProjectRole(guest, PROJECT, orgUsers, {})).toBe('viewer')
   })
 
   it('matches by email when name missing', () => {
@@ -56,12 +68,12 @@ describe('getProjectRole', () => {
     expect(getProjectRole(ALICE, PROJECT, null, { p1: 'editor' })).toBe('editor')
   })
 
-  it('handles null project', () => {
-    expect(getProjectRole(BOB, null, mkOrgUsers(), {})).toBe('viewer')
+  it('handles null project (member defaults to editor)', () => {
+    expect(getProjectRole(BOB, null, mkOrgUsers(), {})).toBe('editor')
   })
 
-  it('handles null myProjectRoles', () => {
-    expect(getProjectRole(BOB, PROJECT, mkOrgUsers(), null)).toBe('viewer')
+  it('handles null myProjectRoles (member defaults to editor)', () => {
+    expect(getProjectRole(BOB, PROJECT, mkOrgUsers(), null)).toBe('editor')
   })
 })
 

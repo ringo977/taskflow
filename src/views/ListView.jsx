@@ -3,7 +3,8 @@ import { useLang } from '@/i18n'
 import { applyFilters, isOverdue, applyVisibilityFilter } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'
 import { fmtDate } from '@/utils/format'
-import { canEditTasks } from '@/utils/permissions'
+import { getProjectRole, canEditTasks } from '@/utils/permissions'
+import { useOrgUsers } from '@/context/OrgUsersCtx'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
@@ -31,7 +32,8 @@ function sortTasks(tasks, sortId) {
 
 export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang }) {
   const t = useLang()
-  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const orgUsers = useOrgUsers()
+  const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
   const readOnly = !canEditTasks(projectRole)
   const [addIn, setAddIn] = useState(null)
   const [newTitle, setNewTitle] = useState('')

@@ -4,7 +4,7 @@ import { isOverdue } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { uploadAttachment, deleteAttachment } from '@/lib/db'
-import { canEditTasks } from '@/utils/permissions'
+import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import Avatar from '@/components/Avatar'
 // eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
@@ -28,9 +28,9 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const me = orgUsers.find(u => u.email === currentUser?.email)
   const isAdmin = me?.role === 'admin'
   const isManager = me?.role === 'manager'
-  const canDelete = isAdmin || (isManager && myProjectRoles[task.pid] === 'owner')
+  const projectRole = getProjectRole(currentUser, proj, orgUsers, myProjectRoles)
+  const canDelete = isAdmin || (isManager && projectRole === 'owner')
   const ov   = isOverdue(task.due) && !task.done
-  const projectRole = myProjectRoles[task.pid] ?? 'viewer'
   const readOnly = !canEditTasks(projectRole)
 
   const deps = (task.deps ?? []).map(id => allTasks.find(t => t.id === id)).filter(Boolean)

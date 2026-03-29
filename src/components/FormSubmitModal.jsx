@@ -126,7 +126,7 @@ export default function FormSubmitModal({ form, sections, onSubmit, onClose }) {
                   style={{ ...fieldInputStyle(field.id), cursor: 'pointer' }}>
                   <option value="">{t.formSelectOption ?? 'Select...'}</option>
                   {(typeof field.options === 'string' ? field.options.split(',') : field.options ?? [])
-                    .map(o => o.trim()).filter(Boolean)
+                    .map(o => (typeof o === 'string' ? o.trim() : String(o))).filter(Boolean)
                     .map(o => <option key={o} value={o}>{o}</option>)
                   }
                 </select>

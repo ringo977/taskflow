@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
-import { canEditTasks } from '@/utils/permissions'
+import { getProjectRole, canEditTasks } from '@/utils/permissions'
 
 export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, currentUser, defaultDue, templates = [], project, myProjectRoles = {} }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
-  const projectRole = project ? (myProjectRoles[project.id] ?? 'viewer') : 'viewer'
+  const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
   const canCreate = canEditTasks(projectRole)
   const [title,     setTitle]     = useState('')
   const [sec,       setSec]       = useState(secs[0] ?? '')
