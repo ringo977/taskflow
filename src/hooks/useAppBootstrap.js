@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { logger } from '@/utils/logger'
 import { storage, seedStorage } from '@/utils/storage'
 import { supabase } from '@/lib/supabase'
 import { getMfaLevel, getFactors } from '@/lib/auth'
@@ -12,6 +13,8 @@ import { useLocalStorageSync } from '@/hooks/useLocalStorageSync'
 import { INITIAL_ORGS } from '@/data/orgs'
 import { seedFor, oget } from '@/constants'
 import { deferAuthWork } from '@/utils/routing'
+
+const log = logger('Bootstrap')
 
 /**
  * useAppBootstrap
@@ -75,7 +78,7 @@ export function useAppBootstrap() {
       secRowsRef.current = await fetchSectionRows(orgId)
       setDbStatus('supabase')
     } catch (e) {
-      console.error('loadOrgData error:', e)
+      log.error('loadOrgData failed:', e)
       setDbStatus('error')
       // Fallback to localStorage
     }
@@ -123,7 +126,7 @@ export function useAppBootstrap() {
   const syncOrgContextFromDb = useCallback(async () => {
     let memberships = []
     try { memberships = await fetchUserOrgIds() } catch (e) {
-      console.warn('syncOrgContextFromDb:', e)
+      log.warn('syncOrgContextFromDb failed:', e.message)
       return
     }
     const memberOrgIds = memberships.map(m => m.org_id)
@@ -210,7 +213,7 @@ export function useAppBootstrap() {
 
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             // 1. Ensure org membership before anything else
-            try { await ensureOrgMembership(u.id) } catch (e) { console.error('ensureOrgMembership:', e) }
+            try { await ensureOrgMembership(u.id) } catch (e) { log.error('ensureOrgMembership failed:', e) }
 
             // 2. Check MFA — don't set user until we know MFA status
             try {
@@ -221,11 +224,11 @@ export function useAppBootstrap() {
                 setUser(userObj)
                 return
               }
-            } catch (e) { console.warn('MFA check:', e) }
+            } catch (e) { log.warn('MFA check failed:', e.message) }
 
             // 3. MFA passed — load everything
             setUser(userObj)
-            try { await initOrgs(u.id) } catch (e) { console.error('initOrgs:', e) }
+            try { await initOrgs(u.id) } catch (e) { log.error('initOrgs failed:', e) }
           } else {
             setUser(userObj)
           }

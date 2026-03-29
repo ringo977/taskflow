@@ -620,7 +620,8 @@ describe('useRuleEngine', () => {
       await vi.advanceTimersByTimeAsync(0)
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Webhook timeout'),
+        '[TaskFlow:RuleEngine]',
+        'Webhook timeout:',
         expect.any(String)
       )
       warnSpy.mockRestore()

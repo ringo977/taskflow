@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
+import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { fetchTrash, restoreItem, permanentlyDelete } from '@/lib/db'
 import ConfirmModal from '@/components/ConfirmModal'
+
+const log = logger('TrashView')
 
 export default function TrashView({ orgId, onReload }) {
   const t = useLang()
@@ -9,7 +12,7 @@ export default function TrashView({ orgId, onReload }) {
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState(null)
 
-  const load = () => fetchTrash(orgId).then(setData).catch(() => {})
+  const load = () => fetchTrash(orgId).then(setData).catch(e => log.warn('fetchTrash failed:', e.message))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [orgId])
 
@@ -19,7 +22,7 @@ export default function TrashView({ orgId, onReload }) {
       await restoreItem(table, id)
       await load()
       onReload?.()
-    } catch {}
+    } catch (e) { log.error('restoreItem failed:', e) }
     finally { setBusy(false) }
   }
 
@@ -28,7 +31,7 @@ export default function TrashView({ orgId, onReload }) {
     try {
       await permanentlyDelete(table, id, orgId)
       await load()
-    } catch {}
+    } catch (e) { log.error('permanentlyDelete failed:', e) }
     finally { setBusy(false); setConfirm(null) }
   }
 

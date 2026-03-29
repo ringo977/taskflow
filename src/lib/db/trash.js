@@ -1,5 +1,7 @@
 import { supabase } from '../supabase'
+import { logger } from '@/utils/logger'
 
+const log = logger('Trash')
 const NOW = () => new Date().toISOString()
 
 // ── Soft delete ─────────────────────────────────────────────────
@@ -48,7 +50,7 @@ export async function permanentlyDelete(table, id, orgId) {
     const { data: taskRows } = await supabase.from('tasks').select('id').eq('org_id', orgId).eq('project_id', id)
     for (const t of taskRows ?? []) await permanentlyDelete('tasks', t.id, orgId)
     await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', id)
-    await supabase.from('project_members').delete().eq('project_id', id).then(() => {}).catch(() => {})
+    await supabase.from('project_members').delete().eq('project_id', id).then(() => {}).catch(e => log.warn('Cleanup project_members failed:', e.message))
   }
   const { error } = await supabase.from(table).delete().eq('id', id)
   if (error) throw error

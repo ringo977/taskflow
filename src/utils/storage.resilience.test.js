@@ -79,7 +79,7 @@ describe('storage resilience', () => {
 
       // Should not throw
       storage.set('big', 'x'.repeat(100))
-      expect(warnSpy).toHaveBeenCalledWith('localStorage write failed:', expect.any(DOMException))
+      expect(warnSpy).toHaveBeenCalledWith('[TaskFlow:Storage] localStorage write failed:', expect.any(DOMException))
 
       proto.setItem = origSetItem
       warnSpy.mockRestore()

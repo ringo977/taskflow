@@ -1,5 +1,8 @@
 import { useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import { generateSubtasks, createTaskFromText, summariseProject, AI_ERROR_MESSAGES } from '@/utils/ai'
+
+const log = logger('AIActions')
 
 /**
  * useAIActions
@@ -36,7 +39,7 @@ export function useAIActions({
       await updTask(task.id, { subs: newSubs })
       toast(tr.msgSubsGenerated(arr.length), 'success')
     } catch (e) {
-      console.error('genSubs:', e)
+      log.error('genSubs failed:', e)
       toast(e.code ? (AI_ERROR_MESSAGES[e.code] ?? tr.msgAIError) : tr.msgAIError, 'error')
     }
     setAiLoad(false)
@@ -54,7 +57,7 @@ export function useAIActions({
       })
       setShowAdd(false)
     } catch (e) {
-      console.error('aiCreate:', e)
+      log.error('aiCreate failed:', e)
       toast(e.code ? (AI_ERROR_MESSAGES[e.code] ?? tr.msgAIError) : tr.msgAIError, 'error')
     }
     setAiLoad(false)

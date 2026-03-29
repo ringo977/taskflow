@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
 import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest, fetchPendingSignups, confirmUserEmail, deleteUserAccount } from '@/lib/db'
 import ConfirmModal from '@/components/ConfirmModal'
 import { getInitials } from '@/utils/initials'
+
+const log = logger('PeopleView')
 
 const ROLES = ['admin', 'manager', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
@@ -40,7 +43,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
         const m = rows.find(r => r.org_id === activeOrgId)
         if (m) setDbRole(m.role)
       })
-      .catch(() => {})
+      .catch(e => log.warn('fetchMyMemberships failed:', e.message))
   }, [activeOrgId])
 
   const isAdmin = currentMember?.role === 'admin' || dbRole === 'admin'
@@ -51,10 +54,10 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
     if (!isAdmin) return
     fetchPendingJoinRequests()
       .then(rows => setPendingReqs(rows.filter(r => r.org_id === activeOrgId)))
-      .catch(() => {})
+      .catch(e => log.warn('fetchPendingJoinRequests failed:', e.message))
     fetchPendingSignups(activeOrgId)
       .then(rows => setPendingSignups(rows))
-      .catch(e => console.error('[PeopleView] fetchPendingSignups error:', e))
+      .catch(e => log.warn('fetchPendingSignups failed:', e.message))
   }, [isAdmin, activeOrgId, busy])
 
   const handleConfirmEmail = async (userId) => {
@@ -119,7 +122,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       flash(t.removeSuccess(u.name))
       refreshUsers()
     } catch (e) {
-      console.error('removeOrgMember failed:', e)
+      log.error('removeOrgMember failed:', e)
       flash(t.removeError + (e?.message ? ` (${e.message})` : ''), 'err')
     }
     finally { setBusy(false) }

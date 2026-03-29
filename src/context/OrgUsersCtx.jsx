@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import { fetchOrgDirectory, fetchMyMemberships } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
 
+const log = logger('OrgUsers')
 const OrgUsersCtx = createContext(null)
 const RefreshCtx = createContext(() => {})
 
@@ -22,7 +24,8 @@ export function OrgUsersProvider({ orgId, children }) {
           currentUserFallback(orgId).then(fb => !cancelled && setUsers(fb))
         }
       })
-      .catch(() => {
+      .catch(e => {
+        log.warn('fetchOrgDirectory failed, using fallback:', e.message)
         if (cancelled) return
         currentUserFallback(orgId).then(fb => !cancelled && setUsers(fb))
       })
@@ -49,7 +52,8 @@ async function currentUserFallback(orgId) {
       role: membership?.role ?? 'member',
       color: '#378ADD',
     }]
-  } catch {
+  } catch (e) {
+    log.warn('currentUserFallback failed:', e.message)
     return []
   }
 }

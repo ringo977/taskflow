@@ -1,5 +1,8 @@
 import { supabase } from '../supabase'
+import { logger } from '@/utils/logger'
 import { signupOrgStorage } from '@/utils/storage'
+
+const log = logger('Org')
 
 // ── RPC-with-fallback helper ────────────────────────────────────
 // Many org operations use an RPC that may not exist yet in all
@@ -93,7 +96,7 @@ export async function ensureOrgMembership(userId) {
     signupOrgStorage.clear()
     return rpcRows
   }
-  if (error) console.warn('ensure_org_membership RPC failed:', error.message)
+  if (error) log.warn('ensure_org_membership RPC failed:', error.message)
   // Fallback to client-side logic
   const memberships = await fetchUserOrgIds()
   if (memberships.length > 0) return memberships
@@ -102,7 +105,7 @@ export async function ensureOrgMembership(userId) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       orgId = user?.user_metadata?.signup_org
-    } catch {}
+    } catch (e) { log.warn('getUser fallback failed:', e.message) }
   }
   orgId = orgId || 'polimi'
   signupOrgStorage.clear()
@@ -110,7 +113,7 @@ export async function ensureOrgMembership(userId) {
     org_id: orgId, user_id: userId, role: 'member',
   })
   if (insErr && insErr.code !== '23505') {
-    console.error('ensureOrgMembership insert failed:', insErr)
+    log.error('ensureOrgMembership insert failed:', insErr)
     throw insErr
   }
   return [{ org_id: orgId, role: 'member' }]

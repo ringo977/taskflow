@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState as useLocalState } from 'react'
+import { logger } from '@/utils/logger'
 import { LangCtx, translations } from '@/i18n'
 import { signOut } from '@/lib/auth'
 import { INITIAL_ORGS } from '@/data/orgs'
@@ -7,6 +8,8 @@ import { INITIAL_ORGS } from '@/data/orgs'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
 import { useUIState } from '@/hooks/useUIState'
 import { useAppActions } from '@/hooks/useAppActions'
+
+const log = logger('App')
 
 // Eagerly loaded layout
 import AuthGate from '@/layout/AuthGate'
@@ -90,7 +93,7 @@ function App() {
     <AuthGate appLoading={appLoading} user={user} needsMfa={needsMfa}
       lang={lang} setLang={setLang} tr={tr}
       onMfaComplete={async () => {
-        try { await initOrgs(user.id) } catch (e) { console.error('post-MFA init:', e) }
+        try { await initOrgs(user.id) } catch (e) { log.error('post-MFA init failed:', e) }
         setNeedsMfa(false)
       }}>
 

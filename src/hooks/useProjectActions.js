@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import {
   upsertProject,
   upsertPortfolio,
@@ -10,6 +11,8 @@ import {
   upsertTask
 } from '@/lib/db'
 import { PROJECT_TEMPLATES } from '@/constants'
+
+const log = logger('ProjectActions')
 
 export const useProjectActions = ({
   projs,
@@ -79,7 +82,7 @@ export const useProjectActions = ({
       setNav('projects')
       try {
         await upsertProject(activeOrgId, newProj)
-        await addProjectMember(id, user.id, 'owner').catch(() => {})
+        await addProjectMember(id, user.id, 'owner').catch(e => log.warn('Auto-add owner failed:', e.message))
         setMyProjectRoles(prev => ({ ...prev, [id]: 'owner' }))
         await upsertSections(activeOrgId, id, secNames)
         secRowsRef.current = await fetchSectionRows(activeOrgId)
@@ -91,7 +94,7 @@ export const useProjectActions = ({
           message: tr.msgDidCreateProject(name)
         })
       } catch (e) {
-        console.error('addProject:', e)
+        log.error('addProject failed:', e)
         // Revert optimistic add
         setProjs(p => p.filter(proj => proj.id !== id))
         setSecs(s => { const n = { ...s }; delete n[id]; return n })
@@ -128,7 +131,7 @@ export const useProjectActions = ({
         await upsertPortfolio(activeOrgId, newPort)
         toast(tr.msgPortfolioCreated(name), 'success')
       } catch (e) {
-        console.error('addPortfolio:', e)
+        log.error('addPortfolio failed:', e)
         toast(tr.msgSaveError, 'error')
       }
     },
@@ -148,7 +151,7 @@ export const useProjectActions = ({
         await dbDeleteProject(activeOrgId, id)
         toast(tr.msgDeleted(p?.name ?? 'Project'), 'success')
       } catch (e) {
-        console.error('delProject:', e)
+        log.error('delProject failed:', e)
         // Revert optimistic delete
         if (p) setProjs(prev => [...prev, p])
         if (prevTasks.length) setTasks(prev => [...prev, ...prevTasks])
@@ -171,7 +174,7 @@ export const useProjectActions = ({
         await dbDeletePortfolio(activeOrgId, id)
         toast(tr.msgDeleted(po?.name ?? 'Portfolio'), 'success')
       } catch (e) {
-        console.error('delPortfolio:', e)
+        log.error('delPortfolio failed:', e)
         // Revert optimistic delete
         if (po) setPorts(prev => [...prev, po])
         if (prevProjs.length) setProjs(prev => prev.map(p => {
@@ -191,7 +194,7 @@ export const useProjectActions = ({
       try {
         if (prev) await upsertProject(activeOrgId, { ...prev, ...patch })
       } catch (e) {
-        console.error('updProj:', e)
+        log.error('updProj failed:', e)
         // Revert optimistic update
         if (prev) setProjs(p => p.map(proj => (proj.id === id ? prev : proj)))
         toast(tr.msgSaveError, 'error')
@@ -231,7 +234,7 @@ export const useProjectActions = ({
           'success'
         )
       } catch (e) {
-        console.error('archivePortfolio:', e)
+        log.error('archivePortfolio failed:', e)
       }
     },
     [ports, setPorts, activeOrgId, toast, tr]

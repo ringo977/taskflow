@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import { supabase } from '@/lib/supabase'
 import {
   upsertTask,
@@ -9,6 +10,8 @@ import {
   deleteTask as dbDeleteTask,
   addProjectMember,
 } from '@/lib/db'
+
+const log = logger('TaskActions')
 
 /**
  * useTaskActions
@@ -50,7 +53,7 @@ export function useTaskActions({
           .or(`display_name.eq.${assigneeName},email.ilike.${assigneeName.split(' ')[0]}%`)
           .limit(1)
           .maybeSingle()
-        if (data) await addProjectMember(projectId, data.id).catch(() => {})
+        if (data) await addProjectMember(projectId, data.id).catch(e => log.warn('Auto-add assignee failed:', e.message))
       } catch {}
     },
     []
@@ -136,7 +139,7 @@ export function useTaskActions({
           }
         }
       } catch (e) {
-        console.error('updTask:', e)
+        log.error('updTask failed:', e)
         // Revert optimistic update
         if (prev) setTasks(p => p.map(t => (t.id === id ? prev : t)))
         toast(tr.msgSaveError, 'error')
@@ -156,7 +159,7 @@ export function useTaskActions({
         done ? tr.msgTaskCompleted(task.title) : tr.msgTaskReopened(task.title),
         () => {
           setTasks(p => p.map(t => (t.id === id ? { ...t, done: prevDone } : t)))
-          updateTaskField(activeOrgId, id, { done: prevDone }).catch(e => console.error(e))
+          updateTaskField(activeOrgId, id, { done: prevDone }).catch(e => log.error('Undo togTask failed:', e))
         }
       )
       try {
@@ -180,7 +183,7 @@ export function useTaskActions({
           }
         }
       } catch (e) {
-        console.error('togTask:', e)
+        log.error('togTask failed:', e)
         // Revert optimistic update
         setTasks(p => p.map(t => (t.id === id ? { ...t, done: prevDone } : t)))
         toast(tr.msgSaveError, 'error')
@@ -200,14 +203,14 @@ export function useTaskActions({
         () => {
           setTasks(p => p.map(t => (t.id === id ? { ...t, sec: prevSec } : t)))
           dbMoveTaskToSection(activeOrgId, id, prevSec, task.pid, secRowsRef.current).catch(e =>
-            console.error(e)
+            log.error('Undo moveTask failed:', e)
           )
         }
       )
       try {
         await dbMoveTaskToSection(activeOrgId, id, sec, task.pid, secRowsRef.current)
       } catch (e) {
-        console.error('moveTask:', e)
+        log.error('moveTask failed:', e)
         // Revert optimistic update
         setTasks(p => p.map(t => (t.id === id ? { ...t, sec: prevSec } : t)))
         toast(tr.msgSaveError, 'error')
@@ -226,7 +229,7 @@ export function useTaskActions({
         const reordered = [...inSec.slice(0, newIndex), { ...task, sec }, ...inSec.slice(newIndex)]
           .map((t, i) => ({ ...t, position: i }))
         updateTaskPositions(reordered.map(t => ({ id: t.id, position: t.position }))).catch(e =>
-          console.error('reorder:', e)
+          log.error('reorder failed:', e)
         )
         return [...others, ...reordered]
       })
@@ -262,7 +265,7 @@ export function useTaskActions({
           taskId: newTask.id,
         })
       } catch (e) {
-        console.error('addTask:', e)
+        log.error('addTask failed:', e)
         // Revert optimistic add
         setTasks(p => p.filter(t => t.id !== newTask.id))
         toast(tr.msgSaveError, 'error')
@@ -279,7 +282,7 @@ export function useTaskActions({
         await dbDeleteTask(activeOrgId, id)
         toast(tr.msgDeleted(task?.title ?? 'Task'), 'success')
       } catch (e) {
-        console.error('delTask:', e)
+        log.error('delTask failed:', e)
         // Revert optimistic delete
         if (task) setTasks(p => [...p, task])
         toast(tr.msgSaveError, 'error')

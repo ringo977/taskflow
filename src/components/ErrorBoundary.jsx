@@ -1,4 +1,7 @@
 import { Component } from 'react'
+import { logger } from '@/utils/logger'
+
+const log = logger('ErrorBoundary')
 
 /**
  * Generic React error boundary.
@@ -26,7 +29,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('[ErrorBoundary]', error, errorInfo)
+    log.error('Uncaught render error:', error, errorInfo)
     this.props.onError?.(error, errorInfo)
   }
 

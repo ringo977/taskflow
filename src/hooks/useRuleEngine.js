@@ -1,4 +1,7 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react'
+import { logger } from '@/utils/logger'
+
+const log = logger('RuleEngine')
 
 /**
  * useRuleEngine
@@ -138,8 +141,8 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
             body: JSON.stringify(payload),
             signal: ctrl.signal,
           }).catch(err => {
-            if (err.name !== 'AbortError') console.warn('[TaskFlow] Webhook failed:', url, err.message)
-            else console.warn('[TaskFlow] Webhook timeout:', url)
+            if (err.name !== 'AbortError') log.warn('Webhook failed:', url, err.message)
+            else log.warn('Webhook timeout:', url)
           }).finally(() => clearTimeout(timer))
         }
         break
@@ -172,8 +175,8 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
               body: JSON.stringify({ to, subject, body }),
               signal: ctrl.signal,
             }).catch(err => {
-              if (err.name !== 'AbortError') console.warn('[TaskFlow] Email send failed:', to, err.message)
-              else console.warn('[TaskFlow] Email send timeout:', to)
+              if (err.name !== 'AbortError') log.warn('Email send failed:', to, err.message)
+              else log.warn('Email send timeout:', to)
             }).finally(() => clearTimeout(timer))
           }
         }

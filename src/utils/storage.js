@@ -22,7 +22,7 @@ export const storage = {
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify(value))
     } catch (e) {
-      console.warn('localStorage write failed:', e)
+      console.warn('[TaskFlow:Storage] localStorage write failed:', e)
     }
   },
 

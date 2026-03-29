@@ -165,6 +165,7 @@ taskflow/
     │   ├── format.js              # fmtDate(), todayStr()
     │   ├── highlight.jsx          # Search term highlighting
     │   ├── initials.js            # User initials extraction
+    │   ├── logger.js               # Structured logging: logger(module) → [TaskFlow:module] prefix + error sink hook
     │   ├── storage.js             # localStorage wrapper (tf_ prefix) + well-known key helpers
     │   ├── routing.js             # parseRoute(), buildPath(), deferAuthWork()
     │   ├── permissions.js          # Role hierarchy + per-project/section/task access checks
@@ -237,6 +238,10 @@ Uses `react-router-dom` v6 with full URL ↔ state sync. Route pattern: `/:nav/:
 `src/utils/ai.js` is a thin client that calls a Supabase Edge Function proxy (`supabase/functions/ai-proxy/`). The proxy holds the Anthropic API key server-side and adds rate limiting (20 req/min per IP), input validation, and 30s timeout handling. No API keys are exposed in the browser.
 
 If the proxy is not configured (`VITE_AI_PROXY_URL` is empty), AI features are gracefully disabled — the UI never breaks.
+
+### Observability and structured logging
+
+All error and warning logs use a centralized `logger(module)` factory (`src/utils/logger.js`) that outputs messages with a `[TaskFlow:module]` prefix for easy filtering. Every error handler across the codebase (hooks, pages, views, context, DB layer) uses this logger — no silent `.catch(() => {})` remain. The logger's `error()` method forwards `Error` objects to an optional external sink via `setErrorSink(fn)`, ready for future Sentry integration. The only exception is `storage.js`, which uses a direct `console.warn` with `[TaskFlow:Storage]` prefix to avoid circular dependencies with the logger.
 
 ### Automation rules
 

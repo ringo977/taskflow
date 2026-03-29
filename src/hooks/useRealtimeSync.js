@@ -1,6 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import { supabase } from '@/lib/supabase'
 import { toTask, toProject } from '@/lib/db/adapters'
+
+const log = logger('RealtimeSync')
 
 /**
  * useRealtimeSync
@@ -102,7 +105,7 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
             return
           }
         } catch (e) {
-          console.warn('realtime INSERT task fetch failed, falling back to reload:', e)
+          log.warn('INSERT task fetch failed, falling back to reload:', e.message)
         }
       }
 
@@ -138,7 +141,7 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
             return
           }
         } catch (e) {
-          console.warn('realtime INSERT project fetch failed, falling back to reload:', e)
+          log.warn('INSERT project fetch failed, falling back to reload:', e.message)
         }
       }
 
@@ -163,7 +166,7 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
           }))
           return
         } catch (e) {
-          console.warn('realtime comment fetch failed, falling back to reload:', e)
+          log.warn('Comment fetch failed, falling back to reload:', e.message)
         }
       }
       debouncedFullReload()

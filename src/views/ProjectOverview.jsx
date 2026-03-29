@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
@@ -15,6 +16,8 @@ import FormsPanel from '@/components/FormsPanel'
 import GoalsPanel from '@/components/GoalsPanel'
 import Badge from '@/components/Badge'
 // reportPdf is loaded lazily on button click to avoid bundling jsPDF (360KB) eagerly
+
+const log = logger('ProjectOverview')
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
@@ -346,7 +349,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
   useEffect(() => {
     fetchProjectMembers(projectId)
       .then(setMembers)
-      .catch(() => {})
+      .catch(e => log.warn('fetchProjectMembers failed:', e.message))
   }, [projectId, busy])
 
   const nonMembers = orgUsers.filter(u => !members.some(m => m.user_id === u.id))
@@ -355,7 +358,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
     setBusy(true)
     try {
       await addProjectMember(projectId, userId)
-    } catch {}
+    } catch (e) { log.warn('addProjectMember failed:', e.message) }
     finally { setBusy(false) }
   }
 
@@ -363,7 +366,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
     setBusy(true)
     try {
       await removeProjectMember(projectId, userId)
-    } catch {}
+    } catch (e) { log.warn('removeProjectMember failed:', e.message) }
     finally { setBusy(false) }
   }
 
@@ -410,7 +413,7 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
                 setBusy(true)
                 try {
                   await addProjectMember(projectId, m.user_id, newRole)
-                } catch {}
+                } catch (e) { log.warn('updateMemberRole failed:', e.message) }
                 finally { setBusy(false) }
               }}
               disabled={!canManage || m.role === 'owner'}

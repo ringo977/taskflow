@@ -78,7 +78,8 @@ describe('useRuleEngine resilience', () => {
 
       // Should not throw — webhook failures are fire-and-forget
       expect(warnSpy).toHaveBeenCalledWith(
-        '[TaskFlow] Webhook failed:',
+        '[TaskFlow:RuleEngine]',
+        'Webhook failed:',
         'https://hooks.example.com/test',
         expect.any(String)
       )
@@ -107,7 +108,8 @@ describe('useRuleEngine resilience', () => {
       await vi.advanceTimersByTimeAsync(100)
 
       expect(warnSpy).toHaveBeenCalledWith(
-        '[TaskFlow] Webhook timeout:',
+        '[TaskFlow:RuleEngine]',
+        'Webhook timeout:',
         'https://hooks.example.com/slow'
       )
       warnSpy.mockRestore()
@@ -238,7 +240,8 @@ describe('useRuleEngine resilience', () => {
       await vi.advanceTimersByTimeAsync(100)
 
       expect(warnSpy).toHaveBeenCalledWith(
-        '[TaskFlow] Email send failed:',
+        '[TaskFlow:RuleEngine]',
+        'Email send failed:',
         'user@test.com',
         expect.any(String)
       )
