@@ -1018,23 +1018,23 @@ function content(lang) {
 const S = {
   page: {
     minHeight: '100vh',
-    background: 'var(--bg0, #0e0e10)',
-    color: 'var(--tx1, #e4e4e7)',
+    background: 'var(--bg3)',
+    color: 'var(--tx1)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif',
     lineHeight: 1.7,
     fontSize: 14,
   },
   header: {
-    borderBottom: '1px solid var(--bd3, #27272a)',
+    borderBottom: '1px solid var(--bd3)',
     padding: '32px 0 24px',
     textAlign: 'center',
   },
   title: {
     fontSize: 28, fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.5px',
-    color: 'var(--tx1, #e4e4e7)',
+    color: 'var(--tx1)',
   },
   subtitle: {
-    fontSize: 14, color: 'var(--tx3, #71717a)', margin: 0, fontWeight: 400,
+    fontSize: 14, color: 'var(--tx3)', margin: 0, fontWeight: 400,
   },
   layout: {
     maxWidth: 900, margin: '0 auto', padding: '0 24px 64px', display: 'flex', gap: 48,
@@ -1048,12 +1048,12 @@ const S = {
   },
   tocTitle: {
     fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px',
-    color: 'var(--tx3, #71717a)', margin: '0 0 12px',
+    color: 'var(--tx3)', margin: '0 0 12px',
   },
   tocLink: (active) => ({
     display: 'block', padding: '4px 10px', borderRadius: 6, fontSize: 13,
-    color: active ? 'var(--tx1, #e4e4e7)' : 'var(--tx3, #71717a)',
-    background: active ? 'var(--bg1, #18181b)' : 'transparent',
+    color: active ? 'var(--tx1)' : 'var(--tx3)',
+    background: active ? 'var(--bg1)' : 'transparent',
     textDecoration: 'none', cursor: 'pointer', fontWeight: active ? 500 : 400,
     transition: 'all 0.15s',
     marginBottom: 2,
@@ -1063,18 +1063,18 @@ const S = {
   },
   sectionTitle: {
     fontSize: 20, fontWeight: 600, margin: '0 0 16px', paddingBottom: 8,
-    borderBottom: '1px solid var(--bd3, #27272a)', color: 'var(--tx1, #e4e4e7)',
+    borderBottom: '1px solid var(--bd3)', color: 'var(--tx1)',
   },
   topBar: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     maxWidth: 900, margin: '0 auto', padding: '0 24px',
   },
   langBtn: {
-    fontSize: 12, fontWeight: 600, padding: '4px 12px', border: '1px solid var(--bd3, #27272a)',
-    borderRadius: 6, color: 'var(--tx3, #71717a)', background: 'transparent', cursor: 'pointer',
+    fontSize: 12, fontWeight: 600, padding: '4px 12px', border: '1px solid var(--bd3)',
+    borderRadius: 6, color: 'var(--tx3)', background: 'transparent', cursor: 'pointer',
   },
   backBtn: {
-    fontSize: 12, color: 'var(--tx3, #71717a)', textDecoration: 'none',
+    fontSize: 12, color: 'var(--tx3)', textDecoration: 'none',
     display: 'flex', alignItems: 'center', gap: 4,
   },
 }
@@ -1132,16 +1132,16 @@ export default function ManualPage() {
       {/* ── Inline styles for tables, kbd, etc. ── */}
       <style>{`
         .manual-body table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13px; }
-        .manual-body th, .manual-body td { padding: 8px 12px; border: 1px solid var(--bd3, #27272a); text-align: left; }
-        .manual-body th { background: var(--bg1, #18181b); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--tx2, #a1a1aa); }
-        .manual-body td { color: var(--tx2, #a1a1aa); }
-        .manual-body h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: var(--tx1, #e4e4e7); }
-        .manual-body p { margin: 0 0 12px; color: var(--tx2, #a1a1aa); }
-        .manual-body ul, .manual-body ol { margin: 0 0 12px; padding-left: 24px; color: var(--tx2, #a1a1aa); }
+        .manual-body th, .manual-body td { padding: 8px 12px; border: 1px solid var(--bd3); text-align: left; }
+        .manual-body th { background: var(--bg1); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--tx2); }
+        .manual-body td { color: var(--tx2); }
+        .manual-body h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: var(--tx1); }
+        .manual-body p { margin: 0 0 12px; color: var(--tx2); }
+        .manual-body ul, .manual-body ol { margin: 0 0 12px; padding-left: 24px; color: var(--tx2); }
         .manual-body li { margin-bottom: 4px; }
-        .manual-body li strong { color: var(--tx1, #e4e4e7); }
-        .manual-body code { background: var(--bg1, #18181b); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--c-brand, #a78bfa); }
-        .manual-body kbd { background: var(--bg1, #18181b); border: 1px solid var(--bd3, #27272a); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'SF Mono', monospace; color: var(--tx1, #e4e4e7); box-shadow: 0 1px 0 var(--bd3, #27272a); }
+        .manual-body li strong { color: var(--tx1); }
+        .manual-body code { background: var(--bg1); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--c-brand); }
+        .manual-body kbd { background: var(--bg1); border: 1px solid var(--bd3); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'SF Mono', monospace; color: var(--tx1); box-shadow: 0 1px 0 var(--bd3); }
         @media (max-width: 768px) { .manual-sidebar { display: none !important; } .manual-layout { gap: 0 !important; } }
       `}</style>
 
@@ -1192,7 +1192,7 @@ export default function ManualPage() {
             <a
               href="#"
               onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              style={{ color: 'var(--tx3, #71717a)', textDecoration: 'none', fontSize: 13 }}
+              style={{ color: 'var(--tx3)', textDecoration: 'none', fontSize: 13 }}
             >
               ↑ {t.backToTop}
             </a>
