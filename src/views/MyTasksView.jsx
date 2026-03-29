@@ -15,7 +15,7 @@ export default function MyTasksView({ tasks, projects, currentUser, filters, onO
   const weEnd = new Date(now); weEnd.setDate(now.getDate() + 7)
   const weStr = weEnd.toISOString().slice(0, 10)
 
-  const mine     = applyFilters(tasks.filter(task => task.who === currentUser.name), filters)
+  const mine     = applyFilters(tasks.filter(task => Array.isArray(task.who) ? task.who.includes(currentUser.name) : task.who === currentUser.name), filters)
   const openMine = mine.filter(task => !task.done)
 
   const groups = [

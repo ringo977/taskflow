@@ -297,7 +297,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const WORKLOAD_THRESHOLD = 8
   const workloadData = useMemo(() => {
     return USERS.map(u => {
-      const open = tasks.filter(tk => tk.who === u.name && !tk.done).length
+      const open = tasks.filter(tk => (Array.isArray(tk.who) ? tk.who.includes(u.name) : tk.who === u.name) && !tk.done).length
       const level = open > WORKLOAD_THRESHOLD ? 'overloaded' : open > WORKLOAD_THRESHOLD / 2 ? 'balanced' : 'light'
       return { name: u.name.split(' ')[0], open, color: u.color, level }
     }).filter(d => d.open > 0).sort((a, b) => b.open - a.open)
@@ -431,7 +431,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
                       <span style={{ fontSize: 11, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: `color-mix(in srgb, ${typeColor} 15%, transparent)`, color: typeColor, flexShrink: 0 }}>{typeIcon}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontWeight: 500 }}>{who ? who.split(' ')[0] : ''}</span>{' '}
+                          <span style={{ fontWeight: 500 }}>{who ? (Array.isArray(who) ? who[0] : who).split(' ')[0] : ''}</span>{' '}
                           <span style={{ color: 'var(--tx3)' }}>{typeLabel}</span>{' '}
                           {act.task.title}
                         </div>
@@ -842,10 +842,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
         <SectionTitle>{t.team}</SectionTitle>
         {USERS.map(u => {
-          const open    = tasks.filter(task => task.who === u.name && !task.done).length
-          const od      = tasks.filter(task => task.who === u.name && !task.done && isOverdue(task.due)).length
-          const pct     = tasks.filter(task => task.who === u.name).length
-            ? Math.round(tasks.filter(task => task.who === u.name && task.done).length / tasks.filter(task => task.who === u.name).length * 100)
+          const whoMatch = task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name
+          const open    = tasks.filter(task => whoMatch(task) && !task.done).length
+          const od      = tasks.filter(task => whoMatch(task) && !task.done && isOverdue(task.due)).length
+          const pct     = tasks.filter(task => whoMatch(task)).length
+            ? Math.round(tasks.filter(task => whoMatch(task) && task.done).length / tasks.filter(task => whoMatch(task)).length * 100)
             : 0
           return (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--bd3)' }}>

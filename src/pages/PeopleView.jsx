@@ -335,7 +335,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       {/* Member cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
         {USERS.map(u => {
-          const userTasks = tasks.filter(task => task.who === u.name)
+          const userTasks = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
           const open      = userTasks.filter(task => !task.done)
           const od        = open.filter(task => isOverdue(task.due))
           const userProjs = [...new Set(userTasks.map(task => task.pid))]
