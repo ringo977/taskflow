@@ -54,7 +54,7 @@ export function useTaskActions({
           .limit(1)
           .maybeSingle()
         if (data) await addProjectMember(projectId, data.id).catch(e => log.warn('Auto-add assignee failed:', e.message))
-      } catch {}
+      } catch (e) { log.warn('autoAddAssigneeToProject lookup failed:', e.message) }
     },
     []
   )

@@ -91,12 +91,12 @@ export function useAppBootstrap() {
     try {
       const { data: { user: u } } = await supabase.auth.getUser()
       signupOrg = u?.user_metadata?.signup_org || null
-    } catch {}
+    } catch (e) { log.warn('getUser metadata failed:', e.message) }
 
     let memberships = []
-    try { memberships = await ensureOrgMembership(userId) } catch {}
+    try { memberships = await ensureOrgMembership(userId) } catch (e) { log.warn('ensureOrgMembership failed:', e.message) }
     if (!memberships.length) {
-      try { memberships = await fetchUserOrgIds() } catch {}
+      try { memberships = await fetchUserOrgIds() } catch (e) { log.warn('fetchUserOrgIds failed:', e.message) }
     }
     if (!memberships.length && signupOrg) {
       memberships = [{ org_id: signupOrg, role: 'member' }]
@@ -138,7 +138,7 @@ export function useAppBootstrap() {
     try {
       const { data: { user: u } } = await supabase.auth.getUser()
       signupOrg = u?.user_metadata?.signup_org || null
-    } catch {}
+    } catch (e) { log.warn('getUser for signup_org failed:', e.message) }
 
     let next = activeOrgIdRef.current
     if (memberOrgIds.length) {
