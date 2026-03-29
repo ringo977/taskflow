@@ -514,4 +514,251 @@ describe('useRuleEngine', () => {
       expect(toast).toHaveBeenCalledWith('Legacy works', 'info')
     })
   })
+
+  // ── Webhook action ──
+
+  describe('webhook action', () => {
+    let fetchSpy
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true })
+    })
+    afterEach(() => {
+      fetchSpy.mockRestore()
+    })
+
+    it('sends POST with correct payload shape', () => {
+      const rule = makeRule('section_change', act1('webhook', {
+        url: 'https://hooks.example.com/test',
+        ruleName: 'Deploy notify',
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      const [url, opts] = fetchSpy.mock.calls[0]
+      expect(url).toBe('https://hooks.example.com/test')
+      expect(opts.method).toBe('POST')
+      expect(opts.headers['Content-Type']).toBe('application/json')
+
+      const body = JSON.parse(opts.body)
+      expect(body.event).toBe('rule_triggered')
+      expect(body.rule).toBe('Deploy notify')
+      expect(body.task).toEqual(expect.objectContaining({
+        id: 't1', title: 'Test Task', who: ['Alice'],
+      }))
+      expect(body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    })
+
+    it('includes custom headers when provided', () => {
+      const rule = makeRule('section_change', act1('webhook', {
+        url: 'https://hooks.example.com/test',
+        headers: { 'X-Webhook-Secret': 's3cret' },
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      const [, opts] = fetchSpy.mock.calls[0]
+      expect(opts.headers['X-Webhook-Secret']).toBe('s3cret')
+    })
+
+    it('does not fetch when url is missing', () => {
+      const rule = makeRule('section_change', act1('webhook', {}))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it('catches fetch errors without throwing', () => {
+      fetchSpy.mockRejectedValue(new Error('Network error'))
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const rule = makeRule('section_change', act1('webhook', {
+        url: 'https://hooks.example.com/fail',
+      }))
+      const { result } = setup([rule])
+
+      expect(() => {
+        act(() => {
+          result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+          vi.advanceTimersByTime(100)
+        })
+      }).not.toThrow()
+
+      warnSpy.mockRestore()
+    })
+
+    it('handles AbortError on timeout', async () => {
+      const abortErr = new DOMException('Aborted', 'AbortError')
+      fetchSpy.mockRejectedValue(abortErr)
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const rule = makeRule('section_change', act1('webhook', {
+        url: 'https://hooks.example.com/slow',
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      // Wait for the catch handler
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Webhook timeout'),
+        expect.any(String)
+      )
+      warnSpy.mockRestore()
+    })
+
+    it('includes task.who as array in payload', () => {
+      const multiTask = { ...TASK, who: ['Alice', 'Bob', 'Charlie'] }
+      const rule = makeRule('section_change', act1('webhook', {
+        url: 'https://hooks.example.com/test',
+      }))
+      const { result } = setup([rule], [multiTask])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, multiTask)
+        vi.advanceTimersByTime(100)
+      })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1].body)
+      expect(body.task.who).toEqual(['Alice', 'Bob', 'Charlie'])
+    })
+  })
+
+  // ── Send email action ──
+
+  describe('send_email action', () => {
+    let fetchSpy
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true })
+      vi.stubEnv('VITE_AI_PROXY_URL', 'https://proxy.example.com/ai-proxy')
+    })
+    afterEach(() => {
+      fetchSpy.mockRestore()
+      vi.unstubAllEnvs()
+    })
+
+    it('sends email with correct to/subject/body', () => {
+      const rule = makeRule('task_completed', act1('send_email', {
+        to: 'marco@lab.it',
+        subject: 'Task {task} done by {who}',
+        body: 'Task {task} assigned to {who} due {due}',
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { done: true }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      const [url, opts] = fetchSpy.mock.calls[0]
+      expect(url).toBe('https://proxy.example.com/send-email')
+
+      const payload = JSON.parse(opts.body)
+      expect(payload.to).toBe('marco@lab.it')
+      expect(payload.subject).toBe('Task Test Task done by Alice')
+      expect(payload.body).toContain('Test Task')
+      expect(payload.body).toContain('Alice')
+      expect(payload.body).toContain('2026-04-01')
+    })
+
+    it('uses default subject/body when not configured', () => {
+      const rule = makeRule('task_completed', act1('send_email', {
+        to: 'marco@lab.it',
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { done: true }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      const payload = JSON.parse(fetchSpy.mock.calls[0][1].body)
+      expect(payload.subject).toBe('TaskFlow: Test Task')
+      expect(payload.body).toContain('Test Task')
+    })
+
+    it('does not send when to is empty', () => {
+      const rule = makeRule('task_completed', act1('send_email', { to: '' }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { done: true }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it('does not send when proxy URL is not set', () => {
+      vi.stubEnv('VITE_AI_PROXY_URL', '')
+      const rule = makeRule('task_completed', act1('send_email', {
+        to: 'marco@lab.it',
+      }))
+      const { result } = setup([rule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { done: true }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it('replaces {who} with comma-joined multi-assignees', () => {
+      const multiTask = { ...TASK, who: ['Alice', 'Bob'] }
+      const rule = makeRule('section_change', act1('send_email', {
+        to: 'team@lab.it',
+        subject: 'Assigned: {who}',
+        body: 'People: {who}',
+      }))
+      const { result } = setup([rule], [multiTask])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, multiTask)
+        vi.advanceTimersByTime(100)
+      })
+
+      const payload = JSON.parse(fetchSpy.mock.calls[0][1].body)
+      expect(payload.subject).toBe('Assigned: Alice, Bob')
+      expect(payload.body).toBe('People: Alice, Bob')
+    })
+
+    it('handles missing due date in placeholder', () => {
+      const noDueTask = { ...TASK, due: null }
+      const rule = makeRule('section_change', act1('send_email', {
+        to: 'x@lab.it',
+        body: 'Due: {due}',
+      }))
+      const { result } = setup([rule], [noDueTask])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, noDueTask)
+        vi.advanceTimersByTime(100)
+      })
+
+      const payload = JSON.parse(fetchSpy.mock.calls[0][1].body)
+      expect(payload.body).toBe('Due: —')
+    })
+  })
 })

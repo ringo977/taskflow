@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyFilters, isOverdue } from './filters'
+import { applyFilters, isOverdue, applyVisibilityFilter } from './filters'
 
 const makeTasks = () => [
   { id: '1', title: 'Design landing page', desc: 'Figma mockup', pri: 'high', who: 'alice', done: false, due: '2026-01-10', sec: 'To Do', tags: [{ name: 'design' }] },
@@ -109,5 +109,124 @@ describe('isOverdue', () => {
 
   it('returns false for far future dates', () => {
     expect(isOverdue('2099-12-31')).toBe(false)
+  })
+})
+
+// ── applyVisibilityFilter ─────────────────────────────────
+
+describe('applyVisibilityFilter', () => {
+  const mkTask = (id, who, sec = 'To Do', visibility = 'all') => ({
+    id, title: `Task ${id}`, who, sec, visibility, done: false,
+  })
+
+  const mkProject = (members = [], sectionAccess = {}) => ({
+    id: 'p1', name: 'Proj', members, sectionAccess,
+  })
+
+  it('returns all tasks when no project', () => {
+    const tasks = [mkTask('1', 'Alice'), mkTask('2', 'Bob')]
+    expect(applyVisibilityFilter(tasks, null, 'Alice')).toEqual(tasks)
+  })
+
+  it('returns all tasks when no userName', () => {
+    const tasks = [mkTask('1', 'Alice')]
+    expect(applyVisibilityFilter(tasks, mkProject(), null)).toEqual(tasks)
+  })
+
+  it('returns all public tasks regardless of role', () => {
+    const tasks = [mkTask('1', 'Alice'), mkTask('2', 'Bob')]
+    const project = mkProject([{ name: 'Charlie', role: 'viewer' }])
+    expect(applyVisibilityFilter(tasks, project, 'Charlie')).toHaveLength(2)
+  })
+
+  // Task visibility: assignees
+  it('hides assignees-only tasks from non-assignees', () => {
+    const tasks = [
+      mkTask('1', ['Alice'], 'To Do', 'assignees'),
+      mkTask('2', ['Bob'], 'To Do', 'all'),
+    ]
+    const project = mkProject([{ name: 'Bob', role: 'viewer' }])
+    const result = applyVisibilityFilter(tasks, project, 'Bob')
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('2')
+  })
+
+  it('shows assignees-only tasks to assignees', () => {
+    const tasks = [mkTask('1', ['Alice', 'Bob'], 'To Do', 'assignees')]
+    const project = mkProject([{ name: 'Bob', role: 'viewer' }])
+    expect(applyVisibilityFilter(tasks, project, 'Bob')).toHaveLength(1)
+  })
+
+  it('handles legacy string who for visibility check', () => {
+    const tasks = [mkTask('1', 'Alice', 'To Do', 'assignees')]
+    const project = mkProject([{ name: 'Alice', role: 'viewer' }])
+    expect(applyVisibilityFilter(tasks, project, 'Alice')).toHaveLength(1)
+  })
+
+  it('handles null who on assignees-only task', () => {
+    const tasks = [mkTask('1', null, 'To Do', 'assignees')]
+    const project = mkProject([{ name: 'Alice', role: 'viewer' }])
+    expect(applyVisibilityFilter(tasks, project, 'Alice')).toHaveLength(0)
+  })
+
+  // Section access: editors
+  it('hides editor-only sections from viewers', () => {
+    const tasks = [
+      mkTask('1', 'Alice', 'Secret'),
+      mkTask('2', 'Alice', 'Open'),
+    ]
+    const project = mkProject(
+      [{ name: 'Alice', role: 'viewer' }],
+      { 'Secret': 'editors' }
+    )
+    const result = applyVisibilityFilter(tasks, project, 'Alice')
+    expect(result).toHaveLength(1)
+    expect(result[0].sec).toBe('Open')
+  })
+
+  it('shows editor-only sections to editors', () => {
+    const tasks = [mkTask('1', 'Alice', 'Secret')]
+    const project = mkProject(
+      [{ name: 'Alice', role: 'editor' }],
+      { 'Secret': 'editors' }
+    )
+    expect(applyVisibilityFilter(tasks, project, 'Alice')).toHaveLength(1)
+  })
+
+  it('shows editor-only sections to owners', () => {
+    const tasks = [mkTask('1', 'Alice', 'Secret')]
+    const project = mkProject(
+      [{ name: 'Alice', role: 'owner' }],
+      { 'Secret': 'editors' }
+    )
+    expect(applyVisibilityFilter(tasks, project, 'Alice')).toHaveLength(1)
+  })
+
+  // Combined filters
+  it('applies both visibility and section access', () => {
+    const tasks = [
+      mkTask('1', ['Alice'], 'Secret', 'assignees'),  // visible: assignee + editor section → need editor+
+      mkTask('2', ['Bob'], 'Secret', 'assignees'),     // hidden: not assignee
+      mkTask('3', ['Alice'], 'Open', 'all'),            // visible
+    ]
+    const project = mkProject(
+      [{ name: 'Alice', role: 'editor' }],
+      { 'Secret': 'editors' }
+    )
+    const result = applyVisibilityFilter(tasks, project, 'Alice')
+    expect(result).toHaveLength(2)
+    expect(result.map(t => t.id)).toEqual(['1', '3'])
+  })
+
+  // Edge: member not found defaults to viewer
+  it('defaults to viewer when user not in members list', () => {
+    const tasks = [mkTask('1', 'Ghost', 'Secret')]
+    const project = mkProject([], { 'Secret': 'editors' })
+    expect(applyVisibilityFilter(tasks, project, 'Ghost')).toHaveLength(0)
+  })
+
+  // Edge: empty tasks
+  it('handles empty task array', () => {
+    expect(applyVisibilityFilter([], mkProject(), 'Alice')).toEqual([])
   })
 })

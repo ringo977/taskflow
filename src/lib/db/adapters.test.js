@@ -1,6 +1,61 @@
 import { describe, it, expect } from 'vitest'
 import { toPortfolio, toProject, toTask } from './adapters'
 
+// ── parseWho (tested through toTask) ───────────────────────
+
+describe('parseWho (via toTask)', () => {
+  const quick = (assignee_name) =>
+    toTask({ id: 't', project_id: 'p', title: 'T', priority: 'low', done: false, assignee_name }).who
+
+  it('null → empty array', () => {
+    expect(quick(null)).toEqual([])
+  })
+
+  it('undefined → empty array', () => {
+    expect(quick(undefined)).toEqual([])
+  })
+
+  it('empty string → empty array', () => {
+    expect(quick('')).toEqual([])
+  })
+
+  it('plain string → single-element array', () => {
+    expect(quick('Alice')).toEqual(['Alice'])
+  })
+
+  it('array passthrough', () => {
+    expect(quick(['Alice', 'Bob'])).toEqual(['Alice', 'Bob'])
+  })
+
+  it('empty array passthrough', () => {
+    expect(quick([])).toEqual([])
+  })
+
+  it('JSON array string → parsed array', () => {
+    expect(quick('["Alice","Bob"]')).toEqual(['Alice', 'Bob'])
+  })
+
+  it('JSON empty array string → empty array', () => {
+    expect(quick('[]')).toEqual([])
+  })
+
+  it('malformed JSON → wraps as string', () => {
+    expect(quick('[invalid')).toEqual(['[invalid'])
+  })
+
+  it('JSON object string → wraps as string (not array)', () => {
+    expect(quick('{"name":"Alice"}')).toEqual(['{"name":"Alice"}'])
+  })
+
+  it('number 0 (falsy) → empty array', () => {
+    expect(quick(0)).toEqual([])
+  })
+
+  it('whitespace string → single-element array', () => {
+    expect(quick('  ')).toEqual(['  '])
+  })
+})
+
 describe('toPortfolio', () => {
   it('maps DB row to portfolio shape', () => {
     const row = { id: 'po1', name: 'Research', color: '#ff0000', description: 'R&D', status: 'active' }

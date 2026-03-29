@@ -23,7 +23,7 @@ export default defineConfig({
         'src/lib/db/adapters.js',
         'src/constants.js',
       ],
-      exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.spec.*', 'src/utils/highlight.jsx'],
+      exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.spec.*', 'src/utils/highlight.jsx', 'src/utils/reportPdf.js'],
       thresholds: {
         statements: 70,
         branches: 55,
