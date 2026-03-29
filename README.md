@@ -37,7 +37,7 @@ Login with any test account — password: `mimic2026`
 | PWA | vite-plugin-pwa (offline shell, installable) |
 | PDF reports | jsPDF (lazy-loaded) |
 | Permissions | Per-project roles (owner/editor/viewer) + section/task visibility |
-| Testing | Vitest + Testing Library (205 tests, >70% coverage) |
+| Testing | Vitest + Testing Library (286 unit/integration tests) + Playwright E2E (28 tests: 7 smoke + 21 auth) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -179,7 +179,9 @@ taskflow/
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
 
-Tests: 205 total — unit tests for utils (ai, filters, storage) + integration tests for hooks (useTaskActions, useProjectActions, useRuleEngine) + component tests (FormSubmitModal, HomeDashboard).
+Tests: 314 total (286 unit/integration + 28 E2E).
+Unit/integration: Vitest + Testing Library — permissions (45 tests), filters (30), adapters (28), rule engine actions (28), hooks (useTaskActions, useProjectActions, useRuleEngine), components (FormSubmitModal, HomeDashboard).
+E2E: Playwright — 7 smoke (manual page, no auth) + 21 auth (login + TOTP 2FA, dashboard layout, multi-assignee views, permissions, templates).
 ```
 
 ---
@@ -330,7 +332,26 @@ npm run format       # Prettier format
 npm run test         # Run tests (Vitest)
 npm run test:watch   # Run tests in watch mode
 npm run validate     # Full check: lint + test + build
+
+# E2E tests (Playwright)
+npx playwright install  # First time: download browsers
+npm run e2e:smoke       # Smoke tests (no auth, always green)
+npm run e2e:auth        # Auth tests (needs Supabase + .env.e2e)
+npm run e2e             # All E2E tests
+npm run e2e:ui          # Interactive Playwright UI
 ```
+
+### E2E credentials
+
+Copy `.env.e2e.example` to `.env.e2e` and fill in your test account:
+
+```env
+E2E_EMAIL=your@email.com
+E2E_PASSWORD=your-password
+E2E_TOTP_SECRET=BASE32_SECRET   # only if MFA enrolled
+```
+
+The TOTP secret is the base32 key from your authenticator app. To reset it: `node scripts/reset-totp.mjs <email> <password> <current-6-digit-code>`
 
 ---
 
