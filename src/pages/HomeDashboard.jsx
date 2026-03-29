@@ -160,7 +160,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
     return tasks
       .filter(task => !task.done && task.due && task.due >= ts && task.due <= weStr)
       .sort((a, b) => a.due.localeCompare(b.due))
-      .slice(0, 8)
+      .slice(0, 15)
   }, [tasks, ts, weStr])
 
   // Recent activity: derive from activity log (real timestamps), task ids, and comments
@@ -217,7 +217,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
         }
       }
     }
-    return acts.sort((a, b) => b.time - a.time).slice(0, 8)
+    return acts.sort((a, b) => b.time - a.time).slice(0, 15)
   }, [tasks])
 
   // Project health scores (always show, even with 0 tasks)
@@ -441,7 +441,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
           {upcomingDeadlines.length === 0
             ? <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>🎉 {t.noUpcoming ?? 'No deadlines this week'}</div>
             : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {upcomingDeadlines.map(task => {
                   const p = projects.find(x => x.id === task.pid)
                   const daysUntil = Math.round((new Date(task.due + 'T00:00:00') - new Date(ts + 'T00:00:00')) / 86400000)
@@ -471,7 +471,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
           {recentActivity.length === 0
             ? <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--tx3)' }}>{t.noRecentActivity ?? 'No recent activity'}</div>
             : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {recentActivity.map((act, i) => {
                   const p = projects.find(x => x.id === act.task.pid)
                   const ago = formatTimeAgo(act.time, t)
