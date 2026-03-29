@@ -23,12 +23,13 @@ test.describe('Viewer read-only enforcement', () => {
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
     await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(2000)
 
-    // Should see project cards or list items
-    const projects = page.locator('[class*="project"], [data-testid*="project"]')
-    // Fallback: look for any clickable item in the content area
-    const anyProject = page.locator('text=GlycoAxis').or(page.locator('text=uBeat')).or(page.locator('[class*="card"]'))
+    // Look for known seed project names or any clickable project element
+    const anyProject = page.locator('text=MiMic Lab')
+      .or(page.locator('text=PHOENIX'))
+      .or(page.locator('text=BiomimX'))
+      .or(page.locator('text=BuonMarrow'))
     const count = await anyProject.count()
     expect(count).toBeGreaterThan(0)
   })

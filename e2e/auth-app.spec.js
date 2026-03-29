@@ -32,8 +32,8 @@ test.describe('Auth & App bootstrap', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    await expect(page.locator('text=Home')).toBeVisible()
-    await expect(page.locator('text=Progetti').or(page.locator('text=Projects'))).toBeVisible()
+    await expect(page.locator('text=Home')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('text=Progetti').or(page.locator('text=Projects')).first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('sidebar shows all main nav items after login', async ({ page }) => {

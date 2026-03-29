@@ -83,6 +83,13 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const [editing, setEditing] = useState(false)
   const [dragIdx, setDragIdx] = useState(null)
 
+  // Tick every 60s so relative timestamps ("2h", "3d") stay fresh
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick(n => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   // Save layout to localStorage on change
   useEffect(() => {
     localStorage.setItem('tf_dashboard_layout', JSON.stringify(layout))

@@ -22,3 +22,8 @@ export const getUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   return user
 }
+
+/* Expose for E2E programmatic login (dev only, stripped in prod build) */
+if (import.meta.env.DEV) {
+  window.__supabase = supabase
+}
