@@ -16,8 +16,9 @@
     "test:watch": "vitest",
     "validate": "npm run lint && npm run test && npm run build",
     "e2e": "npx playwright test",
-    "e2e:ui": "npx playwright test --ui",
-    "e2e:smoke": "npx playwright test e2e/manual-page.spec.js e2e/auth-app.spec.js"
+    "e2e:smoke": "npx playwright test --project=smoke",
+    "e2e:auth": "npx playwright test --project=auth",
+    "e2e:ui": "npx playwright test --ui"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",

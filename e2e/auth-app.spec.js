@@ -12,12 +12,19 @@ import { login } from './fixtures/auth.js'
 test.describe('Auth & App bootstrap', () => {
   test('login page renders with email and password fields', async ({ page }) => {
     await page.goto('/taskflow/')
+    // Wait for either login form or main app (whichever appears first)
     await page.waitForLoadState('domcontentloaded')
+    const emailInput = page.locator('input[type="email"], input[placeholder*="mail"], input[placeholder*="john"]')
+    const homeLabel = page.locator('text=Home')
 
-    // Should show either login form or main app
-    const hasEmail = await page.locator('input[type="email"], input[placeholder*="mail"], input[placeholder*="john"]').isVisible({ timeout: 8000 }).catch(() => false)
-    const hasHome = await page.locator('text=Home').isVisible({ timeout: 2000 }).catch(() => false)
+    // Race: login form vs already-authenticated main app
+    await Promise.race([
+      emailInput.first().waitFor({ timeout: 12_000 }).catch(() => {}),
+      homeLabel.first().waitFor({ timeout: 12_000 }).catch(() => {}),
+    ])
 
+    const hasEmail = await emailInput.first().isVisible().catch(() => false)
+    const hasHome = await homeLabel.first().isVisible().catch(() => false)
     expect(hasEmail || hasHome).toBe(true)
   })
 
