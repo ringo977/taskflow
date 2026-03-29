@@ -354,10 +354,10 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
 
   const nonMembers = orgUsers.filter(u => !members.some(m => m.user_id === u.id))
 
-  const handleAdd = async (userId) => {
+  const handleAdd = async (userId, role = 'editor') => {
     setBusy(true)
     try {
-      await addProjectMember(projectId, userId)
+      await addProjectMember(projectId, userId, role)
     } catch (e) { log.warn('addProjectMember failed:', e.message) }
     finally { setBusy(false) }
   }
@@ -383,15 +383,26 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
       </div>
 
       {showAdd && nonMembers.length > 0 && (
-        <div style={{ marginBottom: 10, padding: '8px', background: 'var(--bg2)', borderRadius: 'var(--r1)', maxHeight: 120, overflow: 'auto' }}>
+        <div style={{ marginBottom: 10, padding: '8px', background: 'var(--bg2)', borderRadius: 'var(--r1)', maxHeight: 160, overflow: 'auto' }}>
           {nonMembers.map(u => (
-            <div key={u.id} onClick={() => handleAdd(u.id)}
-              className="row-interactive"
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 'var(--r1)', cursor: 'pointer', fontSize: 12, color: 'var(--tx2)' }}>
-              <div style={{ width: 20, height: 20, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {getInitials(u.name)}
+            <div key={u.id}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 'var(--r1)', fontSize: 12, color: 'var(--tx2)' }}>
+              <div onClick={() => handleAdd(u.id, 'editor')} className="row-interactive"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer', borderRadius: 'var(--r1)', padding: '2px 4px' }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {getInitials(u.name)}
+                </div>
+                {u.name}
               </div>
-              {u.name}
+              <select
+                defaultValue="editor"
+                onClick={e => e.stopPropagation()}
+                onChange={e => handleAdd(u.id, e.target.value)}
+                style={{ fontSize: 10, padding: '1px 3px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg1)', color: 'var(--tx3)', cursor: 'pointer', width: 62 }}>
+                <option value="owner">{t.roleOwner ?? 'Owner'}</option>
+                <option value="editor">{t.roleEditor ?? 'Editor'}</option>
+                <option value="viewer">{t.roleViewer ?? 'Viewer'}</option>
+              </select>
             </div>
           ))}
         </div>
@@ -416,14 +427,14 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
                 } catch (e) { log.warn('updateMemberRole failed:', e.message) }
                 finally { setBusy(false) }
               }}
-              disabled={!canManage || m.role === 'owner'}
-              style={{ fontSize: 11, padding: '2px 4px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: canManage && m.role !== 'owner' ? 'pointer' : 'not-allowed', opacity: canManage && m.role !== 'owner' ? 1 : 0.6 }}
+              disabled={!canManage}
+              style={{ fontSize: 11, padding: '2px 4px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: canManage ? 'pointer' : 'not-allowed', opacity: canManage ? 1 : 0.6 }}
             >
               <option value="owner">{t.roleOwner ?? 'Owner'}</option>
               <option value="editor">{t.roleEditor ?? 'Editor'}</option>
               <option value="viewer">{t.roleViewer ?? 'Viewer'}</option>
             </select>
-            {canManage && m.role !== 'owner' && (
+            {canManage && (
               <button onClick={() => handleRemove(m.user_id)}
                 style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
             )}
