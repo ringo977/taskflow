@@ -59,7 +59,7 @@ taskflow/
 │   └── deploy.yml                 # Deploy to GitHub Pages on push to main
 │
 ├── supabase/
-│   ├── migrations/                # 19 SQL migrations (001_init → 019_org_members_realtime)
+│   ├── migrations/                # 22 SQL migrations (001_init → 022_fix_project_member_default_role)
 │   ├── functions/
 │   │   └── ai-proxy/index.ts      # Edge Function: AI proxy (keeps API key server-side)
 │   └── schema.sql                 # Base schema reference
@@ -285,7 +285,9 @@ Two-tier role model: organization-level roles control broad capabilities, projec
 
 Organization roles (managed in PeopleView admin panel): `admin` has full ownership on every project, can create projects/portfolios, manage members; `manager` can create projects/portfolios and defaults to editor on all projects; `member` can work on tasks (editor) in projects they belong to, but cannot create projects; `guest` has read-only access (viewer) on projects they belong to.
 
-Project roles (managed in ProjectOverview members panel): `owner`, `editor`, `viewer`. An explicit project role always overrides the org-level default. The `getProjectRole()` function in `src/utils/permissions.js` resolves the effective role by checking org role first, then project membership. All views (AddModal, BoardView, ListView, TaskPanel) use this unified resolver — no direct `myProjectRoles` fallback.
+Project roles (managed in ProjectOverview members panel): `owner`, `editor`, `viewer`. An explicit project role always overrides the org-level default. The `getProjectRole()` function in `src/utils/permissions.js` resolves the effective role by checking org role first, then project membership. All views (AddModal, BoardView, ListView, TaskPanel) use this unified resolver — no direct `myProjectRoles` fallback. Admins can transfer project ownership to any member from the ProjectOverview members panel.
+
+Member badges: the sidebar shows small avatar circles (initials) for each project's members, fetched via a `get_all_project_members()` SECURITY DEFINER RPC that bypasses RLS. Up to 3 avatars are shown with an overflow count.
 
 Additional access checks: section-level access can restrict visibility to editors-only or all members; task-level visibility can be limited to assignees only. Permission data is stored in project JSONB fields (`visibility`, `section_access`) and task fields (`visibility`). This is currently enforced at the UI level; Supabase RLS enforcement can be added later for server-side security.
 
@@ -385,7 +387,7 @@ Copy `.env.example` to `.env.local` to override defaults. The three variables ar
 
 ### Supabase schema
 
-19 migrations in `supabase/migrations/` build up the schema incrementally:
+22 migrations in `supabase/migrations/` build up the schema incrementally:
 
 | Tables | Purpose |
 |---|---|
@@ -411,7 +413,7 @@ All tables are protected by org-scoped Row Level Security.
 // Task
 { id, pid, sec, title, desc, who, pri, startDate, due, done,
   recurrence, attachments, tags, activity, position,
-  customValues, subs, cmts, deps,
+  customValues, createdAt, updatedAt, subs, cmts, deps,
   timeEntries, approval, milestone, visibility }
 
 // Project
@@ -445,9 +447,9 @@ All tables are protected by org-scoped Row Level Security.
 - **Multiple assignees**: Assign multiple team members to a task — stacked AvatarGroup display across all views, array-aware filters, notifications for newly added assignees
 - **Milestones**: Flag tasks as milestones — diamond rendering in Timeline/Gantt, indicators on Calendar and task cards
 - **Task templates**: Save any task as a reusable template (title, description, priority, subtasks, tags); load templates when creating new tasks
-- **Granular permissions**: Per-project roles (owner/editor/viewer), per-section access control, per-task visibility (all / assignees only)
+- **Granular permissions**: Per-project roles (owner/editor/viewer) with admin ownership transfer, per-section access control, per-task visibility (all / assignees only), member badges in sidebar
 - **Customizable dashboard**: Drag & drop widget reorder, toggle visibility, 3 size options per widget, localStorage persistence, reset to defaults
-- **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards). Time-based widgets (activity feed, burndown, velocity, 14-day activity chart) derive completion timestamps from the task activity log for accuracy, with due-date fallback for legacy tasks
+- **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed (scrollable, up to 15 events), project health scores (traffic-light cards). Activity feed derives timestamps from the task activity log and DB `updated_at`/`created_at` fields for accuracy, with due-date fallback for legacy tasks. Both activity and deadline widgets use fixed-height scrollable containers (Asana-style)
 - **Manual**: Standalone bilingual (IT/EN) documentation page with 19 sections, sticky scroll-tracking TOC, lazy-loaded
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Visual form builder with 8 field types (text, textarea, select, date, number, checkbox, url, email), drag reorder, live preview, placeholder/default values, and task property mapping

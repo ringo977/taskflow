@@ -142,10 +142,10 @@ function content(lang) {
         <p>Barre di progresso per ogni progetto attivo. La percentuale indica il rapporto task completati / totali.</p>
 
         <h3>Scadenze in arrivo</h3>
-        <p>I prossimi task in scadenza (7 giorni), ordinati per data. Mostra progetto, titolo e giorni rimanenti. In rosso se scaduti.</p>
+        <p>I prossimi task in scadenza (7 giorni), ordinati per data. Mostra progetto, titolo e giorni rimanenti. In rosso se scaduti. Il widget ha un'altezza fissa con scorrimento interno per gestire molti elementi.</p>
 
         <h3>Attività recente</h3>
-        <p>Feed delle ultime azioni: task creati, completati, commentati, assegnati. Con timestamp relativo ("2h fa").</p>
+        <p>Feed delle ultime 15 azioni: task creati, completati, commentati, assegnati e spostati. I timestamp relativi ("2m", "3h", "1d") si aggiornano automaticamente ogni 15 secondi. Il widget ha un'altezza fissa con scorrimento interno (stile Asana). I timestamp derivano dal log attività del task e dai campi <code>updated_at</code>/<code>created_at</code> del database per la massima accuratezza.</p>
 
         <h3>Salute dei progetti</h3>
         <p>Un pannello con lo stato di ogni progetto: 🟢 In linea (meno del 10% scaduti), 🟡 A rischio (10-25%), 🔴 Fuori rotta (oltre 25%).</p>
@@ -185,10 +185,10 @@ function content(lang) {
         <p>Progress bars for each active project. Percentage shows completed/total tasks ratio.</p>
 
         <h3>Upcoming deadlines</h3>
-        <p>Next tasks due (7 days), sorted by date. Shows project, title and remaining days. Red if overdue.</p>
+        <p>Next tasks due (7 days), sorted by date. Shows project, title and remaining days. Red if overdue. The widget has a fixed height with internal scrolling for many items.</p>
 
         <h3>Recent activity</h3>
-        <p>Feed of recent actions: tasks created, completed, commented, assigned. With relative timestamps ("2h ago").</p>
+        <p>Feed of the last 15 actions: tasks created, completed, commented, assigned, and moved. Relative timestamps ("2m", "3h", "1d") auto-refresh every 15 seconds. The widget has a fixed height with internal scrolling (Asana-style). Timestamps are derived from the task activity log and DB <code>updated_at</code>/<code>created_at</code> fields for accuracy.</p>
 
         <h3>Project health</h3>
         <p>A panel showing each project's status: 🟢 On track (less than 10% overdue), 🟡 At risk (10-25%), 🔴 Off track (over 25%).</p>
@@ -249,11 +249,15 @@ function content(lang) {
         <h3>Permessi granulari</h3>
         <p>In ProjectOverview puoi configurare permessi a più livelli:</p>
         <ul>
-          <li><strong>Ruoli per progetto</strong> — assegna Owner, Editor o Viewer a ogni membro</li>
+          <li><strong>Ruoli per progetto</strong> — assegna Owner, Editor o Viewer a ogni membro. Quando aggiungi un membro, scegli il ruolo dal dropdown</li>
+          <li><strong>Trasferimento ownership</strong> — l'admin può trasferire la proprietà di un progetto a un altro membro dal pannello membri</li>
           <li><strong>Visibilità progetto</strong> — tutta l'organizzazione, solo membri o solo assegnatari</li>
           <li><strong>Accesso per sezione</strong> — limita la visibilità di singole sezioni a editor e owner</li>
           <li><strong>Visibilità task</strong> — ogni task può essere visibile a tutti o solo agli assegnatari</li>
         </ul>
+
+        <h3>Badge membri nella sidebar</h3>
+        <p>La sidebar mostra piccoli avatar (iniziali) per ogni progetto, indicando i membri del progetto. Fino a 3 avatar sono visibili, con un contatore "+N" per i rimanenti.</p>
 
         <h3>Portfolios</h3>
         <p>I portfolios raggruppano più progetti. Crea un portfolio dalla pagina Portfolios, poi associa i progetti. La barra di progresso del portfolio aggrega i dati di tutti i progetti al suo interno.</p>
@@ -289,11 +293,15 @@ function content(lang) {
         <h3>Granular permissions</h3>
         <p>In ProjectOverview you can configure permissions at multiple levels:</p>
         <ul>
-          <li><strong>Per-project roles</strong> — assign Owner, Editor or Viewer to each member</li>
+          <li><strong>Per-project roles</strong> — assign Owner, Editor or Viewer to each member. When adding a member, choose the role from the dropdown</li>
+          <li><strong>Ownership transfer</strong> — admins can transfer project ownership to any member from the members panel</li>
           <li><strong>Project visibility</strong> — entire organization, members only, or assignees only</li>
           <li><strong>Section access</strong> — limit section visibility to editors and owners</li>
           <li><strong>Task visibility</strong> — each task can be visible to everyone or assignees only</li>
         </ul>
+
+        <h3>Member badges in sidebar</h3>
+        <p>The sidebar shows small avatars (initials) for each project, indicating its members. Up to 3 avatars are shown, with a "+N" counter for the rest.</p>
 
         <h3>Portfolios</h3>
         <p>Portfolios group multiple projects. Create a portfolio from the Portfolios page, then associate projects. The portfolio progress bar aggregates data from all its projects.</p>
@@ -976,6 +984,9 @@ function content(lang) {
           <li><strong>Editor</strong> — crea e modifica task, ma non può cambiare le impostazioni del progetto</li>
           <li><strong>Viewer</strong> — sola lettura, non può modificare nulla</li>
         </ul>
+
+        <h3>Trasferimento ownership</h3>
+        <p>L'admin dell'organizzazione può trasferire la proprietà di un progetto a qualsiasi membro. In ProjectOverview → pannello Membri, clicca sul ruolo di un membro e seleziona "Owner". Il precedente owner diventa automaticamente Editor.</p>
       </>
     ) : (
       <>
@@ -1009,6 +1020,9 @@ function content(lang) {
           <li><strong>Editor</strong> — create and edit tasks, but cannot change project settings</li>
           <li><strong>Viewer</strong> — read-only, cannot modify anything</li>
         </ul>
+
+        <h3>Ownership transfer</h3>
+        <p>Organization admins can transfer project ownership to any member. In ProjectOverview → Members panel, click a member's role and select "Owner". The previous owner is automatically demoted to Editor.</p>
       </>
     ),
   }
