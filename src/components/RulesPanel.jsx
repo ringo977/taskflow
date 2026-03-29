@@ -24,6 +24,8 @@ const ACTIONS = [
   { id: 'add_tag',         icon: '🏷', color: 'var(--c-lime)' },
   { id: 'set_due_date',    icon: '📅', color: 'var(--c-brand)' },
   { id: 'create_subtask',  icon: '📋', color: 'var(--tx3)' },
+  { id: 'webhook',    icon: '🔗', color: 'var(--c-brand)' },
+  { id: 'send_email', icon: '📧', color: 'var(--c-warning)' },
 ]
 
 const PRI_OPTIONS = ['low', 'medium', 'high']
@@ -57,6 +59,8 @@ const actionLabelMap = (t) => ({
   add_tag:         t.ruleActAddTag ?? 'Add tag',
   set_due_date:    t.ruleActSetDue ?? 'Set due date',
   create_subtask:  t.ruleActCreateSub ?? 'Create subtask',
+  webhook:    t.ruleActWebhook ?? 'Webhook (HTTP POST)',
+  send_email: t.ruleActEmail ?? 'Send email',
 })
 
 const conditionFieldLabel = (t) => ({
@@ -89,6 +93,11 @@ function describeAction(action, t) {
     const msg = action.config.message
     label += `: "${msg.length > 28 ? msg.slice(0, 28) + '…' : msg}"`
   }
+  if (action.type === 'webhook' && action.config?.url) {
+    const url = action.config.url
+    label += `: ${url.length > 30 ? url.slice(0, 30) + '…' : url}`
+  }
+  if (action.type === 'send_email' && action.config?.to) label += ` → ${action.config.to}`
   return label
 }
 
@@ -520,6 +529,44 @@ function ActionEditor({ action, idx: _idx, sections, t, actLabels, inputStyle, s
           <input value={action.config?.subtaskTitle ?? ''}
             onChange={e => onUpdate({ config: { subtaskTitle: e.target.value } })}
             placeholder={t.ruleSubtaskPlaceholder ?? 'Review task…'} style={inputStyle} />
+        </div>
+      )}
+      {action.type === 'webhook' && (
+        <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div>
+            <label style={labelStyle}>{t.ruleWebhookUrl ?? 'Webhook URL'}</label>
+            <input value={action.config?.url ?? ''}
+              onChange={e => onUpdate({ config: { ...action.config, url: e.target.value } })}
+              placeholder="https://hooks.example.com/..." style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>{t.ruleWebhookSecret ?? 'Secret header (optional)'}</label>
+            <input value={action.config?.headers?.['X-Webhook-Secret'] ?? ''}
+              onChange={e => onUpdate({ config: { ...action.config, headers: { 'X-Webhook-Secret': e.target.value } } })}
+              placeholder="Bearer token or secret…" style={inputStyle} />
+          </div>
+        </div>
+      )}
+      {action.type === 'send_email' && (
+        <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div>
+            <label style={labelStyle}>{t.ruleEmailTo ?? 'Recipient email'}</label>
+            <input type="email" value={action.config?.to ?? ''}
+              onChange={e => onUpdate({ config: { ...action.config, to: e.target.value } })}
+              placeholder="team@example.com" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>{t.ruleEmailSubject ?? 'Subject'}</label>
+            <input value={action.config?.subject ?? ''}
+              onChange={e => onUpdate({ config: { ...action.config, subject: e.target.value } })}
+              placeholder={'TaskFlow: {task}'} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>{t.ruleEmailBody ?? 'Body'}</label>
+            <input value={action.config?.body ?? ''}
+              onChange={e => onUpdate({ config: { ...action.config, body: e.target.value } })}
+              placeholder={'{task} assigned to {who}, due {due}'} style={inputStyle} />
+          </div>
         </div>
       )}
     </div>

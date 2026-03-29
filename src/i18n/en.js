@@ -232,6 +232,14 @@ const en = {
   ruleSubtaskTitle: 'Subtask title',
   ruleSubtaskPlaceholder: 'Review task…',
   ruleAnyTag: 'Any tag (leave empty)',
+  // Webhook & Email
+  ruleActWebhook: 'Webhook (HTTP POST)',
+  ruleActEmail: 'Send email',
+  ruleWebhookUrl: 'Webhook URL',
+  ruleWebhookSecret: 'Secret header (optional)',
+  ruleEmailTo: 'Recipient email',
+  ruleEmailSubject: 'Subject',
+  ruleEmailBody: 'Body',
   // Multi-action & conditions
   ruleAddAction: 'Action',
   ruleAddCondition: 'Filter',

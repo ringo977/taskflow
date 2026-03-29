@@ -238,7 +238,7 @@ If the proxy is not configured (`VITE_AI_PROXY_URL` is empty), AI features are g
 
 ### Automation rules
 
-Per-project automation rules are stored in `project.rules` JSONB (no extra DB table or migration needed). Each rule has a trigger, an action, and an enabled flag. The `useRuleEngine` hook evaluates rules after every task mutation and runs a periodic deadline check (every 60s). Supported triggers: task moves to section, deadline approaching (configurable N days), all subtasks completed, task assigned. Supported actions: move to section, send notification (toast + inbox), set priority, mark as completed. Rule actions use raw (unwrapped) task functions to prevent infinite loops — only user-initiated mutations trigger rule evaluation.
+Per-project automation rules are stored in `project.rules` JSONB (no extra DB table or migration needed). Each rule has a trigger, an action, and an enabled flag. The `useRuleEngine` hook evaluates rules after every task mutation and runs a periodic deadline check (every 60s). Supported triggers: task moves to section, deadline approaching (configurable N days), all subtasks completed, task assigned, priority changed, comment added, task completed, tag added. Supported actions: move to section, send notification (toast + inbox), set priority, mark as completed, assign to, add tag, set due date, create subtask, webhook (fire-and-forget HTTP POST to external URL with task payload and optional auth headers), send email (via Supabase Edge Function proxy with customizable subject/body supporting `{task}`, `{who}`, `{due}` placeholders). Rule actions use raw (unwrapped) task functions to prevent infinite loops — only user-initiated mutations trigger rule evaluation.
 
 ### Forms
 
@@ -409,7 +409,7 @@ All tables are protected by org-scoped Row Level Security.
 - **Soft delete**: Trash view with restore and permanent delete
 - **CSV export**: Download project tasks as spreadsheet
 - **PWA**: Installable, offline shell
-- **Automation rules**: 8 triggers × 8 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask. Loop guard: cascade depth limit (3), dedup window (500ms), circuit breaker (20 fires/tick)
+- **Automation rules**: 8 triggers × 10 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask, webhook (outbound HTTP POST), send email (via Edge Function). Loop guard: cascade depth limit (3), dedup window (500ms), circuit breaker (20 fires/tick)
 - **Multiple assignees**: Assign multiple team members to a task — stacked AvatarGroup display across all views, array-aware filters, notifications for newly added assignees
 - **Milestones**: Flag tasks as milestones — diamond rendering in Timeline/Gantt, indicators on Calendar and task cards
 - **Task templates**: Save any task as a reusable template (title, description, priority, subtasks, tags); load templates when creating new tasks

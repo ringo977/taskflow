@@ -232,6 +232,14 @@ const it = {
   ruleSubtaskTitle: 'Titolo subtask',
   ruleSubtaskPlaceholder: 'Revisiona task…',
   ruleAnyTag: 'Qualsiasi tag (lascia vuoto)',
+  // Webhook & Email
+  ruleActWebhook: 'Webhook (HTTP POST)',
+  ruleActEmail: 'Invia email',
+  ruleWebhookUrl: 'URL webhook',
+  ruleWebhookSecret: 'Header segreto (opzionale)',
+  ruleEmailTo: 'Email destinatario',
+  ruleEmailSubject: 'Oggetto',
+  ruleEmailBody: 'Corpo',
   // Multi-azione & condizioni
   ruleAddAction: 'Azione',
   ruleAddCondition: 'Filtro',

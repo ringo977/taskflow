@@ -16,7 +16,7 @@ import { useCallback, useRef, useEffect, useMemo } from 'react'
  *   - task_completed:       task.done changed to true
  *   - tag_added:            a tag was added to the task (optionally a specific tag)
  *
- * Actions (8):
+ * Actions (10):
  *   - move_to_section:  change task.sec
  *   - notify:           push toast + inbox notification
  *   - set_priority:     change task.pri
@@ -25,6 +25,8 @@ import { useCallback, useRef, useEffect, useMemo } from 'react'
  *   - add_tag:          add a tag to task.tags
  *   - set_due_date:     set task.due relative to now (+N days)
  *   - create_subtask:   add a subtask to task.subs
+ *   - webhook:         fire-and-forget POST to external URL
+ *   - send_email:      send email via Supabase Edge Function proxy
  *
  * Multi-action:  rule.actions[] array (fallback: single rule.action)
  * Conditions:    rule.conditions[] — optional filters (priority, assignee, tag)
@@ -115,6 +117,46 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         if (title) {
           const subs = [...(task.subs ?? []), { id: `s${Date.now()}`, title, done: false }]
           updTask(task.id, { subs })
+        }
+        break
+      }
+
+      case 'webhook': {
+        const url = action.config?.url
+        if (url) {
+          const payload = {
+            event: 'rule_triggered',
+            rule: action.config?.ruleName ?? '',
+            task: { id: task.id, title: task.title, who: task.who, pri: task.pri, due: task.due, done: task.done, sec: task.sec },
+            timestamp: new Date().toISOString(),
+          }
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(action.config?.headers ?? {}) },
+            body: JSON.stringify(payload),
+          }).catch(() => {/* fire-and-forget */})
+        }
+        break
+      }
+
+      case 'send_email': {
+        const to = action.config?.to
+        const subject = action.config?.subject
+          ? action.config.subject.replace('{task}', task.title).replace('{who}', (Array.isArray(task.who) ? task.who.join(', ') : task.who) ?? '')
+          : `TaskFlow: ${task.title}`
+        const body = action.config?.body
+          ? action.config.body.replace('{task}', task.title).replace('{who}', (Array.isArray(task.who) ? task.who.join(', ') : task.who) ?? '').replace('{due}', task.due ?? '—')
+          : `Task "${task.title}" triggered a rule.`
+        if (to) {
+          const proxyUrl = import.meta.env.VITE_AI_PROXY_URL
+          if (proxyUrl) {
+            const emailUrl = proxyUrl.replace(/\/ai-proxy\/?$/, '/send-email')
+            fetch(emailUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ to, subject, body }),
+            }).catch(() => {/* fire-and-forget */})
+          }
         }
         break
       }

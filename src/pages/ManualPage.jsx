@@ -163,6 +163,15 @@ function content(lang) {
           <li><strong>Carico di lavoro</strong> — barre con indicatore di capacità</li>
           <li><strong>Tutti i grafici</strong> sono interattivi: passa il mouse per i tooltip</li>
         </ol>
+
+        <h3>Personalizzazione dashboard</h3>
+        <p>Clicca "⚙ Personalizza" per entrare in modalità modifica. Puoi:</p>
+        <ul>
+          <li><strong>Nascondere/mostrare</strong> singoli widget con il toggle visibilità</li>
+          <li><strong>Ridimensionare</strong> ogni widget ciclando tra tre dimensioni (S/M/L)</li>
+          <li><strong>Riordinare</strong> i widget con drag & drop nativo HTML5</li>
+        </ul>
+        <p>Il layout viene salvato in localStorage e ripristinato automaticamente. Usa "Ripristina layout" per tornare al default.</p>
       </>
     ) : (
       <>
@@ -197,6 +206,15 @@ function content(lang) {
           <li><strong>Workload</strong> — bars with capacity indicator</li>
           <li><strong>All charts</strong> are interactive: hover for tooltips</li>
         </ol>
+
+        <h3>Dashboard customization</h3>
+        <p>Click "⚙ Customize" to enter edit mode. You can:</p>
+        <ul>
+          <li><strong>Show/hide</strong> individual widgets with the visibility toggle</li>
+          <li><strong>Resize</strong> each widget by cycling through three sizes (S/M/L)</li>
+          <li><strong>Reorder</strong> widgets with native HTML5 drag & drop</li>
+        </ul>
+        <p>Layout is saved in localStorage and automatically restored. Use "Reset layout" to return to defaults.</p>
       </>
     ),
 
@@ -224,6 +242,18 @@ function content(lang) {
 
         <h3>Campi personalizzati</h3>
         <p>Ogni progetto può avere campi personalizzati (testo, numero, select, checkbox, data…). Definiscili in ProjectOverview → "Campi personalizzati". I valori vengono mostrati nel pannello task.</p>
+
+        <h3>Template task</h3>
+        <p>In ProjectOverview → "Template task", salva un task esistente come template riutilizzabile. Il template cattura titolo, descrizione, priorità, tag e lista subtask. Quando crei un nuovo task, puoi selezionare un template dal dropdown per pre-compilare i campi.</p>
+
+        <h3>Permessi granulari</h3>
+        <p>In ProjectOverview puoi configurare permessi a più livelli:</p>
+        <ul>
+          <li><strong>Ruoli per progetto</strong> — assegna Owner, Editor o Viewer a ogni membro</li>
+          <li><strong>Visibilità progetto</strong> — tutta l'organizzazione, solo membri o solo assegnatari</li>
+          <li><strong>Accesso per sezione</strong> — limita la visibilità di singole sezioni a editor e owner</li>
+          <li><strong>Visibilità task</strong> — ogni task può essere visibile a tutti o solo agli assegnatari</li>
+        </ul>
 
         <h3>Portfolios</h3>
         <p>I portfolios raggruppano più progetti. Crea un portfolio dalla pagina Portfolios, poi associa i progetti. La barra di progresso del portfolio aggrega i dati di tutti i progetti al suo interno.</p>
@@ -253,6 +283,18 @@ function content(lang) {
         <h3>Custom fields</h3>
         <p>Each project can have custom fields (text, number, select, checkbox, date…). Define them in ProjectOverview → "Custom fields". Values appear in the task panel.</p>
 
+        <h3>Task templates</h3>
+        <p>In ProjectOverview → "Task Templates", save an existing task as a reusable template. The template captures title, description, priority, tags and subtask list. When creating a new task, you can select a template from the dropdown to pre-fill the form.</p>
+
+        <h3>Granular permissions</h3>
+        <p>In ProjectOverview you can configure permissions at multiple levels:</p>
+        <ul>
+          <li><strong>Per-project roles</strong> — assign Owner, Editor or Viewer to each member</li>
+          <li><strong>Project visibility</strong> — entire organization, members only, or assignees only</li>
+          <li><strong>Section access</strong> — limit section visibility to editors and owners</li>
+          <li><strong>Task visibility</strong> — each task can be visible to everyone or assignees only</li>
+        </ul>
+
         <h3>Portfolios</h3>
         <p>Portfolios group multiple projects. Create a portfolio from the Portfolios page, then associate projects. The portfolio progress bar aggregates data from all its projects.</p>
       </>
@@ -274,7 +316,9 @@ function content(lang) {
           <li><strong>Titolo e descrizione</strong> — modifica inline</li>
           <li><strong>Sezione</strong> — dropdown per spostare il task</li>
           <li><strong>Priorità</strong> — Alta (rossa), Media (gialla), Bassa (verde)</li>
-          <li><strong>Assegnatario</strong> — dropdown con i membri del progetto</li>
+          <li><strong>Assegnatari multipli</strong> — seleziona più membri dal dropdown. Ogni assegnatario appare come tag rimovibile. Il filtro per assegnatario controlla l'inclusione nell'array.</li>
+          <li><strong>Milestone</strong> — checkbox per contrassegnare il task come milestone. I milestone appaiono come diamanti ◆ nella Timeline e nel Calendario.</li>
+          <li><strong>Visibilità task</strong> — controlla chi può vedere il task: tutti, solo gli assegnatari.</li>
           <li><strong>Scadenza e data inizio</strong> — date picker</li>
           <li><strong>Tag</strong> — aggiungi etichette colorate, filtra per tag</li>
           <li><strong>Ricorrenza</strong> — giornaliera, settimanale, mensile o personalizzata (ogni N giorni)</li>
@@ -314,7 +358,9 @@ function content(lang) {
           <li><strong>Title and description</strong> — inline editing</li>
           <li><strong>Section</strong> — dropdown to move the task</li>
           <li><strong>Priority</strong> — High (red), Medium (yellow), Low (green)</li>
-          <li><strong>Assignee</strong> — dropdown with project members</li>
+          <li><strong>Multiple assignees</strong> — select multiple members from the dropdown. Each assignee appears as a removable tag. The assignee filter checks array inclusion.</li>
+          <li><strong>Milestone</strong> — checkbox to mark the task as a milestone. Milestones appear as diamonds ◆ in Timeline and Calendar views.</li>
+          <li><strong>Task visibility</strong> — control who can see the task: everyone or assignees only.</li>
           <li><strong>Due date and start date</strong> — date pickers</li>
           <li><strong>Tags</strong> — add colored labels, filter by tag</li>
           <li><strong>Recurrence</strong> — daily, weekly, monthly or custom (every N days)</li>
@@ -352,7 +398,7 @@ function content(lang) {
         <p>Due modalità: mese e settimana. I task sono posizionati per data di scadenza. Drag & drop per ripianificare. I task scaduti sono evidenziati in rosso. Colore per priorità o progetto.</p>
 
         <h3>Timeline (Gantt)</h3>
-        <p>Visualizzazione temporale con barre di durata (da "inizio" a "scadenza"). Le frecce indicano le dipendenze tra task. Trascina le barre per ripianificare, trascina i bordi per cambiare durata. Passa il mouse per i dettagli. Zoom e pan con scroll e drag.</p>
+        <p>Visualizzazione temporale con barre di durata (da "inizio" a "scadenza"). Le frecce indicano le dipendenze tra task. I task contrassegnati come milestone appaiono come diamanti ◆. Trascina le barre per ripianificare, trascina i bordi per cambiare durata. Passa il mouse per i dettagli. Zoom e pan con scroll e drag.</p>
 
         <h3>Overview</h3>
         <p>Pagina di impostazioni del progetto: descrizione, stato, risorse, membri, campi personalizzati, progresso, attività recente, regole, form, obiettivi. Qui trovi anche il pulsante "Genera Report (PDF)".</p>
@@ -372,7 +418,7 @@ function content(lang) {
         <p>Two modes: month and week. Tasks are positioned by due date. Drag & drop to reschedule. Overdue tasks are highlighted in red. Color by priority or project.</p>
 
         <h3>Timeline (Gantt)</h3>
-        <p>Time-based view with duration bars (from start to due date). Arrows show dependencies. Drag bars to reschedule, drag edges to change duration. Hover for details. Zoom and pan with scroll and drag.</p>
+        <p>Time-based view with duration bars (from start to due date). Arrows show dependencies. Tasks marked as milestones appear as diamonds ◆. Drag bars to reschedule, drag edges to change duration. Hover for details. Zoom and pan with scroll and drag.</p>
 
         <h3>Overview</h3>
         <p>Project settings page: description, status, resources, members, custom fields, progress, recent activity, rules, forms, goals. Here you'll also find the "Generate Report (PDF)" button.</p>
@@ -402,7 +448,7 @@ function content(lang) {
           </tbody>
         </table>
 
-        <h3>Azioni (8 tipi)</h3>
+        <h3>Azioni (10 tipi)</h3>
         <table>
           <thead><tr><th>Azione</th><th>Cosa fa</th></tr></thead>
           <tbody>
@@ -414,6 +460,8 @@ function content(lang) {
             <tr><td>Aggiungi tag</td><td>Aggiunge un tag al task</td></tr>
             <tr><td>Imposta scadenza</td><td>Imposta la scadenza a +N giorni da oggi</td></tr>
             <tr><td>Crea subtask</td><td>Crea automaticamente un subtask con titolo specifico</td></tr>
+            <tr><td>Webhook (HTTP POST)</td><td>Invia un POST JSON a un URL esterno con i dati del task (fire-and-forget). Supporta header di autenticazione.</td></tr>
+            <tr><td>Invia email</td><td>Invia un'email via Edge Function con oggetto e corpo personalizzabili (supporta <code>{'{task}'}</code>, <code>{'{who}'}</code>, <code>{'{due}'}</code>)</td></tr>
           </tbody>
         </table>
 
@@ -443,7 +491,7 @@ function content(lang) {
           </tbody>
         </table>
 
-        <h3>Actions (8 types)</h3>
+        <h3>Actions (10 types)</h3>
         <table>
           <thead><tr><th>Action</th><th>What it does</th></tr></thead>
           <tbody>
@@ -455,6 +503,8 @@ function content(lang) {
             <tr><td>Add tag</td><td>Adds a tag to the task</td></tr>
             <tr><td>Set due date</td><td>Sets due date to +N days from today</td></tr>
             <tr><td>Create subtask</td><td>Auto-creates a subtask with a specific title</td></tr>
+            <tr><td>Webhook (HTTP POST)</td><td>Sends a JSON POST to an external URL with task data (fire-and-forget). Supports authentication headers.</td></tr>
+            <tr><td>Send email</td><td>Sends an email via Edge Function with customizable subject and body (supports <code>{'{task}'}</code>, <code>{'{who}'}</code>, <code>{'{due}'}</code>)</td></tr>
           </tbody>
         </table>
 
@@ -918,6 +968,14 @@ function content(lang) {
 
         <h3>Ospite</h3>
         <p>L'ospite ha visibilità limitata: può vedere e modificare solo i task assegnati a sé.</p>
+
+        <h3>Ruoli per progetto</h3>
+        <p>Oltre ai ruoli organizzativi, ogni progetto ha i propri ruoli (Owner, Editor, Viewer). Questi controllano cosa ogni membro può fare all'interno del singolo progetto:</p>
+        <ul>
+          <li><strong>Owner</strong> — accesso completo: modifica task, impostazioni progetto, regole, permessi</li>
+          <li><strong>Editor</strong> — crea e modifica task, ma non può cambiare le impostazioni del progetto</li>
+          <li><strong>Viewer</strong> — sola lettura, non può modificare nulla</li>
+        </ul>
       </>
     ) : (
       <>
@@ -943,6 +1001,14 @@ function content(lang) {
 
         <h3>Guest</h3>
         <p>Guest has limited visibility: can only see and edit tasks assigned to them.</p>
+
+        <h3>Per-project roles</h3>
+        <p>In addition to organization-level roles, each project has its own roles (Owner, Editor, Viewer). These control what each member can do within a specific project:</p>
+        <ul>
+          <li><strong>Owner</strong> — full access: edit tasks, project settings, rules, permissions</li>
+          <li><strong>Editor</strong> — create and edit tasks, but cannot change project settings</li>
+          <li><strong>Viewer</strong> — read-only, cannot modify anything</li>
+        </ul>
       </>
     ),
   }
@@ -1018,10 +1084,29 @@ export default function ManualPage() {
   const [lang, setLang] = useState(() => {
     try { const v = localStorage.getItem('tf_lang'); return v === 'en' ? 'en' : 'it' } catch { return 'it' }
   })
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('tf_theme') ?? 'auto' } catch { return 'auto' }
+  })
   const t = T[lang]
   const c = useMemo(() => content(lang), [lang])
   const keys = Object.keys(t.sections)
   const [activeSection, setActiveSection] = useState(keys[0])
+
+  useEffect(() => {
+    const resolved = theme === 'auto'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme
+    document.documentElement.setAttribute('data-theme', resolved)
+  }, [theme])
+
+  const cycleTheme = () => {
+    const order = ['dark', 'light', 'auto']
+    const next = order[(order.indexOf(theme) + 1) % 3]
+    setTheme(next)
+    try { localStorage.setItem('tf_theme', next) } catch {}
+  }
+
+  const themeIcon = theme === 'dark' ? '\u{1F319}' : theme === 'light' ? '\u2600\uFE0F' : '\u2699\uFE0F'
 
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
@@ -1057,9 +1142,14 @@ export default function ManualPage() {
           <a href="/taskflow/" style={S.backBtn}>
             <span style={{ fontSize: 16 }}>&#8592;</span> {t.backToApp}
           </a>
-          <button style={S.langBtn} onClick={() => setLang(l => l === 'it' ? 'en' : 'it')}>
-            {t.switchLang}
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button style={S.langBtn} onClick={cycleTheme} title={theme}>
+              {themeIcon}
+            </button>
+            <button style={S.langBtn} onClick={() => setLang(l => l === 'it' ? 'en' : 'it')}>
+              {t.switchLang}
+            </button>
+          </div>
         </div>
         <h1 style={S.title}>{t.title}</h1>
         <p style={S.subtitle}>{t.subtitle}</p>
