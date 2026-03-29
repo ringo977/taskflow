@@ -48,6 +48,8 @@ export const toTask = (r, secName, subs, cmts, deps) => ({
   position: r.position ?? 0,
   customValues: r.custom_values ?? {},
   visibility: r.visibility ?? 'all',
+  createdAt: r.created_at ?? null,
+  updatedAt: r.updated_at ?? null,
   subs: subs ?? [],
   cmts: cmts ?? [],
   deps: deps ?? [],

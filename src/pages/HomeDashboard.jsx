@@ -30,9 +30,11 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-/** Format a timestamp as relative time (e.g. "2h ago", "3d ago") */
+/** Format a timestamp as relative time (e.g. "2m", "2h", "3d") */
 function formatTimeAgo(ts, _t) {
+  if (!ts || !Number.isFinite(ts)) return _t.justNow ?? 'just now'
   const diff = Date.now() - ts
+  if (diff < 0) return _t.justNow ?? 'just now' // future timestamp guard
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return _t.justNow ?? 'just now'
   if (mins < 60) return `${mins}m`
@@ -83,10 +85,10 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const [editing, setEditing] = useState(false)
   const [dragIdx, setDragIdx] = useState(null)
 
-  // Tick every 60s so relative timestamps ("2h", "3d") stay fresh
+  // Tick every 15s so relative timestamps ("2m", "2h", "3d") stay fresh
   const [, setTick] = useState(0)
   useEffect(() => {
-    const id = setInterval(() => setTick(n => n + 1), 60_000)
+    const id = setInterval(() => setTick(n => n + 1), 15_000)
     return () => clearInterval(id)
   }, [])
 
@@ -164,8 +166,9 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   // Recent activity: derive from activity log (real timestamps), task ids, and comments
   const recentActivity = useMemo(() => {
     const acts = []
+    const now = Date.now()
     const WEEK_MS = 7 * 86400000
-    const cutoff = Date.now() - WEEK_MS
+    const cutoff = now - WEEK_MS
 
     for (const task of tasks) {
       // ── Activity-log events (real timestamps from useTaskActions) ──
@@ -184,28 +187,32 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
         }
       }
 
-      // ── Creation event (from task id timestamp) ──
+      // ── Creation event: prefer DB created_at, fall back to task-id timestamp ──
+      const createdMs = task.createdAt ? new Date(task.createdAt).getTime() : null
       const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
-      if (!isNaN(idTs) && idTs > cutoff) {
-        acts.push({ type: 'created', task, time: idTs })
+      const createTs = (createdMs && !isNaN(createdMs)) ? createdMs : (!isNaN(idTs) ? idTs : null)
+      if (createTs && createTs > cutoff && createTs <= now) {
+        acts.push({ type: 'created', task, time: createTs })
       }
 
-      // ── Completion fallback: if activity log has no 'done' entry, use due date ──
+      // ── Completion fallback: prefer updated_at (when it was marked done), then due date ──
       if (task.done && !acts.some(a => a.type === 'completed' && a.task.id === task.id)) {
-        if (task.due) {
-          const dueTs = new Date(task.due + 'T12:00:00').getTime()
-          if (dueTs > cutoff) {
-            acts.push({ type: 'completed', task, time: dueTs })
-          }
+        const updMs = task.updatedAt ? new Date(task.updatedAt).getTime() : null
+        const dueMs = task.due ? new Date(task.due + 'T12:00:00').getTime() : null
+        // Use updated_at as best proxy for completion time; cap to now so future dates don't show "ora"
+        const compTs = (updMs && !isNaN(updMs)) ? Math.min(updMs, now)
+          : (dueMs && !isNaN(dueMs)) ? Math.min(dueMs, now) : null
+        if (compTs && compTs > cutoff) {
+          acts.push({ type: 'completed', task, time: compTs })
         }
       }
 
       // ── Comments ──
-      if (task.comments?.length) {
-        for (const c of task.comments.slice(-2)) {
-          const cTs = new Date(c.date).getTime()
-          if (cTs > cutoff) {
-            acts.push({ type: 'commented', task, time: cTs, who: c.user })
+      if (task.cmts?.length) {
+        for (const c of task.cmts.slice(-2)) {
+          const cTs = new Date(c.d).getTime()
+          if (!isNaN(cTs) && cTs > cutoff) {
+            acts.push({ type: 'commented', task, time: cTs, who: c.who })
           }
         }
       }
