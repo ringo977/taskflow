@@ -161,27 +161,50 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       .slice(0, 8)
   }, [tasks, ts, weStr])
 
-  // Recent activity: derive from task ids (creation timestamp) + done status + comments
+  // Recent activity: derive from activity log (real timestamps), task ids, and comments
   const recentActivity = useMemo(() => {
     const acts = []
+    const WEEK_MS = 7 * 86400000
+    const cutoff = Date.now() - WEEK_MS
+
     for (const task of tasks) {
-      // creation event
-      const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
-      if (!isNaN(idTs) && idTs > Date.now() - 7 * 86400000) {
-        acts.push({ type: 'created', task, time: idTs })
-      }
-      // completion event (approximate: if done and due is recent, treat due as completion date)
-      if (task.done && task.due) {
-        const dueTs = new Date(task.due + 'T12:00:00').getTime()
-        if (dueTs > Date.now() - 7 * 86400000) {
-          acts.push({ type: 'completed', task, time: dueTs })
+      // ── Activity-log events (real timestamps from useTaskActions) ──
+      if (task.activity?.length) {
+        for (const entry of task.activity) {
+          const entryTs = new Date(entry.ts).getTime()
+          if (isNaN(entryTs) || entryTs < cutoff) continue
+
+          if (entry.field === 'done' && entry.to === true) {
+            acts.push({ type: 'completed', task, time: entryTs, who: entry.who })
+          } else if (entry.field === 'who') {
+            acts.push({ type: 'assigned', task, time: entryTs, who: entry.who })
+          } else if (entry.field === 'sec') {
+            acts.push({ type: 'moved', task, time: entryTs, who: entry.who, detail: entry.to })
+          }
         }
       }
-      // comments
+
+      // ── Creation event (from task id timestamp) ──
+      const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
+      if (!isNaN(idTs) && idTs > cutoff) {
+        acts.push({ type: 'created', task, time: idTs })
+      }
+
+      // ── Completion fallback: if activity log has no 'done' entry, use due date ──
+      if (task.done && !acts.some(a => a.type === 'completed' && a.task.id === task.id)) {
+        if (task.due) {
+          const dueTs = new Date(task.due + 'T12:00:00').getTime()
+          if (dueTs > cutoff) {
+            acts.push({ type: 'completed', task, time: dueTs })
+          }
+        }
+      }
+
+      // ── Comments ──
       if (task.comments?.length) {
         for (const c of task.comments.slice(-2)) {
           const cTs = new Date(c.date).getTime()
-          if (cTs > Date.now() - 7 * 86400000) {
+          if (cTs > cutoff) {
             acts.push({ type: 'commented', task, time: cTs, who: c.user })
           }
         }
@@ -223,13 +246,21 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
     color: priColors[p],
   })).filter(d => d.value > 0)
 
-  // 3. Area: completions over last 14 days (approximate: done tasks whose due date falls in range)
+  // 3. Area: completions over last 14 days
+  // Use activity log for real completion date; fall back to due date for legacy tasks
   const areaData = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(now)
     d.setDate(now.getDate() - (13 - i))
     const ds = d.toISOString().slice(0, 10)
     const label = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
-    const completed = tasks.filter(task => task.done && task.due === ds).length
+    const completed = tasks.filter(task => {
+      if (!task.done) return false
+      // Prefer real completion timestamp from activity log
+      const doneEntry = (task.activity ?? []).findLast?.(a => a.field === 'done' && a.to === true)
+      if (doneEntry?.ts) return doneEntry.ts.slice(0, 10) === ds
+      // Fallback: due date (legacy tasks without activity tracking)
+      return task.due === ds
+    }).length
     const created = tasks.filter(task => {
       if (!task.id) return false
       const idTs = parseInt(task.id.replace(/^t/, ''), 10)
@@ -247,6 +278,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   })
 
   // 5. Burndown chart: remaining open tasks over last 30 days
+  // Use real completion date from activity log; fall back to due date for legacy tasks
   const burndownData = useMemo(() => {
     const scope = burndownPid === '__all__' ? tasks : tasks.filter(tk => tk.pid === burndownPid)
     const total = scope.length
@@ -256,7 +288,12 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       d.setDate(now.getDate() - i)
       const ds = d.toISOString().slice(0, 10)
       const label = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
-      const doneByDate = scope.filter(tk => tk.done && tk.due && tk.due <= ds).length
+      const doneByDate = scope.filter(tk => {
+        if (!tk.done) return false
+        const doneEntry = (tk.activity ?? []).findLast?.(a => a.field === 'done' && a.to === true)
+        const completedDate = doneEntry?.ts ? doneEntry.ts.slice(0, 10) : tk.due
+        return completedDate && completedDate <= ds
+      }).length
       points.push({ date: label, [t.chartRemaining]: total - doneByDate, [t.chartIdeal]: Math.round(total * (1 - (30 - i) / 30)) })
     }
     return points
@@ -276,6 +313,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   }, [tasks])
 
   // 7. Weekly velocity: tasks completed per week (last 8 weeks)
+  // Use real completion date from activity log; fall back to due date for legacy tasks
   const velocityData = useMemo(() => {
     const weeks = []
     for (let w = 7; w >= 0; w--) {
@@ -286,7 +324,12 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       const ws = weekStart.toISOString().slice(0, 10)
       const we = weekEnd.toISOString().slice(0, 10)
       const label = weekStart.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
-      const count = tasks.filter(tk => tk.done && tk.due && tk.due >= ws && tk.due <= we).length
+      const count = tasks.filter(tk => {
+        if (!tk.done) return false
+        const doneEntry = (tk.activity ?? []).findLast?.(a => a.field === 'done' && a.to === true)
+        const completedDate = doneEntry?.ts ? doneEntry.ts.slice(0, 10) : tk.due
+        return completedDate && completedDate >= ws && completedDate <= we
+      }).length
       weeks.push({ week: label, [t.chartCompleted]: count })
     }
     return weeks
@@ -425,10 +468,20 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
                 {recentActivity.map((act, i) => {
                   const p = projects.find(x => x.id === act.task.pid)
                   const ago = formatTimeAgo(act.time, t)
-                  const typeColor = act.type === 'completed' ? 'var(--c-success)' : act.type === 'created' ? 'var(--c-brand)' : 'var(--tx3)'
-                  const typeIcon = act.type === 'completed' ? '✓' : act.type === 'created' ? '+' : '💬'
+                  const typeColor = act.type === 'completed' ? 'var(--c-success)'
+                    : act.type === 'created' ? 'var(--c-brand)'
+                    : act.type === 'assigned' ? 'var(--c-warning, #e9a820)'
+                    : act.type === 'moved' ? 'var(--c-info, #4a90d9)'
+                    : 'var(--tx3)'
+                  const typeIcon = act.type === 'completed' ? '✓'
+                    : act.type === 'created' ? '+'
+                    : act.type === 'assigned' ? '→'
+                    : act.type === 'moved' ? '↦'
+                    : '💬'
                   const typeLabel = act.type === 'created' ? (t.actCreated ?? 'created')
                     : act.type === 'completed' ? (t.actCompleted ?? 'completed')
+                    : act.type === 'assigned' ? (t.actAssigned ?? 'assigned')
+                    : act.type === 'moved' ? (t.actMoved ?? 'moved')
                     : (t.actCommented ?? 'commented on')
                   const who = act.who ?? act.task.who ?? ''
                   return (

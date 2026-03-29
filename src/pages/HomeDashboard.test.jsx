@@ -21,21 +21,46 @@ function computeUpcomingDeadlines(tasks, todayStr, weekEndStr) {
 
 function computeRecentActivity(tasks) {
   const acts = []
+  const WEEK_MS = 7 * 86400000
+  const cutoff = Date.now() - WEEK_MS
+
   for (const task of tasks) {
-    const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
-    if (!isNaN(idTs) && idTs > Date.now() - 7 * 86400000) {
-      acts.push({ type: 'created', task, time: idTs })
-    }
-    if (task.done && task.due) {
-      const dueTs = new Date(task.due + 'T12:00:00').getTime()
-      if (dueTs > Date.now() - 7 * 86400000) {
-        acts.push({ type: 'completed', task, time: dueTs })
+    // Activity log events (real timestamps)
+    if (task.activity?.length) {
+      for (const entry of task.activity) {
+        const entryTs = new Date(entry.ts).getTime()
+        if (isNaN(entryTs) || entryTs < cutoff) continue
+        if (entry.field === 'done' && entry.to === true) {
+          acts.push({ type: 'completed', task, time: entryTs, who: entry.who })
+        } else if (entry.field === 'who') {
+          acts.push({ type: 'assigned', task, time: entryTs, who: entry.who })
+        } else if (entry.field === 'sec') {
+          acts.push({ type: 'moved', task, time: entryTs, who: entry.who, detail: entry.to })
+        }
       }
     }
+
+    // Creation event (from task id timestamp)
+    const idTs = parseInt(task.id?.replace(/^t/, ''), 10)
+    if (!isNaN(idTs) && idTs > cutoff) {
+      acts.push({ type: 'created', task, time: idTs })
+    }
+
+    // Completion fallback: use due date if no activity log entry
+    if (task.done && !acts.some(a => a.type === 'completed' && a.task.id === task.id)) {
+      if (task.due) {
+        const dueTs = new Date(task.due + 'T12:00:00').getTime()
+        if (dueTs > cutoff) {
+          acts.push({ type: 'completed', task, time: dueTs })
+        }
+      }
+    }
+
+    // Comments
     if (task.comments?.length) {
       for (const c of task.comments.slice(-2)) {
         const cTs = new Date(c.date).getTime()
-        if (cTs > Date.now() - 7 * 86400000) {
+        if (cTs > cutoff) {
           acts.push({ type: 'commented', task, time: cTs, who: c.user })
         }
       }

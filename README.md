@@ -37,7 +37,7 @@ Login with any test account — password: `mimic2026`
 | PWA | vite-plugin-pwa (offline shell, installable) |
 | PDF reports | jsPDF (lazy-loaded) |
 | Permissions | Per-project roles (owner/editor/viewer) + section/task visibility |
-| Testing | Vitest + Testing Library (286 unit/integration tests) + Playwright E2E (28 tests: 7 smoke + 21 auth) |
+| Testing | Vitest + Testing Library (501 unit/integration tests, incl. property-based via fast-check) + Playwright E2E (28 tests: 7 smoke + 21 auth) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -179,9 +179,9 @@ taskflow/
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
 
-Tests: 314 total (286 unit/integration + 28 E2E).
-Unit/integration: Vitest + Testing Library — permissions (45 tests), filters (30), adapters (28), rule engine actions (28), hooks (useTaskActions, useProjectActions, useRuleEngine), components (FormSubmitModal, HomeDashboard).
-E2E: Playwright — 7 smoke (manual page, no auth) + 21 auth (login + TOTP 2FA, dashboard layout, multi-assignee views, permissions, templates).
+Tests: 529 total (501 unit/integration + 28 E2E).
+Unit/integration (Vitest + Testing Library): 3 tiers — (1) base unit tests: permissions (45), filters (30), adapters (28), rule engine (28), hooks (useTaskActions, useProjectActions), components (FormSubmitModal, HomeDashboard); (2) resilience: corrupted localStorage + dashboard layout recovery, AI proxy edge cases + network failures, webhook/email timeout/failure, legacy JSONB + parseWho edge cases, milestones without due date + multi-assignee null; (3) property-based (fast-check): arbitrary trigger/action/condition combos, circuit breaker + dedup invariants, filter composition properties (subset, identity, monotonicity), isOverdue consistency, visibility filter safety; (4) concurrency: optimistic UI + revert on DB error, rapid sequential updates, undo integration, notification correctness.
+E2E (Playwright): 7 smoke (manual page, no auth) + 21 auth (login + TOTP 2FA, dashboard layout, multi-assignee views, permissions, templates).
 ```
 
 ---
@@ -436,7 +436,7 @@ All tables are protected by org-scoped Row Level Security.
 - **Task templates**: Save any task as a reusable template (title, description, priority, subtasks, tags); load templates when creating new tasks
 - **Granular permissions**: Per-project roles (owner/editor/viewer), per-section access control, per-task visibility (all / assignees only)
 - **Customizable dashboard**: Drag & drop widget reorder, toggle visibility, 3 size options per widget, localStorage persistence, reset to defaults
-- **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards)
+- **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards). Time-based widgets (activity feed, burndown, velocity, 14-day activity chart) derive completion timestamps from the task activity log for accuracy, with due-date fallback for legacy tasks
 - **Manual**: Standalone bilingual (IT/EN) documentation page with 19 sections, sticky scroll-tracking TOC, lazy-loaded
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Visual form builder with 8 field types (text, textarea, select, date, number, checkbox, url, email), drag reorder, live preview, placeholder/default values, and task property mapping
