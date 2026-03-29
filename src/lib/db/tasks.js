@@ -77,16 +77,18 @@ export async function upsertTask(orgId, task, sectionRows) {
     id: task.id, org_id: orgId, project_id: task.pid,
     section_id: secRow?.id ?? null,
     title: task.title, description: task.desc ?? '',
-    assignee_name: task.who ?? '',
+    assignee_name: Array.isArray(task.who) ? JSON.stringify(task.who) : task.who ?? '',
     priority: task.pri ?? 'medium',
     start_date: task.startDate ?? null,
     due_date: task.due ?? null,
     done: task.done ?? false,
+    milestone: task.milestone ?? false,
     attachments: task.attachments ?? [],
     tags: task.tags ?? [],
     activity: task.activity ?? [],
     position: task.position ?? 0,
     custom_values: task.customValues ?? {},
+    visibility: task.visibility ?? 'all',
     updated_at: new Date().toISOString(),
   })
   if (error) throw error
@@ -102,9 +104,9 @@ export async function upsertTask(orgId, task, sectionRows) {
 const FIELD_MAP = {
   done: 'done', title: 'title', desc: 'description',
   pri: 'priority', startDate: 'start_date', due: 'due_date',
-  who: 'assignee_name', recurrence: 'recurrence',
+  recurrence: 'recurrence', milestone: 'milestone',
   tags: 'tags', activity: 'activity', position: 'position',
-  customValues: 'custom_values',
+  customValues: 'custom_values', visibility: 'visibility',
 }
 
 export async function updateTaskField(orgId, taskId, patch) {
@@ -112,6 +114,8 @@ export async function updateTaskField(orgId, taskId, patch) {
   for (const [client, col] of Object.entries(FIELD_MAP)) {
     if (client in patch) db[col] = patch[client] ?? (typeof patch[client] === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
   }
+  // Serialize who array for DB
+  if ('who' in patch) db.assignee_name = Array.isArray(patch.who) ? JSON.stringify(patch.who) : patch.who ?? ''
   const { error } = await supabase.from('tasks').update(db).eq('id', taskId)
   if (error) throw error
 

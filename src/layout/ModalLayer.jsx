@@ -16,7 +16,7 @@ const ChunkFallback = () => (
  * Rendered at the top level of the app shell.
  */
 export default function ModalLayer({
-  selTask, tasks, projs, ports, pSecs, user, activeOrgId, myProjectRoles, lang,
+  selTask, tasks, projs, ports, pSecs, proj, user, activeOrgId, myProjectRoles, lang,
   actions, ui,
 }) {
   const { updTask, delTask, genSubs, addTask, addProject } = actions
@@ -35,7 +35,7 @@ export default function ModalLayer({
           onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />
       )}
       {showAdd && (
-        <AddModal secs={pSecs}
+        <AddModal secs={pSecs} templates={proj?.taskTemplates ?? []}
           onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }}
           aiLoad={aiLoad} onAICreate={ui.aiCreate} currentUser={user} defaultDue={addDue} />
       )}

@@ -54,7 +54,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
 
       case 'notify': {
         const msg = action.config?.message
-          ? action.config.message.replace('{task}', task.title).replace('{who}', task.who ?? '')
+          ? action.config.message.replace('{task}', task.title).replace('{who}', (Array.isArray(task.who) ? task.who.join(', ') : task.who) ?? '')
           : `Rule: ${task.title}`
         toast(msg, 'info')
         inbox?.push?.({
@@ -78,11 +78,16 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         }
         break
 
-      case 'assign_to':
-        if (action.config?.who && task.who !== action.config.who) {
-          updTask(task.id, { who: action.config.who })
+      case 'assign_to': {
+        const target = action.config?.who
+        if (target) {
+          const arr = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+          if (!arr.includes(target)) {
+            updTask(task.id, { who: [...arr, target] })
+          }
         }
         break
+      }
 
       case 'add_tag': {
         const tag = action.config?.tag
@@ -137,7 +142,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         case 'priority':
           return cond.value ? task.pri === cond.value : true
         case 'assignee':
-          return cond.value ? task.who === cond.value : true
+          return cond.value ? (Array.isArray(task.who) ? task.who.includes(cond.value) : task.who === cond.value) : true
         case 'tag':
           return cond.value ? (task.tags ?? []).includes(cond.value) : true
         case 'section':
@@ -187,8 +192,12 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
           break
 
         case 'task_assigned':
-          if ('who' in patch && patch.who && patch.who !== prevTask.who) {
-            shouldFire = true
+          if ('who' in patch) {
+            const newArr = Array.isArray(patch.who) ? patch.who : patch.who ? [patch.who] : []
+            const oldArr = Array.isArray(prevTask.who) ? prevTask.who : prevTask.who ? [prevTask.who] : []
+            if (newArr.length > oldArr.length || newArr.some(n => !oldArr.includes(n))) {
+              shouldFire = true
+            }
           }
           break
 

@@ -196,6 +196,7 @@ export default function CalendarView({ tasks, projects, onOpen, onMove: _onMove,
                   cursor: 'grab',
                 }}>
                 {task.done && <span className="cal-chip__done">✓</span>}
+                {task.milestone && <span className="cal-chip__badge" style={{ color: p?.color ?? 'var(--tx2)' }}>◆</span>}
                 {task.approval?.status === 'pending' && <span className="cal-chip__badge" style={{ color: 'var(--c-warning)' }}>⏳</span>}
                 {task.title}
               </div>

@@ -66,8 +66,11 @@ export function useTaskActions({
       if (prev) {
         const TRACK = ['title', 'desc', 'who', 'pri', 'due', 'startDate', 'sec', 'recurrence']
         for (const k of TRACK) {
-          if (k in patch && patch[k] !== prev[k])
-            entries.push({ ts, who, field: k, from: prev[k], to: patch[k] })
+          if (!(k in patch)) continue
+          const same = k === 'who'
+            ? JSON.stringify(patch[k] ?? []) === JSON.stringify(prev[k] ?? [])
+            : patch[k] === prev[k]
+          if (!same) entries.push({ ts, who, field: k, from: prev[k], to: patch[k] })
         }
         if ('tags' in patch) {
           const oldNames = (prev.tags ?? []).map(tg => tg.name).sort().join(',')
@@ -92,14 +95,18 @@ export function useTaskActions({
         } else if (!('deps' in patch && Object.keys(patch).length === 1)) {
           await updateTaskField(activeOrgId, id, fullPatch)
         }
-        if ('who' in patch && patch.who && prev) {
-          autoAddAssigneeToProject(prev.pid, patch.who)
-          // Notification: task assigned
-          if (patch.who !== prev.who) {
+        if ('who' in patch && prev) {
+          const newArr = Array.isArray(patch.who) ? patch.who : patch.who ? [patch.who] : []
+          const oldArr = Array.isArray(prev.who) ? prev.who : prev.who ? [prev.who] : []
+          const added = newArr.filter(n => !oldArr.includes(n))
+          for (const name of added) {
+            autoAddAssigneeToProject(prev.pid, name)
+          }
+          if (JSON.stringify(newArr) !== JSON.stringify(oldArr)) {
             inbox.push({
               type: 'task_assigned',
               actor: user?.name ?? 'System',
-              message: tr.msgDidAssign?.(prev.title, patch.who) ?? `assigned "${prev.title}" to ${patch.who}`,
+              message: tr.msgDidAssign?.(prev.title, newArr.join(', ')) ?? `assigned "${prev.title}" to ${newArr.join(', ')}`,
               taskId: id,
             })
           }

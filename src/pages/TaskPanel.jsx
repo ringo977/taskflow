@@ -5,6 +5,8 @@ import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { uploadAttachment, deleteAttachment } from '@/lib/db'
 import Avatar from '@/components/Avatar'
+// eslint-disable-next-line no-unused-vars
+import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
 import ConfirmModal from '@/components/ConfirmModal'
 import Checkbox from '@/components/Checkbox'
@@ -109,9 +111,35 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
         </div>
 
         {/* Meta */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', fontSize: 13, marginBottom: 20, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', fontSize: 13, marginBottom: 20, alignItems: 'start' }}>
           <span style={{ color: 'var(--tx3)' }}>{t.assigned}</span>
-          <Avatar name={task.who} size={20} showName />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {(Array.isArray(task.who) ? task.who : task.who ? [task.who] : []).map(name => (
+              <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--bg2)', padding: '2px 8px 2px 4px', borderRadius: 'var(--r1)', fontSize: 12 }}>
+                <Avatar name={name} size={16} />
+                <span style={{ color: 'var(--tx2)' }}>{name}</span>
+                <button onClick={() => {
+                  const arr = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+                  onUpd(task.id, { who: arr.filter(n => n !== name) })
+                }} style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            ))}
+            <select
+              value=""
+              onChange={e => {
+                if (!e.target.value) return
+                const arr = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+                if (!arr.includes(e.target.value)) onUpd(task.id, { who: [...arr, e.target.value] })
+                e.target.value = ''
+              }}
+              style={{ fontSize: 12, padding: '3px 6px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer' }}
+            >
+              <option value="">+</option>
+              {orgUsers.filter(u => !(Array.isArray(task.who) ? task.who : task.who ? [task.who] : []).includes(u.name)).map(u => (
+                <option key={u.name} value={u.name}>{u.name}</option>
+              ))}
+            </select>
+          </div>
 
           <span style={{ color: 'var(--tx3)' }}>{t.startDate}</span>
           <input type="date" value={task.startDate ?? ''} onChange={e => onUpd(task.id, { startDate: e.target.value || null })}
@@ -133,8 +161,24 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
             <option value="monthly">{t.recMonthly}</option>
           </select>
 
+          <span style={{ color: 'var(--tx3)' }}>{t.milestone ?? 'Milestone'}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+            <input type="checkbox" checked={task.milestone ?? false}
+              onChange={e => onUpd(task.id, { milestone: e.target.checked })}
+              style={{ accentColor: 'var(--c-brand)' }} />
+            <span style={{ color: 'var(--tx2)' }}>{task.milestone ? (t.milestoneYes ?? 'Yes') : (t.milestoneNo ?? 'No')}</span>
+          </label>
+
           <span style={{ color: 'var(--tx3)' }}>{t.section}</span>
           <span style={{ color: 'var(--tx2)' }}>{task.sec}</span>
+
+          <span style={{ color: 'var(--tx3)' }}>{t.taskVisibility ?? 'Visibility'}</span>
+          <select value={task.visibility ?? 'all'}
+            onChange={e => onUpd(task.id, { visibility: e.target.value })}
+            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)' }}>
+            <option value="all">{t.visibilityAll ?? 'Everyone'}</option>
+            <option value="assignees">{t.visibilityAssignees ?? 'Assignees only'}</option>
+          </select>
         </div>
 
         {/* Tags */}

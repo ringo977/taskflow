@@ -5,7 +5,7 @@ import { useRuleEngine, MAX_RULE_DEPTH, MAX_FIRES_PER_TICK } from './useRuleEngi
 // ── Helpers ──────────────────────────────────────────────────
 
 const TASK = {
-  id: 't1', pid: 'p1', title: 'Test Task', sec: 'To Do', who: 'Alice',
+  id: 't1', pid: 'p1', title: 'Test Task', sec: 'To Do', who: ['Alice'],
   done: false, pri: 'medium', desc: '', subs: [], comments: [],
   tags: [], due: '2026-04-01',
 }
@@ -294,7 +294,7 @@ describe('useRuleEngine', () => {
         result.current.evaluateTaskChange('t1', { sec: 'Review' }, TASK)
         vi.advanceTimersByTime(100)
       })
-      expect(updTask).toHaveBeenCalledWith('t1', { who: 'Charlie' })
+      expect(updTask).toHaveBeenCalledWith('t1', { who: ['Alice', 'Charlie'] })
     })
 
     it('add_tag appends to tags', () => {
@@ -354,7 +354,7 @@ describe('useRuleEngine', () => {
       })
 
       expect(updTask).toHaveBeenCalledWith('t1', { pri: 'high' })
-      expect(updTask).toHaveBeenCalledWith('t1', { who: 'Lead' })
+      expect(updTask).toHaveBeenCalledWith('t1', { who: ['Alice', 'Lead'] })
       expect(toast).toHaveBeenCalledWith('Escalated', 'info')
     })
   })

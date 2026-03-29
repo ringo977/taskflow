@@ -250,17 +250,26 @@ export function generateProjectReport(project, tasks, sections, t, lang = 'it') 
   }
 
   // ── 6. Team workload ──
-  const assignees = [...new Set(pTasks.filter(tk => tk.who).map(tk => tk.who))]
+  const assignees = [...new Set(pTasks.filter(tk => tk.who?.length > 0).flatMap(tk => Array.isArray(tk.who) ? tk.who : [tk.who]))]
   if (assignees.length > 0) {
     sectionHeader(t.reportTeam ?? 'Team workload')
 
     assignees.sort((a, b) => {
-      const aOpen = pTasks.filter(tk => tk.who === a && !tk.done).length
-      const bOpen = pTasks.filter(tk => tk.who === b && !tk.done).length
+      const aOpen = pTasks.filter(tk => {
+        const whoArr = Array.isArray(tk.who) ? tk.who : [tk.who]
+        return whoArr.includes(a) && !tk.done
+      }).length
+      const bOpen = pTasks.filter(tk => {
+        const whoArr = Array.isArray(tk.who) ? tk.who : [tk.who]
+        return whoArr.includes(b) && !tk.done
+      }).length
       return bOpen - aOpen
     }).slice(0, 10).forEach(name => {
       checkSpace(10)
-      const personTasks = pTasks.filter(tk => tk.who === name)
+      const personTasks = pTasks.filter(tk => {
+        const whoArr = Array.isArray(tk.who) ? tk.who : [tk.who]
+        return whoArr.includes(name)
+      })
       const personDone = personTasks.filter(tk => tk.done).length
       const personOpen = personTasks.length - personDone
       const personOd = personTasks.filter(tk => !tk.done && isOverdue(tk.due)).length

@@ -141,7 +141,7 @@ function App() {
 
           {/* ── Modals & overlays ────────────────────────── */}
           <ModalLayer
-            selTask={selTask} tasks={tasks} projs={projs} ports={ports} pSecs={pSecs}
+            selTask={selTask} tasks={tasks} projs={projs} ports={ports} pSecs={pSecs} proj={proj}
             user={user} activeOrgId={activeOrgId} myProjectRoles={myProjectRoles} lang={lang}
             actions={actions} ui={uiBag}
           />

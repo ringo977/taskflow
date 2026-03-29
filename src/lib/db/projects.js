@@ -46,6 +46,9 @@ export async function upsertProject(orgId, p) {
     description: p.description ?? '',
     resources: p.resources ?? [],
     custom_fields: p.customFields ?? [],
+    task_templates: p.taskTemplates ?? [],
+    visibility: p.visibility ?? 'all',
+    section_access: p.sectionAccess ?? {},
     updated_at: new Date().toISOString(),
   })
   if (error) throw error

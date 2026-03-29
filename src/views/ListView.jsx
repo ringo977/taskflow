@@ -4,6 +4,7 @@ import { applyFilters, isOverdue } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'
 import { fmtDate } from '@/utils/format'
 import Avatar from '@/components/Avatar'
+import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
 
@@ -116,7 +117,9 @@ export default function ListView({ tasks, secs, project, onOpen, onToggle, onMov
                       ))}
                       <Badge pri={task.pri} />
                       {task.due && <span style={{ fontSize: 13, color: ov ? 'var(--c-danger)' : 'var(--tx3)', flexShrink: 0 }}>{fmtDate(task.due, lang)}</span>}
-                      <Avatar name={task.who} size={20} />
+                      {Array.isArray(task.who) && task.who.length > 1
+                        ? <AvatarGroup names={task.who} size={20} />
+                        : <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={20} />}
                       {(project?.customFields ?? []).map(f => {
                         const v = (task.customValues ?? {})[f.id]
                         return v ? <span key={f.id} style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${f.name}: ${v}`}>{v}</span> : null

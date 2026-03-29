@@ -13,12 +13,62 @@ import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
 import FormsPanel from '@/components/FormsPanel'
 import GoalsPanel from '@/components/GoalsPanel'
+import Badge from '@/components/Badge'
 // reportPdf is loaded lazily on button click to avoid bundling jsPDF (360KB) eagerly
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
   at_risk:   { label: 'at_risk',   color: 'var(--c-warning)', bg: 'color-mix(in srgb, var(--c-warning) 10%, transparent)' },
   off_track: { label: 'off_track', color: 'var(--c-danger)', bg: 'color-mix(in srgb, var(--c-danger) 10%, transparent)' },
+}
+
+function SaveTemplateButton({ tasks, proj, onUpdProject, t }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filtered = tasks.filter(task =>
+    !search || task.title.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 8)
+
+  const saveAsTemplate = (task) => {
+    const tpl = {
+      id: `tpl${Date.now()}`,
+      name: task.title,
+      title: task.title,
+      desc: task.desc ?? '',
+      pri: task.pri,
+      subs: (task.subs ?? []).map(s => ({ t: s.t })),
+      tags: task.tags ?? [],
+    }
+    const updated = [...(proj.taskTemplates ?? []), tpl]
+    onUpdProject(proj.id, { taskTemplates: updated })
+    setOpen(false)
+    setSearch('')
+  }
+
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ fontSize: 12, color: 'var(--c-brand)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+      + {t.saveAsTemplate ?? 'Save task as template'}
+    </button>
+  )
+
+  return (
+    <div style={{ border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: 8, marginTop: 4 }}>
+      <input value={search} onChange={e => setSearch(e.target.value)}
+        placeholder={t.searchTaskForTemplate ?? 'Search task...'}
+        style={{ width: '100%', fontSize: 12, padding: '6px 8px', marginBottom: 6, border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg2)', color: 'var(--tx1)' }} />
+      {filtered.map(task => (
+        <div key={task.id} onClick={() => saveAsTemplate(task)} className="hoverable"
+          style={{ padding: '6px 8px', fontSize: 12, color: 'var(--tx2)', cursor: 'pointer', borderRadius: 'var(--r1)' }}>
+          {task.title}
+        </div>
+      ))}
+      <button onClick={() => { setOpen(false); setSearch('') }}
+        style={{ fontSize: 11, color: 'var(--tx3)', background: 'transparent', border: 'none', cursor: 'pointer', marginTop: 4 }}>
+        {t.cancel}
+      </button>
+    </div>
+  )
 }
 
 export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang: _lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
@@ -127,6 +177,27 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
 
         {/* Goals */}
         <GoalsPanel project={proj} tasks={tasks} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
+
+        {/* Task Templates */}
+        <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t.taskTemplates ?? 'Task Templates'}</div>
+          {(proj.taskTemplates ?? []).length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic', marginBottom: 8 }}>{t.noTemplates ?? 'No templates. Save a task as template to reuse its structure.'}</div>
+          )}
+          {(proj.taskTemplates ?? []).map(tpl => (
+            <div key={tpl.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--bg2)', borderRadius: 'var(--r1)', marginBottom: 6, border: '1px solid var(--bd3)' }}>
+              <span style={{ flex: 1, fontSize: 13, color: 'var(--tx1)' }}>{tpl.name}</span>
+              {tpl.pri && <Badge pri={tpl.pri} />}
+              {tpl.subs?.length > 0 && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>✓ {tpl.subs.length}</span>}
+              <button onClick={() => {
+                const updated = (proj.taskTemplates ?? []).filter(t => t.id !== tpl.id)
+                onUpdProj(proj.id, { taskTemplates: updated })
+              }} aria-label="Delete template" style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontSize: 13 }}>✕</button>
+            </div>
+          ))}
+          {/* Save from existing task */}
+          <SaveTemplateButton tasks={pTasks} proj={proj} onUpdProject={onUpdProj} t={t} />
+        </div>
       </div>
 
       {/* Right column */}
@@ -183,6 +254,46 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
 
         {/* Members */}
         <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} canManage={isAdmin || (isManager && myProjectRoles[proj.id] === 'owner')} />
+
+        {/* Permissions */}
+        {canManage && (
+          <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.projectVisibility ?? 'Permissions'}</div>
+
+            {/* Project Visibility */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ ...sectionTitleStyle, marginBottom: 6 }}>{t.projectVisibility ?? 'Visibility'}</div>
+              <select value={proj.visibility ?? 'all'}
+                onChange={e => onUpdProj(proj.id, { visibility: e.target.value })}
+                style={{ fontSize: 12, padding: '4px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }}>
+                <option value="all">{t.visibilityAll ?? 'Entire organization'}</option>
+                <option value="members">{t.visibilityMembers ?? 'Project members only'}</option>
+              </select>
+            </div>
+
+            {/* Section Access */}
+            {sections && sections.length > 0 && (
+              <div style={{ marginBottom: 0 }}>
+                <div style={{ ...sectionTitleStyle, marginBottom: 6 }}>{t.sectionAccess ?? 'Section access'}</div>
+                {sections.filter(s => s.project_id === proj.id).map(sec => (
+                  <div key={sec.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 12 }}>
+                    <span style={{ flex: 1, color: 'var(--tx2)' }}>{sec.name}</span>
+                    <select value={(proj.sectionAccess ?? {})[sec.name] ?? 'all'}
+                      onChange={e => {
+                        const sa = { ...(proj.sectionAccess ?? {}), [sec.name]: e.target.value }
+                        if (e.target.value === 'all') delete sa[sec.name]
+                        onUpdProj(proj.id, { sectionAccess: sa })
+                      }}
+                      style={{ fontSize: 11, padding: '2px 4px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }}>
+                      <option value="all">{t.accessAll ?? 'Everyone'}</option>
+                      <option value="editors">{t.accessEditors ?? 'Editors & owners'}</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Custom fields config */}
         <CustomFieldsConfig proj={proj} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} t={t} />
@@ -291,7 +402,15 @@ function ProjectMembersPanel({ projectId, orgUsers, sectionTitleStyle, t, canMan
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, color: 'var(--tx1)' }}>{m.user_name}</div>
             </div>
-            <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{m.role}</span>
+            <select
+              value={m.role ?? 'viewer'}
+              disabled={!canManage || m.role === 'owner'}
+              style={{ fontSize: 11, padding: '2px 4px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: canManage && m.role !== 'owner' ? 'pointer' : 'not-allowed', opacity: canManage && m.role !== 'owner' ? 1 : 0.6 }}
+            >
+              <option value="owner">{t.roleOwner ?? 'Owner'}</option>
+              <option value="editor">{t.roleEditor ?? 'Editor'}</option>
+              <option value="viewer">{t.roleViewer ?? 'Viewer'}</option>
+            </select>
             {canManage && m.role !== 'owner' && (
               <button onClick={() => handleRemove(m.user_id)}
                 style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>

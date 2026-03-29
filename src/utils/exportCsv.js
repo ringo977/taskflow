@@ -17,7 +17,7 @@ export function exportTasksCsv(tasks, projectName, customFields = []) {
     const base = [
       t.title,
       t.sec,
-      t.who,
+      Array.isArray(t.who) ? t.who.join('; ') : t.who,
       t.pri,
       t.startDate ?? '',
       t.due ?? '',

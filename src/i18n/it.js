@@ -54,6 +54,7 @@ const it = {
   waitingOn: 'In attesa di',
   attachments: 'Allegati', addAttachment: 'Allega file', noAttachments: 'Nessun allegato',
   recurrence: 'Ricorrenza', recNone: 'Nessuna', recDaily: 'Giornaliera', recWeekly: 'Settimanale', recMonthly: 'Mensile', recCustom: 'Personalizzata',
+  milestone: 'Milestone', milestoneYes: 'Sì', milestoneNo: 'No',
   every: 'Ogni', days: 'giorni',
   newTask: 'Nuovo task', taskTitle: 'Titolo del task…',
   createWithAI: 'Crea con AI',
@@ -262,6 +263,10 @@ const it = {
   healthCritical: 'Fuori rotta',
   healthScore: 'Stato',
   tasksLabel: 'task',
+  editDashboard: '⚙ Personalizza',
+  doneEditing: '✓ Fatto',
+  resetLayout: 'Ripristina layout',
+  hidden: 'nascosto',
 
   // ── Forms ───────────────────────────────────────────────
   forms: 'Form',
@@ -351,5 +356,27 @@ const it = {
   reportOpenLower: 'aperti',
   reportDoneLower: 'completati',
   reportOverdueLower: 'in ritardo',
+
+  // ── Task Templates ──────────────────────────────────────
+  taskTemplates: 'Template task',
+  noTemplates: 'Nessun template. Salva un task come template per riutilizzarne la struttura.',
+  saveAsTemplate: 'Salva task come template',
+  searchTaskForTemplate: 'Cerca task…',
+  fromTemplate: 'Da template',
+  selectTemplate: 'Seleziona template…',
+
+  // ── Permissions ──────────────────────────────────────────
+  projectVisibility: 'Visibilità',
+  visibilityAll: 'Tutta l\'organizzazione',
+  visibilityMembers: 'Solo membri del progetto',
+  visibilityAssignees: 'Solo assegnatari',
+  sectionAccess: 'Accesso sezioni',
+  accessAll: 'Tutti',
+  accessEditors: 'Editor e owner',
+  taskVisibility: 'Visibilità',
+  projectRole: 'Ruolo nel progetto',
+  roleOwner: 'Owner',
+  roleEditor: 'Editor',
+  roleViewer: 'Viewer',
 }
 export default it

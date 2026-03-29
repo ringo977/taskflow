@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 
-export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, currentUser, defaultDue }) {
+export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, currentUser, defaultDue, templates = [] }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
@@ -23,6 +23,13 @@ export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, cur
   const [pri,       setPri]       = useState('medium')
   const [aiTxt,     setAiTxt]     = useState('')
   const [showAI,    setShowAI]    = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+
+  const applyTemplate = (template) => {
+    setTitle(template.title || '')
+    setPri(template.pri || 'medium')
+    setSelectedTemplate(template.id)
+  }
 
   const commit = () => {
     if (title.trim()) { onAdd({ title, sec, who, startDate: startDate || null, due, pri }); onClose() }
@@ -35,6 +42,19 @@ export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, cur
           <span style={{ fontWeight: 600, fontSize: 17 }}>{t.newTask}</span>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 16, lineHeight: 1 }}>✕</button>
         </div>
+
+        {templates.length > 0 && (
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--tx3)', display: 'block', marginBottom: 3, letterSpacing: '0.05em' }}>{t.fromTemplate}</label>
+            <select value={selectedTemplate} onChange={e => {
+              const tpl = templates.find(t => t.id === e.target.value)
+              if (tpl) applyTemplate(tpl)
+            }} style={{ width: '100%', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box', marginBottom: 8 }}>
+              <option value="">{t.selectTemplate}</option>
+              {templates.map(tpl => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.taskTitle}
           style={{ width: '100%', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} autoFocus

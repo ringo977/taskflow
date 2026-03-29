@@ -36,6 +36,7 @@ Login with any test account — password: `mimic2026`
 | Charts | Recharts |
 | PWA | vite-plugin-pwa (offline shell, installable) |
 | PDF reports | jsPDF (lazy-loaded) |
+| Permissions | Per-project roles (owner/editor/viewer) + section/task visibility |
 | Testing | Vitest + Testing Library (205 tests, >70% coverage) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
@@ -75,9 +76,9 @@ taskflow/
     │   ├── db.js                  # Re-export shim → db/ modules
     │   └── db/                    # Modular data layer (split from monolithic db.js)
     │       ├── index.js           # Barrel re-export + fetchOrgData
-    │       ├── adapters.js        # Shape adapters (toTask, toProject, toPortfolio)
-    │       ├── tasks.js           # Task CRUD + _persistRelated helper
-    │       ├── projects.js        # Project + portfolio CRUD
+    │       ├── adapters.js        # Shape adapters (toTask, toProject, toPortfolio) + parseWho()
+    │       ├── tasks.js           # Task CRUD + _persistRelated + multi-assignee serialization
+    │       ├── projects.js        # Project + portfolio CRUD + task templates + permissions
     │       ├── sections.js        # Section operations
     │       ├── org.js             # Org directory, membership, join requests
     │       ├── trash.js           # Soft delete, restore, permanent delete
@@ -124,6 +125,7 @@ taskflow/
     │   ├── TaskPanel.jsx          # Task detail side panel (editable)
     │   ├── AddModal.jsx           # New task modal (manual + AI)
     │   ├── InboxView.jsx          # Activity feed
+    │   ├── ManualPage.jsx         # Standalone bilingual manual (IT/EN, lazy-loaded)
     │   └── TrashView.jsx          # Soft-deleted items recovery
     │
     ├── views/                     # Project view modes
@@ -165,6 +167,7 @@ taskflow/
     │   ├── initials.js            # User initials extraction
     │   ├── storage.js             # localStorage wrapper (tf_ prefix) + well-known key helpers
     │   ├── routing.js             # parseRoute(), buildPath(), deferAuthWork()
+    │   ├── permissions.js          # Role hierarchy + per-project/section/task access checks
     │   ├── reportPdf.js            # Project status PDF report (jsPDF, lazy-loaded)
     │   └── exportCsv.js           # CSV export
     │
@@ -256,6 +259,30 @@ Approval state is stored in `task.approval` JSONB: `{ status, requestedBy, appro
 ### Project reports
 
 The "Generate Report (PDF)" button in ProjectOverview produces a comprehensive A4 status report via `src/utils/reportPdf.js`. The report includes six sections: project header with status badge, progress overview with stat cards and progress bar, task breakdown by section (table), priority distribution (horizontal bars), upcoming deadlines (next 14 days), and team workload. jsPDF (~391 KB) is loaded lazily via dynamic `import()` on button click so it never impacts initial page load. Full i18n support (IT/EN).
+
+### Multiple assignees
+
+The `who` field on tasks supports both a single string (legacy) and an array of strings. The `parseWho()` adapter in `adapters.js` normalizes all forms (null, empty string, plain string, JSON-encoded array) into a consistent array. On write, arrays are serialized as `JSON.stringify` into the existing `assignee_name` text column — no migration needed. The `AvatarGroup` component renders stacked avatars for multi-assigned tasks across Board, List, Calendar, and Timeline views. The assignee filter in `filters.js` checks array inclusion. Activity tracking and assignment notifications in `useTaskActions` diff arrays to detect newly added assignees. CSV export joins multiple assignees with semicolons; PDF reports flatten multi-assigned tasks for workload analysis.
+
+### Milestones
+
+A task can be flagged as a milestone via a boolean `milestone` field (default `false`). Milestones render as diamond shapes (◆) in Timeline/Gantt view (a 20×20px rotated square at the due date position) and as diamond indicators on Calendar chips and task cards. No new DB table — the field is persisted as a regular column on the tasks table. The TaskPanel provides a simple checkbox toggle.
+
+### Task templates
+
+Task templates are stored in `project.taskTemplates` JSONB array (same pattern as rules, forms, goals — no migration). Each template captures title, description, priority, section, tags, and subtask list. The `SaveTemplateButton` in ProjectOverview lets users pick an existing task and save its structure as a reusable template. The `AddModal` offers a template selector dropdown that pre-fills the form via `applyTemplate()`. Templates are scoped per project.
+
+### Granular permissions
+
+A utility module `src/utils/permissions.js` defines a role hierarchy (`owner: 3 > editor: 2 > viewer: 1`) and provides access-check functions: `getProjectRole`, `canEditTasks`, `canManageProject`, `canViewProject`, `canViewSection`, `canViewTask`. Project-level roles are assigned per member in `ProjectOverview` via a role dropdown. Section-level access can restrict visibility to editors-only or all members. Task-level visibility can be limited to assignees only. Permission data is stored in project JSONB fields (`visibility`, `section_access`) and task fields (`visibility`). This is currently enforced at the UI level; Supabase RLS enforcement can be added later for server-side security.
+
+### Customizable dashboard
+
+`HomeDashboard` supports a fully configurable layout with 13 widget types registered in `WIDGET_REGISTRY` (bilingual labels). Users can enter edit mode ("⚙ Customize") to toggle widget visibility, cycle through three sizes (small/medium/large), and reorder widgets via native HTML5 drag and drop. Layout state (visibility, order, size per widget) persists in localStorage (`tf_dashboard_layout`). Stats cards are always pinned at the top. A "Reset layout" button restores defaults. The layout uses CSS flex-wrap for responsive flow.
+
+### Manual page
+
+The sidebar's manual button opens `/taskflow/manual` in a new tab. `ManualPage.jsx` is a standalone, lazy-loaded page (~65 KB chunk) with 19 sections covering every feature. It reads `tf_lang` from localStorage for bilingual IT/EN content. A sticky sidebar TOC uses `IntersectionObserver` for scroll-tracking with active-section highlighting. The page is responsive (TOC hidden on mobile) and styled with the app's CSS custom variables.
 
 ### Multi-tenancy
 
@@ -353,12 +380,13 @@ All tables are protected by org-scoped Row Level Security.
 { id, pid, sec, title, desc, who, pri, startDate, due, done,
   recurrence, attachments, tags, activity, position,
   customValues, subs, cmts, deps,
-  timeEntries, approval }
+  timeEntries, approval, milestone, visibility }
 
 // Project
 { id, name, color, status, statusLabel, portfolio,
   description, resources, members, customFields,
-  rules, forms, goals }
+  rules, forms, goals, taskTemplates,
+  visibility, sectionAccess }
 
 // Portfolio
 { id, name, color, desc, status }
@@ -382,7 +410,13 @@ All tables are protected by org-scoped Row Level Security.
 - **CSV export**: Download project tasks as spreadsheet
 - **PWA**: Installable, offline shell
 - **Automation rules**: 8 triggers × 8 actions with multi-action chains and conditional filters (priority, assignee, tag, section). Triggers: section change, deadline, subtasks done, assignment, priority changed, comment added, task completed, tag added. Actions: move, notify, set priority, complete, assign, add tag, set due date, create subtask. Loop guard: cascade depth limit (3), dedup window (500ms), circuit breaker (20 fires/tick)
+- **Multiple assignees**: Assign multiple team members to a task — stacked AvatarGroup display across all views, array-aware filters, notifications for newly added assignees
+- **Milestones**: Flag tasks as milestones — diamond rendering in Timeline/Gantt, indicators on Calendar and task cards
+- **Task templates**: Save any task as a reusable template (title, description, priority, subtasks, tags); load templates when creating new tasks
+- **Granular permissions**: Per-project roles (owner/editor/viewer), per-section access control, per-task visibility (all / assignees only)
+- **Customizable dashboard**: Drag & drop widget reorder, toggle visibility, 3 size options per widget, localStorage persistence, reset to defaults
 - **Dashboard**: 15 widgets — burndown, velocity, workload capacity, section completion, priority/status breakdown, upcoming deadlines (7-day lookahead), recent activity feed, project health scores (traffic-light cards)
+- **Manual**: Standalone bilingual (IT/EN) documentation page with 19 sections, sticky scroll-tracking TOC, lazy-loaded
 - **Project templates**: Kanban, Sprint, Research, Product Launch — with pre-configured custom fields, rules, forms, and goals
 - **Forms**: Visual form builder with 8 field types (text, textarea, select, date, number, checkbox, url, email), drag reorder, live preview, placeholder/default values, and task property mapping
 - **Goals**: Per-project goals with animated SVG progress rings and automatic roll-up from linked tasks; supports sub-goals (key results)

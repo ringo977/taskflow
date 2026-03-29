@@ -3,6 +3,7 @@ import { useLang } from '@/i18n'
 import { isOverdue, applyFilters } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import Avatar from '@/components/Avatar'
+import AvatarGroup from '@/components/AvatarGroup'
 
 const BASE_DAY_W = 28
 const ROW_H = 44
@@ -279,7 +280,12 @@ export default function TimelineView({ tasks, secs, projects, onOpen, onUpd, fil
                       style={{ height: ROW_H, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderBottom: '1px solid var(--bd3)', cursor: 'pointer' }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.done ? 'var(--tx3)' : (p?.color ?? '#888'), flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: task.done ? 'var(--tx3)' : ov ? 'var(--c-danger)' : 'var(--tx1)', textDecoration: task.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{task.title}</span>
-                      {task.who && <Avatar name={task.who} size={16} />}
+                      {task.milestone && <span style={{ fontSize: 10, color: p?.color ?? '#888' }}>◆</span>}
+                      {task.who?.length > 0 && (
+                        Array.isArray(task.who) && task.who.length > 1
+                          ? <AvatarGroup names={task.who} size={16} />
+                          : <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={16} />
+                      )}
                       {isBlocked && <span style={{ fontSize: 10, color: 'var(--c-danger)', fontWeight: 600 }}>⊘</span>}
                     </div>
                   )
@@ -382,29 +388,50 @@ export default function TimelineView({ tasks, secs, projects, onOpen, onUpd, fil
 
                   return (
                     <div key={task.id} style={{ height: ROW_H, borderBottom: '1px solid var(--bd3)', position: 'relative' }}>
-                      <div
-                        onClick={() => { if (!isDragging) onOpen(task.id) }}
-                        onMouseDown={(e) => handleBarMouseDown(e, task, getBarDragType(e, e.currentTarget))}
-                        onMouseMove={(e) => {
-                          if (!dragState) e.currentTarget.style.cursor = getBarCursor(e, e.currentTarget)
-                        }}
-                        onMouseEnter={(e) => showHover(task, e)}
-                        onMouseLeave={hideHover}
-                        style={{
-                          position: 'absolute', left: startPx + 2, top: (ROW_H - BAR_H) / 2,
-                          width: barW - 4, height: BAR_H,
-                          borderRadius: 'var(--r1)', background: barBg,
-                          border: `1px ${isBlocked ? 'dashed' : 'solid'} ${barBorder}`,
-                          display: 'flex', alignItems: 'center', padding: '0 8px', overflow: 'hidden',
-                          opacity: isDragging ? 0.5 : 1,
-                          transition: isDragging ? 'none' : 'opacity 0.15s',
-                          userSelect: 'none',
-                        }}>
-                        {isBlocked && <span style={{ fontSize: 11, marginRight: 4 }}>⊘</span>}
-                        <span style={{ fontSize: 12, color: isBlocked ? 'var(--c-warning)' : 'var(--bg1)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: task.done ? 'line-through' : 'none' }}>
-                          {task.title}
-                        </span>
-                      </div>
+                      {task.milestone ? (
+                        <div
+                          onClick={() => { if (!isDragging) onOpen(task.id) }}
+                          onMouseDown={(e) => handleBarMouseDown(e, task, 'move')}
+                          onMouseEnter={(e) => showHover(task, e)}
+                          onMouseLeave={hideHover}
+                          style={{
+                            position: 'absolute',
+                            left: startPx + (dw / 2) - 10,
+                            top: (ROW_H - 20) / 2,
+                            width: 20, height: 20,
+                            transform: 'rotate(45deg)',
+                            background: task.done ? 'var(--tx3)' : hex,
+                            border: `2px solid ${task.done ? 'var(--tx3)' : hex}`,
+                            cursor: onUpd ? 'grab' : 'pointer',
+                            opacity: isDragging ? 0.5 : 1,
+                            zIndex: 2,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          onClick={() => { if (!isDragging) onOpen(task.id) }}
+                          onMouseDown={(e) => handleBarMouseDown(e, task, getBarDragType(e, e.currentTarget))}
+                          onMouseMove={(e) => {
+                            if (!dragState) e.currentTarget.style.cursor = getBarCursor(e, e.currentTarget)
+                          }}
+                          onMouseEnter={(e) => showHover(task, e)}
+                          onMouseLeave={hideHover}
+                          style={{
+                            position: 'absolute', left: startPx + 2, top: (ROW_H - BAR_H) / 2,
+                            width: barW - 4, height: BAR_H,
+                            borderRadius: 'var(--r1)', background: barBg,
+                            border: `1px ${isBlocked ? 'dashed' : 'solid'} ${barBorder}`,
+                            display: 'flex', alignItems: 'center', padding: '0 8px', overflow: 'hidden',
+                            opacity: isDragging ? 0.5 : 1,
+                            transition: isDragging ? 'none' : 'opacity 0.15s',
+                            userSelect: 'none',
+                          }}>
+                          {isBlocked && <span style={{ fontSize: 11, marginRight: 4 }}>⊘</span>}
+                          <span style={{ fontSize: 12, color: isBlocked ? 'var(--c-warning)' : 'var(--bg1)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: task.done ? 'line-through' : 'none' }}>
+                            {task.title}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -429,10 +456,14 @@ export default function TimelineView({ tasks, secs, projects, onOpen, onUpd, fil
               <span style={{ marginLeft: 6, color: 'var(--tx2)' }}>({daysBetween(hoverTask.startDate, hoverTask.due) + 1}d)</span>
             )}
           </div>
-          {hoverTask.who && (
+          {hoverTask.who?.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <Avatar name={hoverTask.who} size={14} />
-              <span style={{ fontSize: 11, color: 'var(--tx2)' }}>{hoverTask.who}</span>
+              {(Array.isArray(hoverTask.who) ? hoverTask.who : [hoverTask.who]).map(name => (
+                <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Avatar name={name} size={14} />
+                  <span style={{ fontSize: 11, color: 'var(--tx2)' }}>{name}</span>
+                </span>
+              ))}
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, fontSize: 11, color: 'var(--tx3)' }}>
