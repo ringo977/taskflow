@@ -37,7 +37,7 @@ Login with any test account — password: `mimic2026`
 | PWA | vite-plugin-pwa (offline shell, installable) |
 | PDF reports | jsPDF (lazy-loaded) |
 | Permissions | Per-project roles (owner/editor/viewer) + section/task visibility |
-| Testing | Vitest + Testing Library (501 unit/integration tests, incl. property-based via fast-check) + Playwright E2E (28 tests: 7 smoke + 21 auth) |
+| Testing | Vitest + Testing Library (504 unit/integration tests, incl. property-based via fast-check) + Playwright E2E (28 tests: 7 smoke + 21 auth) |
 | Deploy | GitHub Pages (automated via GitHub Actions) |
 
 ---
@@ -180,7 +180,7 @@ taskflow/
     └── test/
         └── setup.js               # Vitest + Testing Library + jest-dom setup
 
-Tests: 529 total (501 unit/integration + 28 E2E).
+Tests: 532 total (504 unit/integration + 28 E2E).
 Unit/integration (Vitest + Testing Library): 3 tiers — (1) base unit tests: permissions (45), filters (30), adapters (28), rule engine (28), hooks (useTaskActions, useProjectActions), components (FormSubmitModal, HomeDashboard); (2) resilience: corrupted localStorage + dashboard layout recovery, AI proxy edge cases + network failures, webhook/email timeout/failure, legacy JSONB + parseWho edge cases, milestones without due date + multi-assignee null; (3) property-based (fast-check): arbitrary trigger/action/condition combos, circuit breaker + dedup invariants, filter composition properties (subset, identity, monotonicity), isOverdue consistency, visibility filter safety; (4) concurrency: optimistic UI + revert on DB error, rapid sequential updates, undo integration, notification correctness.
 E2E (Playwright): 7 smoke (manual page, no auth) + 21 auth (login + TOTP 2FA, dashboard layout, multi-assignee views, permissions, templates).
 ```
@@ -281,7 +281,13 @@ Task templates are stored in `project.taskTemplates` JSONB array (same pattern a
 
 ### Granular permissions
 
-A utility module `src/utils/permissions.js` defines a role hierarchy (`owner: 3 > editor: 2 > viewer: 1`) and provides access-check functions: `getProjectRole`, `canEditTasks`, `canManageProject`, `canViewProject`, `canViewSection`, `canViewTask`. Project-level roles are assigned per member in `ProjectOverview` via a role dropdown. Section-level access can restrict visibility to editors-only or all members. Task-level visibility can be limited to assignees only. Permission data is stored in project JSONB fields (`visibility`, `section_access`) and task fields (`visibility`). This is currently enforced at the UI level; Supabase RLS enforcement can be added later for server-side security.
+Two-tier role model: organization-level roles control broad capabilities, project-level roles control per-project access.
+
+Organization roles (managed in PeopleView admin panel): `admin` has full ownership on every project, can create projects/portfolios, manage members; `manager` can create projects/portfolios and defaults to editor on all projects; `member` can work on tasks (editor) in projects they belong to, but cannot create projects; `guest` has read-only access (viewer) on projects they belong to.
+
+Project roles (managed in ProjectOverview members panel): `owner`, `editor`, `viewer`. An explicit project role always overrides the org-level default. The `getProjectRole()` function in `src/utils/permissions.js` resolves the effective role by checking org role first, then project membership. All views (AddModal, BoardView, ListView, TaskPanel) use this unified resolver — no direct `myProjectRoles` fallback.
+
+Additional access checks: section-level access can restrict visibility to editors-only or all members; task-level visibility can be limited to assignees only. Permission data is stored in project JSONB fields (`visibility`, `section_access`) and task fields (`visibility`). This is currently enforced at the UI level; Supabase RLS enforcement can be added later for server-side security.
 
 ### Customizable dashboard
 

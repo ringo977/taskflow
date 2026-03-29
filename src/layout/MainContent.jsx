@@ -49,11 +49,6 @@ function ProjectContent({
         forms={proj?.forms ?? []}
       />
       {view !== 'overview' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
-      {orgLoading && (
-        <div style={{ padding: '8px 18px', fontSize: 12, color: 'var(--tx3)', borderBottom: '0.5px solid var(--bd3)' }}>
-          ⟳ {tr.syncing}
-        </div>
-      )}
       {view === 'overview' && (
         <ProjectOverview project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
