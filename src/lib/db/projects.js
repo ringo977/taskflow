@@ -26,16 +26,12 @@ export async function upsertPortfolio(orgId, p) {
 // ── Projects ────────────────────────────────────────────────────
 
 export async function fetchProjects(orgId) {
-  const [{ data, error }, { data: taskRows }, { data: pmRows }, { data: profileRows }] = await Promise.all([
+  const [{ data, error }, { data: taskRows }, { data: pmRows }] = await Promise.all([
     supabase.from('projects').select('*').eq('org_id', orgId).is('deleted_at', null).order('name'),
     supabase.from('tasks').select('project_id, assignee_name').eq('org_id', orgId).is('deleted_at', null),
-    supabase.from('project_members').select('project_id, user_id'),
-    supabase.from('profiles').select('id, display_name'),
+    supabase.rpc('get_all_project_members').then(r => r).catch(() => ({ data: null })),
   ])
   if (error) throw error
-  // Build user_id → display_name lookup
-  const nameById = {}
-  for (const p of profileRows ?? []) if (p.display_name) nameById[p.id] = p.display_name
   const membersByPid = {}
   // Add names from task assignees
   for (const t of taskRows ?? []) {
@@ -43,12 +39,11 @@ export async function fetchProjects(orgId) {
     membersByPid[t.project_id] = membersByPid[t.project_id] ?? new Set()
     membersByPid[t.project_id].add(t.assignee_name)
   }
-  // Merge names from project_members table (owners, editors, viewers)
+  // Merge names from project_members (via SECURITY DEFINER RPC — bypasses RLS)
   for (const pm of pmRows ?? []) {
-    const name = nameById[pm.user_id]
-    if (!name || !pm.project_id) continue
+    if (!pm.user_name || !pm.project_id) continue
     membersByPid[pm.project_id] = membersByPid[pm.project_id] ?? new Set()
-    membersByPid[pm.project_id].add(name)
+    membersByPid[pm.project_id].add(pm.user_name)
   }
   return (data ?? []).map(r => toProject(r, [...(membersByPid[r.id] ?? [])]))
 }
