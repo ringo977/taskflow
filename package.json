@@ -14,7 +14,10 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "validate": "npm run lint && npm run test && npm run build"
+    "validate": "npm run lint && npm run test && npm run build",
+    "e2e": "npx playwright test",
+    "e2e:ui": "npx playwright test --ui",
+    "e2e:smoke": "npx playwright test e2e/manual-page.spec.js e2e/auth-app.spec.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.1",
