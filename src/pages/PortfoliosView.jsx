@@ -11,6 +11,8 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
   const orgUsers = useOrgUsers()
   const me = orgUsers.find(u => u.email === currentUser?.email)
   const isAdmin = me?.role === 'admin'
+  const isManager = me?.role === 'manager'
+  const canCreate = isAdmin || isManager
   const [adding, setAdding] = useState(false)
   const [nm, setNm]   = useState('')
   const [desc, setDesc] = useState('')
@@ -35,9 +37,11 @@ export default function PortfoliosView({ portfolios, projects, tasks, onSelProj,
               {showArchived ? t.hideArchived : t.showArchived}
             </button>
           )}
-          <button onClick={() => setAdding(true)} style={{ padding: '7px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}>
-            {t.newPortfolio}
-          </button>
+          {canCreate && (
+            <button onClick={() => setAdding(true)} style={{ padding: '7px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}>
+              {t.newPortfolio}
+            </button>
+          )}
         </div>
       </div>
 

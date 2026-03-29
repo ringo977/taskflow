@@ -132,7 +132,7 @@ export default function ContextSidebar({
               })
             : visibleProjects.map(p => <SidebarItem key={p.id} project={p} selected={selPid === p.id} />)
           }
-          {onAddProject && navId === 'projects' && (
+          {onAddProject && navId === 'projects' && (isAdmin || isManager) && (
             <div onClick={onAddProject} className="row-interactive"
               style={{ padding: '8px 12px', borderRadius: 'var(--r1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--tx3)', marginTop: 4 }}>
               <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> {t.newProject ?? 'New project'}
