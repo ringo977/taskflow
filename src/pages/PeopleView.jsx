@@ -13,7 +13,7 @@ const ROLES = ['admin', 'manager', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
 const isUUID = id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-/** Split "First Last" into { first, last }. Last word = last name, rest = first name. */
+/** Split "First Last" → { first, last }. Last word = last name. */
 function splitName(fullName) {
   const parts = (fullName ?? '').trim().split(/\s+/)
   if (parts.length <= 1) return { first: parts[0] || '', last: '' }
@@ -24,7 +24,7 @@ function splitName(fullName) {
 
 function RoleBadge({ role }) {
   return (
-    <span style={{ fontSize: 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize' }}>
+    <span style={{ fontSize: 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
       {role}
     </span>
   )
@@ -65,7 +65,7 @@ const SORT_ARROW = { asc: '▲', desc: '▼' }
 function SortHeader({ label, field, sortField, sortDir, onSort, style }) {
   const active = sortField === field
   return (
-    <div onClick={() => onSort(field)} style={{ ...style, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+    <div onClick={() => onSort(field)} style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', ...style }}>
       {label}
       {active && <span style={{ fontSize: 8, marginTop: 1 }}>{SORT_ARROW[sortDir]}</span>}
     </div>
@@ -118,7 +118,7 @@ function MemberCard({ u, userTasks, projects, t }) {
   )
 }
 
-/* ── Admin panel section header ───────────────────────────────── */
+/* ── Admin section header ─────────────────────────────────────── */
 
 function AdminSectionHeader({ icon, title, count, color }) {
   return (
@@ -145,7 +145,6 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   const [view, setView] = useState('cards')
   const [filterProject, setFilterProject] = useState('')
   const [showAdmin, setShowAdmin] = useState(false)
-  const [adminSearch, setAdminSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkRole, setBulkRole] = useState('member')
 
@@ -196,7 +195,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       .catch(e => log.warn('fetchPendingSignups failed:', e.message))
   }, [isAdmin, activeOrgId, busy])
 
-  // Compute user tasks + stats lookup
+  // Compute user stats lookup
   const userStatsMap = useMemo(() => {
     const map = {}
     for (const u of USERS) {
@@ -240,13 +239,6 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
     })
     return arr
   }, [filteredUsers, sortField, sortDir, userStatsMap])
-
-  // Admin: filtered by search
-  const adminFilteredUsers = useMemo(() => {
-    if (!adminSearch.trim()) return USERS
-    const q = adminSearch.toLowerCase()
-    return USERS.filter(u => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
-  }, [USERS, adminSearch])
 
   const flash = (text, type = 'ok') => {
     setMsg({ text, type })
@@ -336,17 +328,14 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
     finally { setBusy(false) }
   }
 
-  // Bulk role change
   const handleBulkRoleChange = async () => {
     if (selectedIds.size === 0) return
     setBusy(true)
     let ok = 0
     for (const uid of selectedIds) {
       if (uid === currentUser?.id) continue
-      try {
-        await updateOrgMemberRole(activeOrgId, uid, bulkRole)
-        ok++
-      } catch (e) { log.warn('bulk role change failed for', uid, e.message) }
+      try { await updateOrgMemberRole(activeOrgId, uid, bulkRole); ok++ }
+      catch (e) { log.warn('bulk role change failed for', uid, e.message) }
     }
     setSelectedIds(new Set())
     refreshUsers()
@@ -363,9 +352,16 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   }
 
   const pendingCount = pendingSignups.length + pendingReqs.length
+  const editing = showAdmin && isAdmin
 
-  /* ── List view grid columns ─────────────────────────────────── */
-  const LIST_GRID = '24px 1fr 1fr 1.2fr 72px 52px 52px 52px 1fr'
+  /*
+   * Grid columns — tighter name/email, comfortable stats + projects.
+   * In admin mode: prepend checkbox, append actions.
+   */
+  const baseCols = '22px 100px 100px 150px 68px 44px 44px 44px 1fr'
+  const adminCols = '28px 22px 100px 100px 150px 68px 44px 44px 44px 1fr 130px'
+
+  const COL_STYLE = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
@@ -376,7 +372,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
         <ProjectFilter projects={projects} selected={filterProject} setSelected={setFilterProject} t={t} />
         <ViewToggle view={view} setView={setView} t={t} />
         {isAdmin && (
-          <button onClick={() => setShowAdmin(s => !s)}
+          <button onClick={() => { setShowAdmin(s => !s); setSelectedIds(new Set()) }}
             style={{ fontSize: 12, fontWeight: 500, color: showAdmin ? '#fff' : 'var(--accent)',
               background: showAdmin ? 'var(--accent)' : 'var(--accent)18',
               border: '1px solid var(--accent)', borderRadius: 'var(--r1)', padding: '4px 12px',
@@ -409,12 +405,12 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
         </div>
       )}
 
-      {/* ── Admin panel ────────────────────────────────────────── */}
-      {showAdmin && isAdmin && (
-        <div style={{ background: 'var(--bg1)', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', marginBottom: 20, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+      {/* ── Admin-only panels (invite + pending) ───────────────── */}
+      {editing && (
+        <div style={{ background: 'var(--bg1)', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', marginBottom: 16, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
 
           {/* Invite section */}
-          <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: (pendingSignups.length || pendingReqs.length) ? '1px solid var(--bd3)' : 'none' }}>
             <AdminSectionHeader
               icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
               title={t.inviteMember} />
@@ -434,184 +430,84 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
             </div>
           </div>
 
-          {/* Member management section */}
-          <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-              <AdminSectionHeader
-                icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 7a3 3 0 100-6 3 3 0 000 6zM0 14c0-2.2 2.7-4 6-4M12 6v6M9 9h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
-                title={t.manageMembers} count={USERS.length} />
-              <div style={{ flex: 1 }} />
-              <div style={{ position: 'relative' }}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--tx3)' }}>
-                  <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                </svg>
-                <input type="text" value={adminSearch} onChange={e => setAdminSearch(e.target.value)} placeholder={t.searchMembers}
-                  style={{ padding: '6px 10px 6px 26px', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 12, outline: 'none', width: 180 }} />
-              </div>
-            </div>
-
-            {/* Bulk actions bar */}
-            {selectedIds.size > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 10, background: 'var(--accent)08', border: '1px solid var(--accent)30', borderRadius: 'var(--r2)' }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)' }}>{t.selectedCount(selectedIds.size)}</span>
-                <div style={{ flex: 1 }} />
-                <select value={bulkRole} onChange={e => setBulkRole(e.target.value)}
-                  style={{ fontSize: 12, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', cursor: 'pointer' }}>
-                  {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
-                </select>
-                <button onClick={handleBulkRoleChange} disabled={busy}
-                  style={{ fontSize: 12, fontWeight: 500, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--accent)', color: '#fff', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
-                  {t.bulkChangeRole}
-                </button>
-                <button onClick={() => setSelectedIds(new Set())}
-                  style={{ fontSize: 11, color: 'var(--tx3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>✕</button>
-              </div>
-            )}
-
-            {/* Admin member table — flex-based to avoid grid overlap */}
-            <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)', gap: 8 }}>
-                <div style={{ width: 24, flexShrink: 0 }} />
-                <div style={{ flex: '1 1 0', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
-                <div style={{ flex: '1 1 0', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
-                <div style={{ width: 90, flexShrink: 0, fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
-                <div style={{ width: 160, flexShrink: 0 }} />
-              </div>
-              {/* Rows */}
-              <div style={{ maxHeight: 340, overflow: 'auto' }}>
-                {adminFilteredUsers.map((u, i) => {
-                  const ut = userStatsMap[u.id] ?? { tasks: [], open: 0 }
-                  const isSelf = u.id === currentUser?.id
-                  const canEdit = !isSelf && isUUID(u.id)
-                  return (
-                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', padding: '9px 12px', gap: 8,
-                      background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
-                      {/* Checkbox */}
-                      <div style={{ width: 24, flexShrink: 0 }}>
-                        {canEdit && (
-                          <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)}
-                            style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent)' }} />
-                        )}
-                      </div>
-                      {/* Name + avatar */}
-                      <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <div style={{ width: 26, height: 26, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {getInitials(u.name)}
-                        </div>
-                        <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{u.name}</span>
-                          {isSelf && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic' }}>(you)</span>}
-                          <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{ut.open + ut.done} {t.tasksAssigned?.toLowerCase?.() ?? 'tasks'}</div>
-                        </div>
-                      </div>
-                      {/* Email */}
-                      <div style={{ flex: '1 1 0', fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{u.email}</div>
-                      {/* Role */}
-                      <div style={{ width: 90, flexShrink: 0 }}>
-                        {!canEdit
-                          ? <RoleBadge role={u.role} />
-                          : (
-                            <select value={u.role} onChange={e => handleRoleChange(u, e.target.value)} disabled={busy}
-                              style={{ padding: '3px 6px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 12, cursor: 'pointer', width: '100%' }}>
-                              {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
-                            </select>
-                          )}
-                      </div>
-                      {/* Actions */}
-                      <div style={{ width: 160, flexShrink: 0, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                        {canEdit && (
-                          <>
-                            <button onClick={() => handleRemove(u)} disabled={busy} title={t.removeMember}
-                              style={{ fontSize: 11, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7a1 1 0 011-1h3.4a1 1 0 011 1V4M6.5 7v4.5M9.5 7v4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3.5 4l.7 8.3a1.5 1.5 0 001.5 1.4h4.6a1.5 1.5 0 001.5-1.4l.7-8.3" stroke="currentColor" strokeWidth="1.2"/></svg>
-                              {t.removeMember}
-                            </button>
-                            <button onClick={() => setConfirmDelete(u)} disabled={busy} title={t.deleteAccount ?? 'Delete'}
-                              style={{ fontSize: 11, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
-                              {t.deleteAccount ?? 'Delete'}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-                {adminFilteredUsers.length === 0 && (
-                  <div style={{ padding: '20px', textAlign: 'center', fontSize: 13, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? 'No results'}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Pending signups */}
           {pendingSignups.length > 0 && (
-            <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: pendingReqs.length ? '1px solid var(--bd3)' : 'none' }}>
               <AdminSectionHeader
                 icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="8" cy="11" r="0.8" fill="currentColor"/></svg>}
                 title={t.pendingSignups ?? 'Pending signups'} count={pendingSignups.length} color="var(--c-warning)" />
               <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 10 }}>
-                {t.pendingSignupsDesc ?? 'These users registered but never confirmed their email. You can confirm them manually.'}
+                {t.pendingSignupsDesc ?? 'These users registered but never confirmed their email.'}
               </div>
-              <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
-                {pendingSignups.map((s, i) => (
-                  <div key={s.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--c-warning)18', color: 'var(--c-warning)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {getInitials(s.display_name)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
-                        <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{s.email}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', gap: 8, marginTop: 2 }}>
-                        <span>{t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                        {!s.signup_org && <span style={{ color: 'var(--c-warning)' }}>{t.noOrgSelected ?? 'no org selected'}</span>}
-                      </div>
-                    </div>
-                    <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
-                      style={{ fontSize: 12, padding: '5px 14px', border: 'none', borderRadius: 'var(--r2)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      {t.confirmEmail ?? 'Confirm email'}
-                    </button>
+              {pendingSignups.map((s, i) => (
+                <div key={s.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? '1px solid var(--bd3)' : 'none' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--c-warning)18', color: 'var(--c-warning)', fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {getInitials(s.display_name)}
                   </div>
-                ))}
-              </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 6 }}>{s.email}</span>
+                    <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
+                      {t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {!s.signup_org && <span style={{ color: 'var(--c-warning)', marginLeft: 6 }}>{t.noOrgSelected ?? 'no org selected'}</span>}
+                    </div>
+                  </div>
+                  <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
+                    style={{ fontSize: 12, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                    {t.confirmEmail ?? 'Confirm'}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
           {/* Pending join requests */}
           {pendingReqs.length > 0 && (
-            <div style={{ padding: '18px 20px 16px' }}>
+            <div style={{ padding: '16px 20px' }}>
               <AdminSectionHeader
                 icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v6l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg>}
                 title={t.pendingRequests ?? 'Pending requests'} count={pendingReqs.length} />
-              <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
-                {pendingReqs.map((req, i) => (
-                  <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)18', color: 'var(--accent)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {getInitials(req.user_name)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{req.user_name}</span>
-                      <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{req.user_email}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => handleApprove(req.id)} disabled={busy}
-                        style={{ fontSize: 12, padding: '5px 14px', border: 'none', borderRadius: 'var(--r2)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        {t.approve ?? 'Approve'}
-                      </button>
-                      <button onClick={() => handleReject(req.id)} disabled={busy}
-                        style={{ fontSize: 12, padding: '5px 14px', border: '1px solid var(--c-danger)30', borderRadius: 'var(--r2)', background: 'none', color: 'var(--c-danger)', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
-                        {t.reject ?? 'Reject'}
-                      </button>
-                    </div>
+              {pendingReqs.map((req, i) => (
+                <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? '1px solid var(--bd3)' : 'none' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)18', color: 'var(--accent)', fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {getInitials(req.user_name)}
                   </div>
-                ))}
-              </div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{req.user_name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 6 }}>{req.user_email}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => handleApprove(req.id)} disabled={busy}
+                      style={{ fontSize: 12, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1 }}>
+                      {t.approve ?? 'Approve'}
+                    </button>
+                    <button onClick={() => handleReject(req.id)} disabled={busy}
+                      style={{ fontSize: 12, padding: '4px 12px', border: '1px solid var(--c-danger)30', borderRadius: 'var(--r1)', background: 'none', color: 'var(--c-danger)', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
+                      {t.reject ?? 'Reject'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Bulk actions bar (above the table when admin + selections) */}
+      {editing && selectedIds.size > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', marginBottom: 8, background: 'var(--accent)08', border: '1px solid var(--accent)30', borderRadius: 'var(--r2)' }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)' }}>{t.selectedCount(selectedIds.size)}</span>
+          <div style={{ flex: 1 }} />
+          <select value={bulkRole} onChange={e => setBulkRole(e.target.value)}
+            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', cursor: 'pointer' }}>
+            {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
+          </select>
+          <button onClick={handleBulkRoleChange} disabled={busy}
+            style={{ fontSize: 12, fontWeight: 500, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--accent)', color: '#fff', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
+            {t.bulkChangeRole}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())}
+            style={{ fontSize: 11, color: 'var(--tx3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>✕</button>
         </div>
       )}
 
@@ -624,46 +520,69 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
         </div>
       ) : (
         <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-          {/* Sortable list header */}
-          <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID, gap: 0, alignItems: 'center', padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
+          {/* List header */}
+          <div style={{ display: 'grid', gridTemplateColumns: editing ? adminCols : baseCols, gap: 6, alignItems: 'center', padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
+            {editing && <div />}
             <div />
             <SortHeader label={t.lastName ?? 'Last name'} field="last" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
             <SortHeader label={t.firstName ?? 'First name'} field="first" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
-            <SortHeader label={t.roleAdmin ? 'Role' : 'Role'} field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</div>
+            <SortHeader label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
             <SortHeader label={t.openTasks} field="open" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
             <SortHeader label={t.overdueLabel} field="overdue" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
             <SortHeader label={t.completed} field="done" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.projects}</div>
+            {editing && <div />}
           </div>
+
           {/* Rows */}
           {sortedUsers.map((u, i) => {
             const s = userStatsMap[u.id] ?? { tasks: [], open: 0, overdue: 0, done: 0 }
             const { first, last } = splitName(u.name)
             const userProjs = [...new Set(s.tasks.map(task => task.pid))]
               .map(id => projects.find(p => p.id === id)).filter(Boolean)
+            const isSelf = u.id === currentUser?.id
+            const canEdit = !isSelf && isUUID(u.id)
 
             return (
               <div key={u.id}
-                style={{ display: 'grid', gridTemplateColumns: LIST_GRID, gap: 0, alignItems: 'center',
-                  padding: '8px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)',
-                  borderBottom: '1px solid var(--bd3)', transition: 'background .1s' }}>
-                {/* Avatar (small) */}
+                style={{ display: 'grid', gridTemplateColumns: editing ? adminCols : baseCols, gap: 6, alignItems: 'center',
+                  padding: '7px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)',
+                  borderBottom: '1px solid var(--bd3)' }}>
+                {/* Checkbox (admin only) */}
+                {editing && (
+                  <div>
+                    {canEdit && (
+                      <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)}
+                        style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent)' }} />
+                    )}
+                  </div>
+                )}
+                {/* Avatar */}
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {getInitials(u.name)}
                 </div>
                 {/* Last name */}
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', ...COL_STYLE }}>
                   {last || first}
                 </div>
                 {/* First name */}
-                <div style={{ fontSize: 13, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                <div style={{ fontSize: 13, color: 'var(--tx1)', ...COL_STYLE }}>
                   {last ? first : ''}
                 </div>
                 {/* Email */}
-                <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{u.email}</div>
-                {/* Role */}
-                <div><RoleBadge role={u.role} /></div>
+                <div style={{ fontSize: 12, color: 'var(--tx3)', ...COL_STYLE }}>{u.email}</div>
+                {/* Role — badge or dropdown in admin mode */}
+                <div>
+                  {editing && canEdit ? (
+                    <select value={u.role} onChange={e => handleRoleChange(u, e.target.value)} disabled={busy}
+                      style={{ padding: '2px 4px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 11, cursor: 'pointer', width: '100%' }}>
+                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  ) : (
+                    <RoleBadge role={u.role} />
+                  )}
+                </div>
                 {/* Open */}
                 <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{s.open}</div>
                 {/* Overdue */}
@@ -678,6 +597,23 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                   {userProjs.length > 3 && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>+{userProjs.length - 3}</span>}
                   {userProjs.length === 0 && <span style={{ fontSize: 11, color: 'var(--tx3)', fontStyle: 'italic' }}>—</span>}
                 </div>
+                {/* Actions (admin only) */}
+                {editing && (
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    {canEdit && (
+                      <>
+                        <button onClick={() => handleRemove(u)} disabled={busy} title={t.removeMember}
+                          style={{ fontSize: 11, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '2px 6px', cursor: 'pointer', opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                          {t.removeMember}
+                        </button>
+                        <button onClick={() => setConfirmDelete(u)} disabled={busy} title={t.deleteAccount ?? 'Delete'}
+                          style={{ fontSize: 11, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '2px 6px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                          {t.deleteAccount ?? 'Delete'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
