@@ -170,7 +170,7 @@ const it = {
   confirmError: 'Conferma fallita',
   registeredOn: 'Registrato il',
   deleteAccount: 'Elimina account',
-  listView: 'Lista', cardView: 'Schede',
+  listView: 'Lista', cardView: 'Schede', firstName: 'Nome', lastName: 'Cognome',
   filterByProject: 'Tutti i progetti',
   searchMembers: 'Cerca membri…',
   tasksAssigned: 'Task', projectsInvolved: 'Progetti',

@@ -170,7 +170,7 @@ const en = {
   confirmError: 'Confirm failed',
   registeredOn: 'Registered',
   deleteAccount: 'Delete account',
-  listView: 'List', cardView: 'Cards',
+  listView: 'List', cardView: 'Cards', firstName: 'First name', lastName: 'Last name',
   filterByProject: 'All projects',
   searchMembers: 'Search members…',
   tasksAssigned: 'Tasks', projectsInvolved: 'Projects',

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
@@ -13,12 +13,18 @@ const ROLES = ['admin', 'manager', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
 const isUUID = id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
+/** Split "First Last" into { first, last }. Last word = last name, rest = first name. */
+function splitName(fullName) {
+  const parts = (fullName ?? '').trim().split(/\s+/)
+  if (parts.length <= 1) return { first: parts[0] || '', last: '' }
+  return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] }
+}
+
 /* ── Shared sub-components ────────────────────────────────────── */
 
-function RoleBadge({ role, size = 'sm' }) {
-  const big = size === 'lg'
+function RoleBadge({ role }) {
   return (
-    <span style={{ fontSize: big ? 12 : 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: big ? '3px 10px' : '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize' }}>
+    <span style={{ fontSize: 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize' }}>
       {role}
     </span>
   )
@@ -52,7 +58,21 @@ function ProjectFilter({ projects, selected, setSelected, t }) {
   )
 }
 
-/* ── Card view (existing, refined) ────────────────────────────── */
+/* ── Sortable column header ───────────────────────────────────── */
+
+const SORT_ARROW = { asc: '▲', desc: '▼' }
+
+function SortHeader({ label, field, sortField, sortDir, onSort, style }) {
+  const active = sortField === field
+  return (
+    <div onClick={() => onSort(field)} style={{ ...style, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      {label}
+      {active && <span style={{ fontSize: 8, marginTop: 1 }}>{SORT_ARROW[sortDir]}</span>}
+    </div>
+  )
+}
+
+/* ── Card view ────────────────────────────────────────────────── */
 
 function MemberCard({ u, userTasks, projects, t }) {
   const open = userTasks.filter(task => !task.done)
@@ -98,59 +118,6 @@ function MemberCard({ u, userTasks, projects, t }) {
   )
 }
 
-/* ── List view (new) ──────────────────────────────────────────── */
-
-function MemberListRow({ u, userTasks, projects, t, isEven }) {
-  const open = userTasks.filter(task => !task.done)
-  const od = open.filter(task => isOverdue(task.due))
-  const done = userTasks.filter(task => task.done)
-  const userProjs = [...new Set(userTasks.map(task => task.pid))]
-    .map(id => projects.find(p => p.id === id)).filter(Boolean)
-
-  return (
-    <div className="row-interactive"
-      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
-        background: isEven ? 'var(--bg1)' : 'var(--bg2)', borderBottom: '1px solid var(--bd3)',
-        borderRadius: 0, transition: 'background .1s' }}>
-      {/* Avatar + name */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 220px', minWidth: 0 }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {getInitials(u.name)}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
-          <div style={{ fontSize: 11, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
-        </div>
-      </div>
-      {/* Role */}
-      <div style={{ flex: '0 0 80px' }}><RoleBadge role={u.role} /></div>
-      {/* Stats */}
-      <div style={{ flex: '0 0 160px', display: 'flex', gap: 12 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx1)', lineHeight: 1 }}>{open.length}</div>
-          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.openTasks}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: od.length ? 'var(--c-danger)' : 'var(--tx3)', lineHeight: 1 }}>{od.length}</div>
-          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.overdueLabel}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--c-success)', lineHeight: 1 }}>{done.length}</div>
-          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.completed}</div>
-        </div>
-      </div>
-      {/* Projects */}
-      <div style={{ flex: '1 1 200px', display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
-        {userProjs.slice(0, 4).map(p => (
-          <span key={p.id} style={{ fontSize: 10, color: p.color, background: p.color + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.name}</span>
-        ))}
-        {userProjs.length > 4 && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>+{userProjs.length - 4}</span>}
-        {userProjs.length === 0 && <span style={{ fontSize: 11, color: 'var(--tx3)', fontStyle: 'italic' }}>—</span>}
-      </div>
-    </div>
-  )
-}
-
 /* ── Admin panel section header ───────────────────────────────── */
 
 function AdminSectionHeader({ icon, title, count, color }) {
@@ -181,6 +148,18 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
   const [adminSearch, setAdminSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkRole, setBulkRole] = useState('member')
+
+  // Sort state for list view
+  const [sortField, setSortField] = useState('last')
+  const [sortDir, setSortDir] = useState('asc')
+
+  const handleSort = useCallback((field) => {
+    setSortField(prev => {
+      if (prev === field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return field }
+      setSortDir('asc')
+      return field
+    })
+  }, [])
 
   // Invite state
   const [inviteEmail, setInviteEmail] = useState('')
@@ -217,20 +196,50 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       .catch(e => log.warn('fetchPendingSignups failed:', e.message))
   }, [isAdmin, activeOrgId, busy])
 
-  // Compute user tasks lookup
-  const userTasksMap = useMemo(() => {
+  // Compute user tasks + stats lookup
+  const userStatsMap = useMemo(() => {
     const map = {}
     for (const u of USERS) {
-      map[u.id] = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
+      const ut = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
+      const open = ut.filter(task => !task.done)
+      map[u.id] = {
+        tasks: ut,
+        open: open.length,
+        overdue: open.filter(task => isOverdue(task.due)).length,
+        done: ut.filter(task => task.done).length,
+      }
     }
     return map
   }, [USERS, tasks])
 
   // Filtered users (by project)
   const filteredUsers = useMemo(() => {
-    if (!filterProject) return USERS
-    return USERS.filter(u => (userTasksMap[u.id] ?? []).some(task => task.pid === filterProject))
-  }, [USERS, filterProject, userTasksMap])
+    let list = USERS
+    if (filterProject) {
+      list = list.filter(u => (userStatsMap[u.id]?.tasks ?? []).some(task => task.pid === filterProject))
+    }
+    return list
+  }, [USERS, filterProject, userStatsMap])
+
+  // Sorted users for list view
+  const sortedUsers = useMemo(() => {
+    const arr = [...filteredUsers]
+    const dir = sortDir === 'asc' ? 1 : -1
+    arr.sort((a, b) => {
+      let va, vb
+      switch (sortField) {
+        case 'first': { va = splitName(a.name).first.toLowerCase(); vb = splitName(b.name).first.toLowerCase(); break }
+        case 'last': { va = splitName(a.name).last.toLowerCase(); vb = splitName(b.name).last.toLowerCase(); break }
+        case 'role': { va = ROLES.indexOf(a.role); vb = ROLES.indexOf(b.role); return (va - vb) * dir }
+        case 'open': { return ((userStatsMap[a.id]?.open ?? 0) - (userStatsMap[b.id]?.open ?? 0)) * dir }
+        case 'overdue': { return ((userStatsMap[a.id]?.overdue ?? 0) - (userStatsMap[b.id]?.overdue ?? 0)) * dir }
+        case 'done': { return ((userStatsMap[a.id]?.done ?? 0) - (userStatsMap[b.id]?.done ?? 0)) * dir }
+        default: va = a.name.toLowerCase(); vb = b.name.toLowerCase()
+      }
+      return va < vb ? -dir : va > vb ? dir : 0
+    })
+    return arr
+  }, [filteredUsers, sortField, sortDir, userStatsMap])
 
   // Admin: filtered by search
   const adminFilteredUsers = useMemo(() => {
@@ -355,6 +364,9 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
 
   const pendingCount = pendingSignups.length + pendingReqs.length
 
+  /* ── List view grid columns ─────────────────────────────────── */
+  const LIST_GRID = '24px 1fr 1fr 1.2fr 72px 52px 52px 52px 1fr'
+
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
       {/* Header */}
@@ -429,7 +441,6 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                 icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 7a3 3 0 100-6 3 3 0 000 6zM0 14c0-2.2 2.7-4 6-4M12 6v6M9 9h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
                 title={t.manageMembers} count={USERS.length} />
               <div style={{ flex: 1 }} />
-              {/* Search */}
               <div style={{ position: 'relative' }}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--tx3)' }}>
                   <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -457,47 +468,47 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
               </div>
             )}
 
-            {/* Member rows */}
+            {/* Admin member table — flex-based to avoid grid overlap */}
             <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
-              {/* Header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 140px 90px 120px', gap: 0, padding: '8px 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
-                <div />
-                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
-                <div />
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)', gap: 8 }}>
+                <div style={{ width: 24, flexShrink: 0 }} />
+                <div style={{ flex: '1 1 0', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
+                <div style={{ flex: '1 1 0', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
+                <div style={{ width: 90, flexShrink: 0, fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
+                <div style={{ width: 160, flexShrink: 0 }} />
               </div>
               {/* Rows */}
               <div style={{ maxHeight: 340, overflow: 'auto' }}>
                 {adminFilteredUsers.map((u, i) => {
-                  const ut = userTasksMap[u.id] ?? []
+                  const ut = userStatsMap[u.id] ?? { tasks: [], open: 0 }
                   const isSelf = u.id === currentUser?.id
                   const canEdit = !isSelf && isUUID(u.id)
                   return (
-                    <div key={u.id} className="row-interactive"
-                      style={{ display: 'grid', gridTemplateColumns: '28px 1fr 140px 90px 120px', gap: 0, padding: '9px 12px', alignItems: 'center', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)', transition: 'background .1s' }}>
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', padding: '9px 12px', gap: 8,
+                      background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
                       {/* Checkbox */}
-                      <div>
+                      <div style={{ width: 24, flexShrink: 0 }}>
                         {canEdit && (
                           <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)}
                             style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent)' }} />
                         )}
                       </div>
                       {/* Name + avatar */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {getInitials(u.name)}
                         </div>
                         <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{u.name}</span>
-                          {isSelf && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic', marginLeft: 4 }}>(you)</span>}
-                          <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{ut.length} {t.tasksAssigned?.toLowerCase?.() ?? 'tasks'}</div>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{u.name}</span>
+                          {isSelf && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic' }}>(you)</span>}
+                          <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{ut.open + ut.done} {t.tasksAssigned?.toLowerCase?.() ?? 'tasks'}</div>
                         </div>
                       </div>
                       {/* Email */}
-                      <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                      <div style={{ flex: '1 1 0', fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{u.email}</div>
                       {/* Role */}
-                      <div>
+                      <div style={{ width: 90, flexShrink: 0 }}>
                         {!canEdit
                           ? <RoleBadge role={u.role} />
                           : (
@@ -508,16 +519,16 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
                           )}
                       </div>
                       {/* Actions */}
-                      <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                      <div style={{ width: 160, flexShrink: 0, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                         {canEdit && (
                           <>
                             <button onClick={() => handleRemove(u)} disabled={busy} title={t.removeMember}
-                              style={{ fontSize: 12, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              style={{ fontSize: 11, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
                               <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7a1 1 0 011-1h3.4a1 1 0 011 1V4M6.5 7v4.5M9.5 7v4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3.5 4l.7 8.3a1.5 1.5 0 001.5 1.4h4.6a1.5 1.5 0 001.5-1.4l.7-8.3" stroke="currentColor" strokeWidth="1.2"/></svg>
                               {t.removeMember}
                             </button>
                             <button onClick={() => setConfirmDelete(u)} disabled={busy} title={t.deleteAccount ?? 'Delete'}
-                              style={{ fontSize: 11, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1 }}>
+                              style={{ fontSize: 11, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
                               {t.deleteAccount ?? 'Delete'}
                             </button>
                           </>
@@ -608,22 +619,69 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       {view === 'cards' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {filteredUsers.map(u => (
-            <MemberCard key={u.id} u={u} userTasks={userTasksMap[u.id] ?? []} projects={projects} t={t} />
+            <MemberCard key={u.id} u={u} userTasks={userStatsMap[u.id]?.tasks ?? []} projects={projects} t={t} />
           ))}
         </div>
       ) : (
         <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-          {/* List header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
-            <div style={{ flex: '1 1 220px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
-            <div style={{ flex: '0 0 80px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
-            <div style={{ flex: '0 0 160px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.tasksAssigned ?? 'Tasks'}</div>
-            <div style={{ flex: '1 1 200px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
+          {/* Sortable list header */}
+          <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID, gap: 0, alignItems: 'center', padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
+            <div />
+            <SortHeader label={t.lastName ?? 'Last name'} field="last" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label={t.firstName ?? 'First name'} field="first" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
+            <SortHeader label={t.roleAdmin ? 'Role' : 'Role'} field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label={t.openTasks} field="open" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
+            <SortHeader label={t.overdueLabel} field="overdue" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
+            <SortHeader label={t.completed} field="done" sortField={sortField} sortDir={sortDir} onSort={handleSort} style={{ justifyContent: 'center' }} />
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
           </div>
-          {filteredUsers.map((u, i) => (
-            <MemberListRow key={u.id} u={u} userTasks={userTasksMap[u.id] ?? []} projects={projects} t={t} isEven={i % 2 === 0} />
-          ))}
-          {filteredUsers.length === 0 && (
+          {/* Rows */}
+          {sortedUsers.map((u, i) => {
+            const s = userStatsMap[u.id] ?? { tasks: [], open: 0, overdue: 0, done: 0 }
+            const { first, last } = splitName(u.name)
+            const userProjs = [...new Set(s.tasks.map(task => task.pid))]
+              .map(id => projects.find(p => p.id === id)).filter(Boolean)
+
+            return (
+              <div key={u.id}
+                style={{ display: 'grid', gridTemplateColumns: LIST_GRID, gap: 0, alignItems: 'center',
+                  padding: '8px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)',
+                  borderBottom: '1px solid var(--bd3)', transition: 'background .1s' }}>
+                {/* Avatar (small) */}
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 9, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {getInitials(u.name)}
+                </div>
+                {/* Last name */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                  {last || first}
+                </div>
+                {/* First name */}
+                <div style={{ fontSize: 13, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                  {last ? first : ''}
+                </div>
+                {/* Email */}
+                <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{u.email}</div>
+                {/* Role */}
+                <div><RoleBadge role={u.role} /></div>
+                {/* Open */}
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{s.open}</div>
+                {/* Overdue */}
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: s.overdue ? 'var(--c-danger)' : 'var(--tx3)' }}>{s.overdue}</div>
+                {/* Completed */}
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'var(--c-success)' }}>{s.done}</div>
+                {/* Projects */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
+                  {userProjs.slice(0, 3).map(p => (
+                    <span key={p.id} style={{ fontSize: 10, color: p.color, background: p.color + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.name}</span>
+                  ))}
+                  {userProjs.length > 3 && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>+{userProjs.length - 3}</span>}
+                  {userProjs.length === 0 && <span style={{ fontSize: 11, color: 'var(--tx3)', fontStyle: 'italic' }}>—</span>}
+                </div>
+              </div>
+            )
+          })}
+          {sortedUsers.length === 0 && (
             <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? 'No results'}</div>
           )}
         </div>
