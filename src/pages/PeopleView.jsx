@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
@@ -13,19 +13,176 @@ const ROLES = ['admin', 'manager', 'member', 'guest']
 const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
 const isUUID = id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-function RoleBadge({ role }) {
+/* ── Shared sub-components ────────────────────────────────────── */
+
+function RoleBadge({ role, size = 'sm' }) {
+  const big = size === 'lg'
   return (
-    <span style={{ fontSize: 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize' }}>
+    <span style={{ fontSize: big ? 12 : 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: big ? '3px 10px' : '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize' }}>
       {role}
     </span>
   )
 }
 
+function ViewToggle({ view, setView, t }) {
+  const btn = (v, label) => (
+    <button key={v} onClick={() => setView(v)}
+      style={{ fontSize: 12, fontWeight: 500, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)',
+        background: view === v ? 'var(--accent)' : 'transparent', color: view === v ? '#fff' : 'var(--tx2)',
+        cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 5 }}>
+      {v === 'cards' && <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/></svg>}
+      {v === 'list' && <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 3h10M4 8h10M4 13h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="1.5" cy="3" r="1" fill="currentColor"/><circle cx="1.5" cy="8" r="1" fill="currentColor"/><circle cx="1.5" cy="13" r="1" fill="currentColor"/></svg>}
+      {label}
+    </button>
+  )
+  return (
+    <div style={{ display: 'flex', gap: 2, background: 'var(--bg2)', borderRadius: 'var(--r1)', padding: 2, border: '1px solid var(--bd3)' }}>
+      {btn('cards', t.cardView)}{btn('list', t.listView)}
+    </div>
+  )
+}
+
+function ProjectFilter({ projects, selected, setSelected, t }) {
+  return (
+    <select value={selected} onChange={e => setSelected(e.target.value)}
+      style={{ fontSize: 12, padding: '5px 10px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', cursor: 'pointer' }}>
+      <option value="">{t.filterByProject}</option>
+      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+    </select>
+  )
+}
+
+/* ── Card view (existing, refined) ────────────────────────────── */
+
+function MemberCard({ u, userTasks, projects, t }) {
+  const open = userTasks.filter(task => !task.done)
+  const od = open.filter(task => isOverdue(task.due))
+  const done = userTasks.filter(task => task.done)
+  const userProjs = [...new Set(userTasks.map(task => task.pid))]
+    .map(id => projects.find(p => p.id === id)).filter(Boolean)
+
+  return (
+    <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+      <div style={{ background: u.color + '14', padding: '16px 18px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px ' + u.color + '40' }}>
+          {getInitials(u.name)}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+        </div>
+        <RoleBadge role={u.role} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--bd3)' }}>
+        {[
+          [t.openTasks, open.length, 'var(--tx1)'],
+          [t.overdueLabel, od.length, od.length ? 'var(--c-danger)' : 'var(--tx3)'],
+          [t.completed, done.length, 'var(--c-success)'],
+        ].map(([label, value, color]) => (
+          <div key={label} style={{ background: 'var(--bg1)', padding: '10px 8px', textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 600, color, lineHeight: 1, marginBottom: 3 }}>{value}</div>
+            <div style={{ fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: '12px 18px 16px' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+          {userProjs.map(p => (
+            <span key={p.id} style={{ fontSize: 11, color: p.color, background: p.color + '18', padding: '3px 8px', borderRadius: 'var(--r1)', fontWeight: 500 }}>{p.name}</span>
+          ))}
+          {userProjs.length === 0 && <span style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? '—'}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── List view (new) ──────────────────────────────────────────── */
+
+function MemberListRow({ u, userTasks, projects, t, isEven }) {
+  const open = userTasks.filter(task => !task.done)
+  const od = open.filter(task => isOverdue(task.due))
+  const done = userTasks.filter(task => task.done)
+  const userProjs = [...new Set(userTasks.map(task => task.pid))]
+    .map(id => projects.find(p => p.id === id)).filter(Boolean)
+
+  return (
+    <div className="row-interactive"
+      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
+        background: isEven ? 'var(--bg1)' : 'var(--bg2)', borderBottom: '1px solid var(--bd3)',
+        borderRadius: 0, transition: 'background .1s' }}>
+      {/* Avatar + name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 220px', minWidth: 0 }}>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {getInitials(u.name)}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
+          <div style={{ fontSize: 11, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+        </div>
+      </div>
+      {/* Role */}
+      <div style={{ flex: '0 0 80px' }}><RoleBadge role={u.role} /></div>
+      {/* Stats */}
+      <div style={{ flex: '0 0 160px', display: 'flex', gap: 12 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx1)', lineHeight: 1 }}>{open.length}</div>
+          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.openTasks}</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: od.length ? 'var(--c-danger)' : 'var(--tx3)', lineHeight: 1 }}>{od.length}</div>
+          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.overdueLabel}</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--c-success)', lineHeight: 1 }}>{done.length}</div>
+          <div style={{ fontSize: 9, color: 'var(--tx3)', textTransform: 'uppercase' }}>{t.completed}</div>
+        </div>
+      </div>
+      {/* Projects */}
+      <div style={{ flex: '1 1 200px', display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
+        {userProjs.slice(0, 4).map(p => (
+          <span key={p.id} style={{ fontSize: 10, color: p.color, background: p.color + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.name}</span>
+        ))}
+        {userProjs.length > 4 && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>+{userProjs.length - 4}</span>}
+        {userProjs.length === 0 && <span style={{ fontSize: 11, color: 'var(--tx3)', fontStyle: 'italic' }}>—</span>}
+      </div>
+    </div>
+  )
+}
+
+/* ── Admin panel section header ───────────────────────────────── */
+
+function AdminSectionHeader({ icon, title, count, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 4 }}>
+      <div style={{ width: 28, height: 28, borderRadius: 'var(--r1)', background: (color ?? 'var(--accent)') + '14', color: color ?? 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx1)', flex: 1 }}>{title}</div>
+      {count > 0 && (
+        <span style={{ fontSize: 11, fontWeight: 600, background: (color ?? 'var(--accent)') + '18', color: color ?? 'var(--accent)', padding: '2px 8px', borderRadius: 10 }}>{count}</span>
+      )}
+    </div>
+  )
+}
+
+/* ── Main component ───────────────────────────────────────────── */
+
 export default function PeopleView({ tasks, projects, currentUser, activeOrgId }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const refreshUsers = useRefreshOrgUsers()
+
+  // View state
+  const [view, setView] = useState('cards')
+  const [filterProject, setFilterProject] = useState('')
   const [showAdmin, setShowAdmin] = useState(false)
+  const [adminSearch, setAdminSearch] = useState('')
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkRole, setBulkRole] = useState('member')
+
+  // Invite state
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('member')
   const [busy, setBusy] = useState(false)
@@ -60,37 +217,27 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
       .catch(e => log.warn('fetchPendingSignups failed:', e.message))
   }, [isAdmin, activeOrgId, busy])
 
-  const handleConfirmEmail = async (userId) => {
-    setBusy(true)
-    try {
-      await confirmUserEmail(userId)
-      setPendingSignups(s => s.filter(x => x.user_id !== userId))
-      flash(t.userConfirmed ?? 'User email confirmed')
-    } catch (e) {
-      flash((t.confirmError ?? 'Confirm failed') + (e?.message ? ` (${e.message})` : ''), 'err')
-    } finally { setBusy(false) }
-  }
+  // Compute user tasks lookup
+  const userTasksMap = useMemo(() => {
+    const map = {}
+    for (const u of USERS) {
+      map[u.id] = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
+    }
+    return map
+  }, [USERS, tasks])
 
-  const handleApprove = async (reqId) => {
-    setBusy(true)
-    try {
-      await approveJoinRequest(reqId)
-      setPendingReqs(r => r.filter(x => x.id !== reqId))
-      refreshUsers()
-      flash(t.requestApproved ?? 'Request approved')
-    } catch { flash(t.inviteError, 'err') }
-    finally { setBusy(false) }
-  }
+  // Filtered users (by project)
+  const filteredUsers = useMemo(() => {
+    if (!filterProject) return USERS
+    return USERS.filter(u => (userTasksMap[u.id] ?? []).some(task => task.pid === filterProject))
+  }, [USERS, filterProject, userTasksMap])
 
-  const handleReject = async (reqId) => {
-    setBusy(true)
-    try {
-      await rejectJoinRequest(reqId)
-      setPendingReqs(r => r.filter(x => x.id !== reqId))
-      flash(t.requestRejected ?? 'Request rejected')
-    } catch { flash(t.removeError, 'err') }
-    finally { setBusy(false) }
-  }
+  // Admin: filtered by search
+  const adminFilteredUsers = useMemo(() => {
+    if (!adminSearch.trim()) return USERS
+    const q = adminSearch.toLowerCase()
+    return USERS.filter(u => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
+  }, [USERS, adminSearch])
 
   const flash = (text, type = 'ok') => {
     setMsg({ text, type })
@@ -124,8 +271,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
     } catch (e) {
       log.error('removeOrgMember failed:', e)
       flash(t.removeError + (e?.message ? ` (${e.message})` : ''), 'err')
-    }
-    finally { setBusy(false) }
+    } finally { setBusy(false) }
   }
 
   const handleDeleteAccount = async (userId) => {
@@ -149,244 +295,339 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
     finally { setBusy(false) }
   }
 
+  const handleConfirmEmail = async (userId) => {
+    setBusy(true)
+    try {
+      await confirmUserEmail(userId)
+      setPendingSignups(s => s.filter(x => x.user_id !== userId))
+      flash(t.userConfirmed ?? 'User email confirmed')
+    } catch (e) {
+      flash((t.confirmError ?? 'Confirm failed') + (e?.message ? ` (${e.message})` : ''), 'err')
+    } finally { setBusy(false) }
+  }
+
+  const handleApprove = async (reqId) => {
+    setBusy(true)
+    try {
+      await approveJoinRequest(reqId)
+      setPendingReqs(r => r.filter(x => x.id !== reqId))
+      refreshUsers()
+      flash(t.requestApproved ?? 'Request approved')
+    } catch { flash(t.inviteError, 'err') }
+    finally { setBusy(false) }
+  }
+
+  const handleReject = async (reqId) => {
+    setBusy(true)
+    try {
+      await rejectJoinRequest(reqId)
+      setPendingReqs(r => r.filter(x => x.id !== reqId))
+      flash(t.requestRejected ?? 'Request rejected')
+    } catch { flash(t.removeError, 'err') }
+    finally { setBusy(false) }
+  }
+
+  // Bulk role change
+  const handleBulkRoleChange = async () => {
+    if (selectedIds.size === 0) return
+    setBusy(true)
+    let ok = 0
+    for (const uid of selectedIds) {
+      if (uid === currentUser?.id) continue
+      try {
+        await updateOrgMemberRole(activeOrgId, uid, bulkRole)
+        ok++
+      } catch (e) { log.warn('bulk role change failed for', uid, e.message) }
+    }
+    setSelectedIds(new Set())
+    refreshUsers()
+    flash(`${ok} ${t.roleUpdated?.toLowerCase?.() ?? 'updated'}`)
+    setBusy(false)
+  }
+
+  const toggleSelect = (uid) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(uid) ? next.delete(uid) : next.add(uid)
+      return next
+    })
+  }
+
+  const pendingCount = pendingSignups.length + pendingReqs.length
+
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--tx1)' }}>{t.people}</div>
-        {isAdmin && (() => {
-          const pendingCount = pendingSignups.length + pendingReqs.length
-          return (
-            <button
-              onClick={() => setShowAdmin(s => !s)}
-              style={{ fontSize: 12, fontWeight: 500, color: showAdmin ? '#fff' : 'var(--accent)', background: showAdmin ? 'var(--accent)' : 'var(--accent)18', border: '1px solid var(--accent)', borderRadius: 'var(--r1)', padding: '3px 10px', cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              {t.manageMembers}
-              {pendingCount > 0 && (
-                <span style={{ background: 'var(--c-warning)', color: '#fff', fontSize: 10, fontWeight: 600, borderRadius: 10, padding: '1px 6px', lineHeight: '16px' }}>
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          )
-        })()}
+        <div style={{ flex: 1 }} />
+        <ProjectFilter projects={projects} selected={filterProject} setSelected={setFilterProject} t={t} />
+        <ViewToggle view={view} setView={setView} t={t} />
+        {isAdmin && (
+          <button onClick={() => setShowAdmin(s => !s)}
+            style={{ fontSize: 12, fontWeight: 500, color: showAdmin ? '#fff' : 'var(--accent)',
+              background: showAdmin ? 'var(--accent)' : 'var(--accent)18',
+              border: '1px solid var(--accent)', borderRadius: 'var(--r1)', padding: '4px 12px',
+              cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1a3 3 0 100 6 3 3 0 000-6zM2 13c0-2.2 2.7-4 6-4s6 1.8 6 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            {t.manageMembers}
+            {pendingCount > 0 && (
+              <span style={{ background: 'var(--c-warning)', color: '#fff', fontSize: 10, fontWeight: 600, borderRadius: 10, padding: '1px 6px', lineHeight: '16px' }}>
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 16 }}>{t.teamMembers(USERS.length)}</div>
+      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 16 }}>{t.teamMembers(filteredUsers.length)}</div>
 
       {/* Feedback toast */}
       {msg && (
-        <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 'var(--r1)', fontSize: 13, fontWeight: 500, color: msg.type === 'err' ? 'var(--c-danger)' : 'var(--c-success)', background: msg.type === 'err' ? 'var(--c-danger)12' : 'var(--c-success)12', border: `1px solid ${msg.type === 'err' ? 'var(--c-danger)' : 'var(--c-success)'}30` }}>
+        <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 'var(--r2)', fontSize: 13, fontWeight: 500,
+          color: msg.type === 'err' ? 'var(--c-danger)' : 'var(--c-success)',
+          background: msg.type === 'err' ? 'var(--c-danger)12' : 'var(--c-success)12',
+          border: `1px solid ${msg.type === 'err' ? 'var(--c-danger)' : 'var(--c-success)'}30`,
+          display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            {msg.type === 'err'
+              ? <><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></>
+              : <><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8.5l2 2 4-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></>}
+          </svg>
           {msg.text}
         </div>
       )}
 
-      {/* Admin panel: invite + member table */}
+      {/* ── Admin panel ────────────────────────────────────────── */}
       {showAdmin && isAdmin && (
-        <div style={{ background: 'var(--bg1)', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', padding: 16, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
-          {/* Invite form */}
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', marginBottom: 10 }}>{t.inviteMember}</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={e => setInviteEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleInvite()}
-              placeholder={t.emailPlaceholder}
-              style={{ flex: 1, minWidth: 200, padding: '7px 10px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 13, outline: 'none' }}
-            />
-            <select
-              value={inviteRole}
-              onChange={e => setInviteRole(e.target.value)}
-              style={{ padding: '7px 10px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 13, cursor: 'pointer' }}
-            >
-              {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
-            </select>
-            <button
-              onClick={handleInvite}
-              disabled={busy || !inviteEmail.trim()}
-              style={{ padding: '7px 16px', borderRadius: 'var(--r1)', border: 'none', background: 'var(--accent)', color: 'var(--bg1)', fontSize: 13, fontWeight: 500, cursor: busy ? 'wait' : 'pointer', opacity: busy || !inviteEmail.trim() ? 0.5 : 1 }}
-            >
-              {t.invite}
-            </button>
+        <div style={{ background: 'var(--bg1)', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', marginBottom: 20, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+
+          {/* Invite section */}
+          <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
+            <AdminSectionHeader
+              icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+              title={t.inviteMember} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleInvite()} placeholder={t.emailPlaceholder}
+                style={{ flex: 1, minWidth: 200, padding: '8px 12px', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 13, outline: 'none' }} />
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+                style={{ padding: '8px 12px', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 13, cursor: 'pointer' }}>
+                {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
+              </select>
+              <button onClick={handleInvite} disabled={busy || !inviteEmail.trim()}
+                style={{ padding: '8px 20px', borderRadius: 'var(--r2)', border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: busy ? 'wait' : 'pointer', opacity: busy || !inviteEmail.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M14 2L7 14l-2-5-5-2L14 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+                {t.invite}
+              </button>
+            </div>
           </div>
 
-          {/* Member table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--bd3)' }}>
-                <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--tx3)', fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Name</th>
-                <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--tx3)', fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email</th>
-                <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--tx3)', fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role</th>
-                <th style={{ width: 80 }} />
-              </tr>
-            </thead>
-            <tbody>
-              {USERS.map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--bd3)' }}>
-                  <td style={{ padding: '8px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {getInitials(u.name)}
-                    </div>
-                    <span style={{ color: 'var(--tx1)', fontWeight: 500 }}>{u.name}</span>
-                    {u.id === currentUser?.id && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic' }}>(you)</span>}
-                  </td>
-                  <td style={{ padding: '8px 8px', color: 'var(--tx3)' }}>{u.email}</td>
-                  <td style={{ padding: '8px 8px' }}>
-                    {u.id === currentUser?.id || !isUUID(u.id)
-                      ? <RoleBadge role={u.role} />
-                      : (
-                        <select
-                          value={u.role}
-                          onChange={e => handleRoleChange(u, e.target.value)}
-                          disabled={busy}
-                          style={{ padding: '3px 6px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 12, cursor: 'pointer' }}
-                        >
-                          {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
-                        </select>
-                      )
-                    }
-                  </td>
-                  <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                    {u.id !== currentUser?.id && isUUID(u.id) && (
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => handleRemove(u)}
-                          disabled={busy}
-                          style={{ fontSize: 12, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '2px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}
-                        >
-                          {t.removeMember}
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(u)}
-                          disabled={busy}
-                          style={{ fontSize: 12, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '2px 10px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1 }}
-                        >
-                          {t.deleteAccount ?? 'Delete account'}
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Pending signups (unconfirmed emails) */}
-          {pendingSignups.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-warning)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="8" cy="11" r="0.8" fill="currentColor"/></svg>
-                {t.pendingSignups ?? 'Pending signups'} ({pendingSignups.length})
+          {/* Member management section */}
+          <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              <AdminSectionHeader
+                icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 7a3 3 0 100-6 3 3 0 000 6zM0 14c0-2.2 2.7-4 6-4M12 6v6M9 9h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
+                title={t.manageMembers} count={USERS.length} />
+              <div style={{ flex: 1 }} />
+              {/* Search */}
+              <div style={{ position: 'relative' }}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--tx3)' }}>
+                  <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                <input type="text" value={adminSearch} onChange={e => setAdminSearch(e.target.value)} placeholder={t.searchMembers}
+                  style={{ padding: '6px 10px 6px 26px', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 12, outline: 'none', width: 180 }} />
               </div>
-              <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8 }}>
+            </div>
+
+            {/* Bulk actions bar */}
+            {selectedIds.size > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 10, background: 'var(--accent)08', border: '1px solid var(--accent)30', borderRadius: 'var(--r2)' }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)' }}>{t.selectedCount(selectedIds.size)}</span>
+                <div style={{ flex: 1 }} />
+                <select value={bulkRole} onChange={e => setBulkRole(e.target.value)}
+                  style={{ fontSize: 12, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', cursor: 'pointer' }}>
+                  {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
+                </select>
+                <button onClick={handleBulkRoleChange} disabled={busy}
+                  style={{ fontSize: 12, fontWeight: 500, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--accent)', color: '#fff', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
+                  {t.bulkChangeRole}
+                </button>
+                <button onClick={() => setSelectedIds(new Set())}
+                  style={{ fontSize: 11, color: 'var(--tx3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>✕</button>
+              </div>
+            )}
+
+            {/* Member rows */}
+            <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
+              {/* Header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 140px 90px 120px', gap: 0, padding: '8px 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
+                <div />
+                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
+                <div />
+              </div>
+              {/* Rows */}
+              <div style={{ maxHeight: 340, overflow: 'auto' }}>
+                {adminFilteredUsers.map((u, i) => {
+                  const ut = userTasksMap[u.id] ?? []
+                  const isSelf = u.id === currentUser?.id
+                  const canEdit = !isSelf && isUUID(u.id)
+                  return (
+                    <div key={u.id} className="row-interactive"
+                      style={{ display: 'grid', gridTemplateColumns: '28px 1fr 140px 90px 120px', gap: 0, padding: '9px 12px', alignItems: 'center', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)', transition: 'background .1s' }}>
+                      {/* Checkbox */}
+                      <div>
+                        {canEdit && (
+                          <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)}
+                            style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent)' }} />
+                        )}
+                      </div>
+                      {/* Name + avatar */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: u.color + '28', color: u.color, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {getInitials(u.name)}
+                        </div>
+                        <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{u.name}</span>
+                          {isSelf && <span style={{ fontSize: 10, color: 'var(--tx3)', fontStyle: 'italic', marginLeft: 4 }}>(you)</span>}
+                          <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{ut.length} {t.tasksAssigned?.toLowerCase?.() ?? 'tasks'}</div>
+                        </div>
+                      </div>
+                      {/* Email */}
+                      <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                      {/* Role */}
+                      <div>
+                        {!canEdit
+                          ? <RoleBadge role={u.role} />
+                          : (
+                            <select value={u.role} onChange={e => handleRoleChange(u, e.target.value)} disabled={busy}
+                              style={{ padding: '3px 6px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', fontSize: 12, cursor: 'pointer', width: '100%' }}>
+                              {ROLES.map(r => <option key={r} value={r}>{t[`role${r.charAt(0).toUpperCase() + r.slice(1)}`]}</option>)}
+                            </select>
+                          )}
+                      </div>
+                      {/* Actions */}
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                        {canEdit && (
+                          <>
+                            <button onClick={() => handleRemove(u)} disabled={busy} title={t.removeMember}
+                              style={{ fontSize: 12, color: 'var(--tx2)', background: 'none', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7a1 1 0 011-1h3.4a1 1 0 011 1V4M6.5 7v4.5M9.5 7v4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3.5 4l.7 8.3a1.5 1.5 0 001.5 1.4h4.6a1.5 1.5 0 001.5-1.4l.7-8.3" stroke="currentColor" strokeWidth="1.2"/></svg>
+                              {t.removeMember}
+                            </button>
+                            <button onClick={() => setConfirmDelete(u)} disabled={busy} title={t.deleteAccount ?? 'Delete'}
+                              style={{ fontSize: 11, color: '#fff', background: 'var(--c-danger)', border: 'none', borderRadius: 'var(--r1)', padding: '3px 8px', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1 }}>
+                              {t.deleteAccount ?? 'Delete'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {adminFilteredUsers.length === 0 && (
+                  <div style={{ padding: '20px', textAlign: 'center', fontSize: 13, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? 'No results'}</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Pending signups */}
+          {pendingSignups.length > 0 && (
+            <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--bd3)' }}>
+              <AdminSectionHeader
+                icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="8" cy="11" r="0.8" fill="currentColor"/></svg>}
+                title={t.pendingSignups ?? 'Pending signups'} count={pendingSignups.length} color="var(--c-warning)" />
+              <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 10 }}>
                 {t.pendingSignupsDesc ?? 'These users registered but never confirmed their email. You can confirm them manually.'}
               </div>
-              {pendingSignups.map(s => (
-                <div key={s.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--c-warning)28', color: 'var(--c-warning)', fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {getInitials(s.display_name)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
-                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{s.email}</span>
-                    <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', gap: 8 }}>
-                      <span>{t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                      {!s.signup_org && <span style={{ color: 'var(--c-warning)' }}>{t.noOrgSelected ?? 'no org selected'}</span>}
+              <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
+                {pendingSignups.map((s, i) => (
+                  <div key={s.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--c-warning)18', color: 'var(--c-warning)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {getInitials(s.display_name)}
                     </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{s.display_name}</span>
+                        <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{s.email}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', gap: 8, marginTop: 2 }}>
+                        <span>{t.registeredOn ?? 'Registered'} {new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        {!s.signup_org && <span style={{ color: 'var(--c-warning)' }}>{t.noOrgSelected ?? 'no org selected'}</span>}
+                      </div>
+                    </div>
+                    <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
+                      style={{ fontSize: 12, padding: '5px 14px', border: 'none', borderRadius: 'var(--r2)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      {t.confirmEmail ?? 'Confirm email'}
+                    </button>
                   </div>
-                  <button onClick={() => handleConfirmEmail(s.user_id)} disabled={busy}
-                    style={{ fontSize: 12, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}>
-                    {t.confirmEmail ?? 'Confirm email'}
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {/* Pending join requests */}
           {pendingReqs.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)', marginBottom: 8 }}>
-                {t.pendingRequests ?? 'Pending requests'} ({pendingReqs.length})
+            <div style={{ padding: '18px 20px 16px' }}>
+              <AdminSectionHeader
+                icon={<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v6l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg>}
+                title={t.pendingRequests ?? 'Pending requests'} count={pendingReqs.length} />
+              <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden' }}>
+                {pendingReqs.map((req, i) => (
+                  <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: i % 2 ? 'var(--bg2)' : 'var(--bg1)', borderBottom: '1px solid var(--bd3)' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)18', color: 'var(--accent)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {getInitials(req.user_name)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{req.user_name}</span>
+                      <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{req.user_email}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => handleApprove(req.id)} disabled={busy}
+                        style={{ fontSize: 12, padding: '5px 14px', border: 'none', borderRadius: 'var(--r2)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 600, opacity: busy ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        {t.approve ?? 'Approve'}
+                      </button>
+                      <button onClick={() => handleReject(req.id)} disabled={busy}
+                        style={{ fontSize: 12, padding: '5px 14px', border: '1px solid var(--c-danger)30', borderRadius: 'var(--r2)', background: 'none', color: 'var(--c-danger)', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
+                        {t.reject ?? 'Reject'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              {pendingReqs.map(req => (
-                <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderBottom: '1px solid var(--bd3)' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)28', color: 'var(--accent)', fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {getInitials(req.user_name)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{req.user_name}</span>
-                    <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 8 }}>{req.user_email}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => handleApprove(req.id)} disabled={busy}
-                      style={{ fontSize: 12, padding: '3px 10px', border: 'none', borderRadius: 'var(--r1)', background: 'var(--c-success)', color: '#fff', cursor: 'pointer', fontWeight: 500, opacity: busy ? 0.5 : 1 }}>
-                      {t.approve ?? 'Approve'}
-                    </button>
-                    <button onClick={() => handleReject(req.id)} disabled={busy}
-                      style={{ fontSize: 12, padding: '3px 10px', border: '1px solid var(--c-danger)40', borderRadius: 'var(--r1)', background: 'none', color: 'var(--c-danger)', cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>
-                      {t.reject ?? 'Reject'}
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Member cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {USERS.map(u => {
-          const userTasks = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
-          const open      = userTasks.filter(task => !task.done)
-          const od        = open.filter(task => isOverdue(task.due))
-          const userProjs = [...new Set(userTasks.map(task => task.pid))]
-            .map(id => projects.find(p => p.id === id))
-            .filter(Boolean)
-
-          return (
-            <div key={u.id} style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-              {/* Header band */}
-              <div style={{ background: u.color + '14', padding: '16px 18px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px ' + u.color + '40' }}>
-                  {getInitials(u.name)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
-                </div>
-                <RoleBadge role={u.role} />
-              </div>
-
-              {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--bd3)', margin: '0' }}>
-                {[
-                  [t.openTasks,    open.length,                          'var(--tx1)'],
-                  [t.overdueLabel, od.length,                            od.length ? 'var(--c-danger)' : 'var(--tx3)'],
-                  [t.completed,    userTasks.filter(task => task.done).length, 'var(--c-success)'],
-                ].map(([label, value, color]) => (
-                  <div key={label} style={{ background: 'var(--bg1)', padding: '10px 8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 20, fontWeight: 600, color, lineHeight: 1, marginBottom: 3 }}>{value}</div>
-                    <div style={{ fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Projects */}
-              <div style={{ padding: '12px 18px 16px' }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {userProjs.map(p => (
-                    <span key={p.id} style={{ fontSize: 11, color: p.color, background: p.color + '18', padding: '3px 8px', borderRadius: 'var(--r1)', fontWeight: 500 }}>{p.name}</span>
-                  ))}
-                  {userProjs.length === 0 && <span style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? '—'}</span>}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {/* ── Members display ────────────────────────────────────── */}
+      {view === 'cards' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+          {filteredUsers.map(u => (
+            <MemberCard key={u.id} u={u} userTasks={userTasksMap[u.id] ?? []} projects={projects} t={t} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          {/* List header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
+            <div style={{ flex: '1 1 220px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Name</div>
+            <div style={{ flex: '0 0 80px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Role</div>
+            <div style={{ flex: '0 0 160px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.tasksAssigned ?? 'Tasks'}</div>
+            <div style={{ flex: '1 1 200px', fontSize: 10, fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
+          </div>
+          {filteredUsers.map((u, i) => (
+            <MemberListRow key={u.id} u={u} userTasks={userTasksMap[u.id] ?? []} projects={projects} t={t} isEven={i % 2 === 0} />
+          ))}
+          {filteredUsers.length === 0 && (
+            <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? 'No results'}</div>
+          )}
+        </div>
+      )}
 
       {confirmDelete && (
         <ConfirmModal
