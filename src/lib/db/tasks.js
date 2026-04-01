@@ -79,8 +79,8 @@ export async function upsertTask(orgId, task, sectionRows) {
     title: task.title, description: task.desc ?? '',
     assignee_name: Array.isArray(task.who) ? JSON.stringify(task.who) : task.who ?? '',
     priority: task.pri ?? 'medium',
-    start_date: task.startDate ?? null,
-    due_date: task.due ?? null,
+    start_date: task.startDate || null,
+    due_date: task.due || null,
     done: task.done ?? false,
     milestone: task.milestone ?? false,
     attachments: task.attachments ?? [],
@@ -112,7 +112,12 @@ const FIELD_MAP = {
 export async function updateTaskField(orgId, taskId, patch) {
   const db = { updated_at: new Date().toISOString() }
   for (const [client, col] of Object.entries(FIELD_MAP)) {
-    if (client in patch) db[col] = patch[client] ?? (typeof patch[client] === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
+    if (client in patch) {
+      const v = patch[client]
+      // Empty strings are invalid for date columns — coerce to null
+      if ((col === 'start_date' || col === 'due_date') && !v) { db[col] = null; continue }
+      db[col] = v ?? (typeof v === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
+    }
   }
   // Serialize who array for DB
   if ('who' in patch) db.assignee_name = Array.isArray(patch.who) ? JSON.stringify(patch.who) : patch.who ?? ''

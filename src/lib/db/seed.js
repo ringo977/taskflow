@@ -44,8 +44,8 @@ export async function seedOrg(orgId, { projs, ports, secs, tasks }) {
         title: task.title, description: task.desc ?? '',
         assignee_name: task.who ?? '',
         priority: task.pri ?? 'medium',
-        start_date: task.startDate ?? null,
-        due_date: task.due ?? null,
+        start_date: task.startDate || null,
+        due_date: task.due || null,
         done: task.done ?? false,
       }
     }))
