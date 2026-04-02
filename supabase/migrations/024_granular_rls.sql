@@ -1,24 +1,28 @@
 -- ============================================================
 -- Migration 024: Granular RLS — write enforcement by role
 -- ============================================================
--- Replaces the broad "FOR ALL USING (is_org_member(...))" policies
--- with per-operation policies that enforce the role hierarchy:
+-- The actual database uses public.* tables with an org_id column,
+-- not the schema-per-org design in 001_init.sql.
 --
---   guests   → read-only (SELECT on everything)
---   members  → can create/edit tasks, subtasks, comments, sections
---   managers → all of the above + create/edit projects & portfolios
+-- This migration replaces the permissive (or absent) policies on
+-- the data tables with per-operation policies that enforce:
+--
+--   guests   → read-only
+--   members  → create/edit tasks, subtasks, comments, sections
+--   managers → all of the above + projects, portfolios
 --   admins   → full control including destructive deletes
 --
 -- SAFE TO RUN:
 --   • No data is modified — only access policies change
 --   • Idempotent: DROP IF EXISTS before every CREATE
---   • SECURITY DEFINER RPCs (get_my_project_roles, etc.) are
---     unaffected — they bypass RLS by design
---   • Reversible: re-running 001_init.sql restores the old policies
+--   • ENABLE ROW LEVEL SECURITY is a no-op if already enabled
+--   • SECURITY DEFINER RPCs (get_my_project_roles, etc.)
+--     bypass RLS and are unaffected
 -- ============================================================
 
--- ── 0. Helper: current user's org role ───────────────────────
+-- ── 0. Helper: current user's role in an org ─────────────────
 -- Returns 'admin' | 'manager' | 'member' | 'guest' | NULL
+-- NULL means the user does not belong to that org at all.
 CREATE OR REPLACE FUNCTION public.get_org_role(p_org_id text)
 RETURNS text LANGUAGE sql SECURITY DEFINER STABLE AS $$
   SELECT role FROM public.org_members
@@ -27,266 +31,179 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_org_role(text) TO authenticated;
 
 
--- ============================================================
--- SCHEMA: polimi
--- ============================================================
+-- ── 1. portfolios ─────────────────────────────────────────────
+ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
 
--- Drop old catch-all policies
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.portfolios;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.projects;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.project_members;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.sections;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.tasks;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.subtasks;
-DROP POLICY IF EXISTS "polimi members full access" ON polimi.comments;
+DROP POLICY IF EXISTS "portfolios select" ON public.portfolios;
+DROP POLICY IF EXISTS "portfolios insert" ON public.portfolios;
+DROP POLICY IF EXISTS "portfolios update" ON public.portfolios;
+DROP POLICY IF EXISTS "portfolios delete" ON public.portfolios;
 
--- ── portfolios: read all, write admin/manager, delete admin only ──
-CREATE POLICY "polimi portfolios select"
-  ON polimi.portfolios FOR SELECT
-  USING (public.is_org_member('polimi'));
+-- Any org member can read
+CREATE POLICY "portfolios select"
+  ON public.portfolios FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
 
-CREATE POLICY "polimi portfolios insert"
-  ON polimi.portfolios FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager'));
+-- Create/edit: admin or manager
+CREATE POLICY "portfolios insert"
+  ON public.portfolios FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "polimi portfolios update"
-  ON polimi.portfolios FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
+CREATE POLICY "portfolios update"
+  ON public.portfolios FOR UPDATE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "polimi portfolios delete"
-  ON polimi.portfolios FOR DELETE
-  USING (public.get_org_role('polimi') = 'admin');
-
--- ── projects: read all, write admin/manager, delete admin only ───
-CREATE POLICY "polimi projects select"
-  ON polimi.projects FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi projects insert"
-  ON polimi.projects FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager'));
-
-CREATE POLICY "polimi projects update"
-  ON polimi.projects FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
-CREATE POLICY "polimi projects delete"
-  ON polimi.projects FOR DELETE
-  USING (public.get_org_role('polimi') = 'admin');
-
--- ── project_members: read all, manage admin/manager ──────────────
-CREATE POLICY "polimi project_members select"
-  ON polimi.project_members FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi project_members insert"
-  ON polimi.project_members FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager'));
-
-CREATE POLICY "polimi project_members update"
-  ON polimi.project_members FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
-CREATE POLICY "polimi project_members delete"
-  ON polimi.project_members FOR DELETE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
--- ── sections: read all, write member+, delete manager+ ───────────
-CREATE POLICY "polimi sections select"
-  ON polimi.sections FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi sections insert"
-  ON polimi.sections FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi sections update"
-  ON polimi.sections FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi sections delete"
-  ON polimi.sections FOR DELETE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
--- ── tasks: read all, create/edit member+, delete manager+ ────────
-CREATE POLICY "polimi tasks select"
-  ON polimi.tasks FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi tasks insert"
-  ON polimi.tasks FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi tasks update"
-  ON polimi.tasks FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi tasks delete"
-  ON polimi.tasks FOR DELETE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
--- ── subtasks: same as tasks ───────────────────────────────────────
-CREATE POLICY "polimi subtasks select"
-  ON polimi.subtasks FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi subtasks insert"
-  ON polimi.subtasks FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi subtasks update"
-  ON polimi.subtasks FOR UPDATE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi subtasks delete"
-  ON polimi.subtasks FOR DELETE
-  USING (public.get_org_role('polimi') IN ('admin', 'manager'));
-
--- ── comments: read all, write member+, edit/delete own or admin ──
-CREATE POLICY "polimi comments select"
-  ON polimi.comments FOR SELECT
-  USING (public.is_org_member('polimi'));
-
-CREATE POLICY "polimi comments insert"
-  ON polimi.comments FOR INSERT
-  WITH CHECK (public.get_org_role('polimi') IN ('admin', 'manager', 'member'));
-
-CREATE POLICY "polimi comments update"
-  ON polimi.comments FOR UPDATE
-  USING (author_id = auth.uid() OR public.get_org_role('polimi') = 'admin');
-
-CREATE POLICY "polimi comments delete"
-  ON polimi.comments FOR DELETE
-  USING (author_id = auth.uid() OR public.get_org_role('polimi') = 'admin');
+-- Delete: admin only
+CREATE POLICY "portfolios delete"
+  ON public.portfolios FOR DELETE
+  USING (public.get_org_role(org_id) = 'admin');
 
 
--- ============================================================
--- SCHEMA: biomimx  (identical logic)
--- ============================================================
+-- ── 2. projects ───────────────────────────────────────────────
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.portfolios;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.projects;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.project_members;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.sections;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.tasks;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.subtasks;
-DROP POLICY IF EXISTS "biomimx members full access" ON biomimx.comments;
+DROP POLICY IF EXISTS "projects select" ON public.projects;
+DROP POLICY IF EXISTS "projects insert" ON public.projects;
+DROP POLICY IF EXISTS "projects update" ON public.projects;
+DROP POLICY IF EXISTS "projects delete" ON public.projects;
 
--- portfolios
-CREATE POLICY "biomimx portfolios select"
-  ON biomimx.portfolios FOR SELECT
-  USING (public.is_org_member('biomimx'));
+CREATE POLICY "projects select"
+  ON public.projects FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
 
-CREATE POLICY "biomimx portfolios insert"
-  ON biomimx.portfolios FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager'));
+CREATE POLICY "projects insert"
+  ON public.projects FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "biomimx portfolios update"
-  ON biomimx.portfolios FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+CREATE POLICY "projects update"
+  ON public.projects FOR UPDATE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "biomimx portfolios delete"
-  ON biomimx.portfolios FOR DELETE
-  USING (public.get_org_role('biomimx') = 'admin');
+CREATE POLICY "projects delete"
+  ON public.projects FOR DELETE
+  USING (public.get_org_role(org_id) = 'admin');
 
--- projects
-CREATE POLICY "biomimx projects select"
-  ON biomimx.projects FOR SELECT
-  USING (public.is_org_member('biomimx'));
 
-CREATE POLICY "biomimx projects insert"
-  ON biomimx.projects FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager'));
+-- ── 3. sections ───────────────────────────────────────────────
+ALTER TABLE public.sections ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "biomimx projects update"
-  ON biomimx.projects FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+DROP POLICY IF EXISTS "sections select" ON public.sections;
+DROP POLICY IF EXISTS "sections insert" ON public.sections;
+DROP POLICY IF EXISTS "sections update" ON public.sections;
+DROP POLICY IF EXISTS "sections delete" ON public.sections;
 
-CREATE POLICY "biomimx projects delete"
-  ON biomimx.projects FOR DELETE
-  USING (public.get_org_role('biomimx') = 'admin');
+CREATE POLICY "sections select"
+  ON public.sections FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
 
--- project_members
-CREATE POLICY "biomimx project_members select"
-  ON biomimx.project_members FOR SELECT
-  USING (public.is_org_member('biomimx'));
+-- Members and above can manage sections
+CREATE POLICY "sections insert"
+  ON public.sections FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx project_members insert"
-  ON biomimx.project_members FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager'));
+CREATE POLICY "sections update"
+  ON public.sections FOR UPDATE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx project_members update"
-  ON biomimx.project_members FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+-- Section delete: manager+ (structural change)
+CREATE POLICY "sections delete"
+  ON public.sections FOR DELETE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "biomimx project_members delete"
-  ON biomimx.project_members FOR DELETE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
 
--- sections
-CREATE POLICY "biomimx sections select"
-  ON biomimx.sections FOR SELECT
-  USING (public.is_org_member('biomimx'));
+-- ── 4. tasks ──────────────────────────────────────────────────
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "biomimx sections insert"
-  ON biomimx.sections FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
+DROP POLICY IF EXISTS "tasks select" ON public.tasks;
+DROP POLICY IF EXISTS "tasks insert" ON public.tasks;
+DROP POLICY IF EXISTS "tasks update" ON public.tasks;
+DROP POLICY IF EXISTS "tasks delete" ON public.tasks;
 
-CREATE POLICY "biomimx sections update"
-  ON biomimx.sections FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
+CREATE POLICY "tasks select"
+  ON public.tasks FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
 
-CREATE POLICY "biomimx sections delete"
-  ON biomimx.sections FOR DELETE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+-- Create/edit tasks: member and above (guests read-only)
+CREATE POLICY "tasks insert"
+  ON public.tasks FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
--- tasks
-CREATE POLICY "biomimx tasks select"
-  ON biomimx.tasks FOR SELECT
-  USING (public.is_org_member('biomimx'));
+CREATE POLICY "tasks update"
+  ON public.tasks FOR UPDATE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx tasks insert"
-  ON biomimx.tasks FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
+-- Delete tasks: manager+ (too destructive for regular members)
+CREATE POLICY "tasks delete"
+  ON public.tasks FOR DELETE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "biomimx tasks update"
-  ON biomimx.tasks FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx tasks delete"
-  ON biomimx.tasks FOR DELETE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+-- ── 5. subtasks ───────────────────────────────────────────────
+ALTER TABLE public.subtasks ENABLE ROW LEVEL SECURITY;
 
--- subtasks
-CREATE POLICY "biomimx subtasks select"
-  ON biomimx.subtasks FOR SELECT
-  USING (public.is_org_member('biomimx'));
+DROP POLICY IF EXISTS "subtasks select" ON public.subtasks;
+DROP POLICY IF EXISTS "subtasks insert" ON public.subtasks;
+DROP POLICY IF EXISTS "subtasks update" ON public.subtasks;
+DROP POLICY IF EXISTS "subtasks delete" ON public.subtasks;
 
-CREATE POLICY "biomimx subtasks insert"
-  ON biomimx.subtasks FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
+CREATE POLICY "subtasks select"
+  ON public.subtasks FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
 
-CREATE POLICY "biomimx subtasks update"
-  ON biomimx.subtasks FOR UPDATE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
+CREATE POLICY "subtasks insert"
+  ON public.subtasks FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx subtasks delete"
-  ON biomimx.subtasks FOR DELETE
-  USING (public.get_org_role('biomimx') IN ('admin', 'manager'));
+CREATE POLICY "subtasks update"
+  ON public.subtasks FOR UPDATE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
--- comments
-CREATE POLICY "biomimx comments select"
-  ON biomimx.comments FOR SELECT
-  USING (public.is_org_member('biomimx'));
+CREATE POLICY "subtasks delete"
+  ON public.subtasks FOR DELETE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
-CREATE POLICY "biomimx comments insert"
-  ON biomimx.comments FOR INSERT
-  WITH CHECK (public.get_org_role('biomimx') IN ('admin', 'manager', 'member'));
 
-CREATE POLICY "biomimx comments update"
-  ON biomimx.comments FOR UPDATE
-  USING (author_id = auth.uid() OR public.get_org_role('biomimx') = 'admin');
+-- ── 6. comments ───────────────────────────────────────────────
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "biomimx comments delete"
-  ON biomimx.comments FOR DELETE
-  USING (author_id = auth.uid() OR public.get_org_role('biomimx') = 'admin');
+DROP POLICY IF EXISTS "comments select" ON public.comments;
+DROP POLICY IF EXISTS "comments insert" ON public.comments;
+DROP POLICY IF EXISTS "comments update" ON public.comments;
+DROP POLICY IF EXISTS "comments delete" ON public.comments;
+
+CREATE POLICY "comments select"
+  ON public.comments FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
+
+CREATE POLICY "comments insert"
+  ON public.comments FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
+
+-- Users can edit/delete their own comments; admins can edit/delete any
+CREATE POLICY "comments update"
+  ON public.comments FOR UPDATE
+  USING (author_id = auth.uid() OR public.get_org_role(org_id) = 'admin');
+
+CREATE POLICY "comments delete"
+  ON public.comments FOR DELETE
+  USING (author_id = auth.uid() OR public.get_org_role(org_id) = 'admin');
+
+
+-- ── 7. task_dependencies ──────────────────────────────────────
+ALTER TABLE public.task_dependencies ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "task_dependencies select" ON public.task_dependencies;
+DROP POLICY IF EXISTS "task_dependencies insert" ON public.task_dependencies;
+DROP POLICY IF EXISTS "task_dependencies delete" ON public.task_dependencies;
+
+CREATE POLICY "task_dependencies select"
+  ON public.task_dependencies FOR SELECT
+  USING (public.get_org_role(org_id) IS NOT NULL);
+
+CREATE POLICY "task_dependencies insert"
+  ON public.task_dependencies FOR INSERT
+  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
+
+CREATE POLICY "task_dependencies delete"
+  ON public.task_dependencies FOR DELETE
+  USING (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
