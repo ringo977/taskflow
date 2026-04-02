@@ -12,9 +12,8 @@ import { login } from './fixtures/auth.js'
 /** Navigate to Home and wait for dashboard to render */
 async function goHome(page) {
   await page.locator('text=Home').first().click()
-  // Wait for any widget container to appear (bg1 cards with borders)
-  await page.locator('[style*="border-radius"][style*="border"]').first().waitFor({ timeout: 10_000 })
-  await page.waitForTimeout(500)
+  // Wait for the Customize button — confirms HomeDashboard (lazy chunk) has fully mounted
+  await page.locator('button').filter({ hasText: /Customize|Personalizza/ }).waitFor({ timeout: 15_000 })
 }
 
 /** Enter edit mode by clicking "Customize" / "⚙ Customize" button */
