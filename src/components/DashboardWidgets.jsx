@@ -104,7 +104,7 @@ export const ActivityWidget = ({ activities, projects, t, onOpen, formatTimeAgo 
                   <span style={{ fontSize: 11, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: `color-mix(in srgb, ${typeColor} 15%, transparent)`, color: typeColor, flexShrink: 0 }}>{typeIcon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontWeight: 500 }}>{who ? (Array.isArray(who) ? who[0] : who).split(' ')[0] : ''}</span>{' '}
+                      <span style={{ fontWeight: 500 }}>{(Array.isArray(who) ? who[0] : who)?.split(' ')[0] ?? ''}</span>{' '}
                       <span style={{ color: 'var(--tx3)' }}>{typeLabel}</span>{' '}
                       {act.task.title}
                     </div>
