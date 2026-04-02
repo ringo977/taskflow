@@ -26,7 +26,7 @@ const ChunkFallback = () => (
  */
 function ProjectContent({
   proj, view, setView, pTasks, pSecs, tasks, projs, ports,
-  filters, setFilters, user, orgLoading, myProjectRoles, lang, tr,
+  filters, setFilters, user, _orgLoading, myProjectRoles, lang, _tr,
   actions, ui,
 }) {
   const {

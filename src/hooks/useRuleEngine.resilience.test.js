@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useRuleEngine, MAX_RULE_DEPTH, MAX_FIRES_PER_TICK, DEDUP_WINDOW_MS } from './useRuleEngine'
+import { useRuleEngine } from './useRuleEngine'
 
 /**
  * Resilience tests for the rule engine.

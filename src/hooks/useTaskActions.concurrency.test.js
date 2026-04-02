@@ -281,7 +281,7 @@ describe('C1: Concurrent updates + conflict resolution', () => {
     })
 
     it('moveTask on missing task is no-op', async () => {
-      const { result, setTasks } = setupHook()
+      const { result, setTasks: _setTasks } = setupHook()
       await act(async () => {
         await result.current.moveTask('t_missing', 'Done')
       })

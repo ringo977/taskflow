@@ -6,7 +6,7 @@ import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
 import { useState, useMemo, useEffect } from 'react'
 import {
-  SectionTitle, ChartTooltip,
+  SectionTitle,
   DeadlinesWidget, ActivityWidget, HealthWidget,
   TasksPerPersonWidget, PriorityWidget, ActivityChartWidget,
   ProgressWidget, BurndownWidget, StatusDistWidget,
