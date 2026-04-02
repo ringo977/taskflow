@@ -26,22 +26,15 @@ export async function upsertPortfolio(orgId, p) {
 // ── Projects ────────────────────────────────────────────────────
 
 export async function fetchProjects(orgId) {
-  const [{ data, error }, { data: taskRows }, pmResult] = await Promise.all([
+  const [{ data, error }, pmResult] = await Promise.all([
     supabase.from('projects').select('*').eq('org_id', orgId).is('deleted_at', null).order('name'),
-    supabase.from('tasks').select('project_id, assignee_name').eq('org_id', orgId).is('deleted_at', null),
     supabase.rpc('get_all_project_members'),
   ])
   if (error) throw error
   const pmRows = pmResult.data
   if (pmResult.error) log.warn('get_all_project_members RPC failed:', pmResult.error.message)
   const membersByPid = {}
-  // Add names from task assignees
-  for (const t of taskRows ?? []) {
-    if (!t.assignee_name) continue
-    membersByPid[t.project_id] = membersByPid[t.project_id] ?? new Set()
-    membersByPid[t.project_id].add(t.assignee_name)
-  }
-  // Merge names from project_members (via SECURITY DEFINER RPC — bypasses RLS)
+  // Populate from project_members (via SECURITY DEFINER RPC — bypasses RLS)
   for (const pm of pmRows ?? []) {
     if (!pm.user_name || !pm.project_id) continue
     membersByPid[pm.project_id] = membersByPid[pm.project_id] ?? new Set()
