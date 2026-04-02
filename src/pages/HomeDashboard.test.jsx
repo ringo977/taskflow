@@ -195,9 +195,9 @@ describe('HomeDashboard widget computations', () => {
   describe('projectHealth', () => {
     it('computes health for projects with tasks', () => {
       const tasks = [
-        { id: 't1', pid: 'p1', title: 'A', done: true, due: '2026-03-20' },
-        { id: 't2', pid: 'p1', title: 'B', done: false, due: '2026-04-01' },
-        { id: 't3', pid: 'p1', title: 'C', done: false, due: '2026-04-05' },
+        { id: 't1', pid: 'p1', title: 'A', done: true, due: '2030-01-01' },
+        { id: 't2', pid: 'p1', title: 'B', done: false, due: '2030-06-01' },
+        { id: 't3', pid: 'p1', title: 'C', done: false, due: '2030-12-01' },
       ]
       const result = computeProjectHealth(tasks, projects)
       const p1 = result.find(p => p.id === 'p1')

@@ -47,6 +47,8 @@ const WIDGET_REGISTRY = [
 
 const DEFAULT_LAYOUT = WIDGET_REGISTRY.map(w => ({ id: w.id, visible: true, size: w.defaultSize }))
 
+const PRI_COLORS = { high: 'var(--c-danger)', medium: 'var(--c-warning)', low: 'var(--c-lime)' }
+
 export default function HomeDashboard({ tasks, projects, currentUser, onOpen, onNav, lang }) {
   const t = useLang()
   const USERS = useOrgUsers()
@@ -244,12 +246,11 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   }).filter(d => d.open + d.done > 0), [USERS, userTaskMap])
 
   // 2. Donut: tasks by priority
-  const priColors = { high: 'var(--c-danger)', medium: 'var(--c-warning)', low: 'var(--c-lime)' }
   const priLabels = useMemo(() => ({ high: t.high, medium: t.medium, low: t.low }), [t.high, t.medium, t.low])
   const donutData = useMemo(() => ['high', 'medium', 'low'].map(p => ({
     name: priLabels[p],
     value: tasks.filter(task => task.pri === p && !task.done).length,
-    color: priColors[p],
+    color: PRI_COLORS[p],
   })).filter(d => d.value > 0), [tasks, priLabels])
 
   // 3. Area: completions over last 14 days
