@@ -47,7 +47,7 @@ const WIDGET_REGISTRY = [
 
 const DEFAULT_LAYOUT = WIDGET_REGISTRY.map(w => ({ id: w.id, visible: true, size: w.defaultSize }))
 
-export default function HomeDashboard({ tasks, projects, secs: _secs = {}, currentUser, onOpen, onNav, lang }) {
+export default function HomeDashboard({ tasks, projects, currentUser, onOpen, onNav, lang }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const [burndownPid, setBurndownPid] = useState('__all__')
@@ -132,10 +132,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const weStr  = weEnd.toISOString().slice(0, 10)
   const greeting = now.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  const mine     = tasks.filter(task => (Array.isArray(task.who) ? task.who.includes(currentUser.name) : task.who === currentUser.name) && !task.done)
-  const overdue  = mine.filter(task => isOverdue(task.due))
-  const dueToday = mine.filter(task => task.due === ts)
-  const dueWeek  = mine.filter(task => task.due && task.due > ts && task.due <= weStr)
+  const mine     = useMemo(() => tasks.filter(task => (Array.isArray(task.who) ? task.who.includes(currentUser.name) : task.who === currentUser.name) && !task.done), [tasks, currentUser.name])
+  const overdue  = useMemo(() => mine.filter(task => isOverdue(task.due)), [mine])
+  const dueToday = useMemo(() => mine.filter(task => task.due === ts), [mine, ts])
+  const dueWeek       = useMemo(() => mine.filter(task => task.due && task.due > ts && task.due <= weStr), [mine, ts, weStr])
+  const completedCount = useMemo(() => tasks.filter(task => task.done).length, [tasks])
 
   // ── New widget data ─────────────────────────────────────────
 
@@ -220,22 +221,36 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
 
   // ── Chart data ────────────────────────────────────────────────
 
+  // Shared per-user task lookup: computed once, reused by barData, workloadData, and team section
+  const userTaskMap = useMemo(() => {
+    const map = {}
+    for (const u of USERS) {
+      map[u.name] = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
+    }
+    return map
+  }, [tasks, USERS])
+
+  // Shared per-project lookup: O(1) access instead of repeated .find()
+  const projectById = useMemo(() => {
+    const map = {}
+    for (const p of projects) map[p.id] = p
+    return map
+  }, [projects])
+
   // 1. Bar: tasks per person (open vs done)
-  const barData = USERS.map(u => ({
-    name: u.name.split(' ')[0],
-    open: tasks.filter(task => (Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name) && !task.done).length,
-    done: tasks.filter(task => (Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name) && task.done).length,
-    color: u.color,
-  })).filter(d => d.open + d.done > 0)
+  const barData = useMemo(() => USERS.map(u => {
+    const ut = userTaskMap[u.name] ?? []
+    return { name: u.name.split(' ')[0], open: ut.filter(t => !t.done).length, done: ut.filter(t => t.done).length, color: u.color }
+  }).filter(d => d.open + d.done > 0), [USERS, userTaskMap])
 
   // 2. Donut: tasks by priority
   const priColors = { high: 'var(--c-danger)', medium: 'var(--c-warning)', low: 'var(--c-lime)' }
-  const priLabels = { high: t.high, medium: t.medium, low: t.low }
-  const donutData = ['high', 'medium', 'low'].map(p => ({
+  const priLabels = useMemo(() => ({ high: t.high, medium: t.medium, low: t.low }), [t.high, t.medium, t.low])
+  const donutData = useMemo(() => ['high', 'medium', 'low'].map(p => ({
     name: priLabels[p],
     value: tasks.filter(task => task.pri === p && !task.done).length,
     color: priColors[p],
-  })).filter(d => d.value > 0)
+  })).filter(d => d.value > 0), [tasks, priLabels])
 
   // 3. Area: completions over last 14 days
   // Use activity log for real completion date; fall back to due date for legacy tasks
@@ -262,11 +277,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   })
 
   // 4. Project progress table
-  const projStats = projects.map(p => {
+  const projStats = useMemo(() => projects.map(p => {
     const pt   = tasks.filter(task => task.pid === p.id)
     const done = pt.filter(task => task.done).length
     return { ...p, total: pt.length, done, pct: pt.length ? Math.round(done / pt.length * 100) : 0 }
-  })
+  }), [tasks, projects])
 
   // 5. Burndown chart: remaining open tasks over last 30 days
   // Use real completion date from activity log; fall back to due date for legacy tasks
@@ -338,11 +353,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
   const WORKLOAD_THRESHOLD = 8
   const workloadData = useMemo(() => {
     return USERS.map(u => {
-      const open = tasks.filter(tk => (Array.isArray(tk.who) ? tk.who.includes(u.name) : tk.who === u.name) && !tk.done).length
+      const open = (userTaskMap[u.name] ?? []).filter(tk => !tk.done).length
       const level = open > WORKLOAD_THRESHOLD ? 'overloaded' : open > WORKLOAD_THRESHOLD / 2 ? 'balanced' : 'light'
       return { name: u.name.split(' ')[0], open, color: u.color, level }
     }).filter(d => d.open > 0).sort((a, b) => b.open - a.open)
-  }, [tasks, USERS])
+  }, [USERS, userTaskMap])
 
   // 10. Section completion: stacked bars per project showing section distribution
   const sectionCompletionData = useMemo(() => {
@@ -466,7 +481,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
         <StatCard label={t.overdue}        value={overdue.length}                   color="var(--c-danger)" onClick={() => onNav('mytasks')} />
         <StatCard label={t.dueToday}       value={dueToday.length}                  color="var(--c-warning)" onClick={() => onNav('mytasks')} />
         <StatCard label={t.thisWeek}       value={dueWeek.length}                   color="var(--c-brand)" onClick={() => onNav('mytasks')} />
-        <StatCard label={t.completedTotal} value={tasks.filter(t => t.done).length} color="var(--c-success)" onClick={() => {}} />
+        <StatCard label={t.completedTotal} value={completedCount}                   color="var(--c-success)" onClick={() => {}} />
       </div>
 
       {/* Dynamic widgets grid */}
@@ -482,7 +497,7 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
         </div>
         {mine.length === 0 && <div style={{ fontSize: 13, color: 'var(--tx3)' }}>🎉 {t.noOpenTasks}</div>}
         {mine.slice(0, 6).map(task => {
-          const p  = projects.find(x => x.id === task.pid)
+          const p  = projectById[task.pid]
           const ov = isOverdue(task.due)
           return (
             <div key={task.id} onClick={() => onOpen(task.id)} className="row-interactive"
@@ -500,12 +515,11 @@ export default function HomeDashboard({ tasks, projects, secs: _secs = {}, curre
       <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px' }}>
         <SectionTitle>{t.team}</SectionTitle>
         {USERS.map(u => {
-          const whoMatch = task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name
-          const open    = tasks.filter(task => whoMatch(task) && !task.done).length
-          const od      = tasks.filter(task => whoMatch(task) && !task.done && isOverdue(task.due)).length
-          const pct     = tasks.filter(task => whoMatch(task)).length
-            ? Math.round(tasks.filter(task => whoMatch(task) && task.done).length / tasks.filter(task => whoMatch(task)).length * 100)
-            : 0
+          const uTasks  = userTaskMap[u.name] ?? []
+          const open    = uTasks.filter(task => !task.done).length
+          const od      = uTasks.filter(task => !task.done && isOverdue(task.due)).length
+          const total   = uTasks.length
+          const pct     = total ? Math.round(uTasks.filter(task => task.done).length / total * 100) : 0
           return (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--bd3)' }}>
               <Avatar name={u.name} size={26} />
