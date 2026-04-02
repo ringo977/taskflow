@@ -179,14 +179,15 @@ CREATE POLICY "comments insert"
   ON public.comments FOR INSERT
   WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager', 'member'));
 
--- Users can edit/delete their own comments; admins can edit/delete any
+-- Edit/delete comments: manager+ only.
+-- Per-author restriction requires user_id on comments (phase 2: name→id migration).
 CREATE POLICY "comments update"
   ON public.comments FOR UPDATE
-  USING (author_id = auth.uid() OR public.get_org_role(org_id) = 'admin');
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
 CREATE POLICY "comments delete"
   ON public.comments FOR DELETE
-  USING (author_id = auth.uid() OR public.get_org_role(org_id) = 'admin');
+  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
 
 -- ── 7. task_dependencies ──────────────────────────────────────
