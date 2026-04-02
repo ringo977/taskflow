@@ -62,15 +62,12 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
       return toTask(row, secName, mappedSubs, mappedCmts, mappedDeps)
     }
 
-    /** Fetch a single project by ID with member names. */
+    /** Fetch a single project by ID. Member names come from the RPC, not assignee_name (dropped). */
     const fetchSingleProject = async (projectId) => {
-      const [{ data: row }, { data: taskRows }] = await Promise.all([
-        supabase.from('projects').select('*').eq('id', projectId).maybeSingle(),
-        supabase.from('tasks').select('assignee_name').eq('project_id', projectId).is('deleted_at', null),
-      ])
+      const { data: row } = await supabase
+        .from('projects').select('*').eq('id', projectId).maybeSingle()
       if (!row) return null
-      const members = [...new Set((taskRows ?? []).map(t => t.assignee_name).filter(Boolean))]
-      return toProject(row, members)
+      return toProject(row, [])
     }
 
     // ── Task handler ────────────────────────────────────────────
