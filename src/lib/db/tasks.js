@@ -38,13 +38,19 @@ export async function fetchTasks(orgId) {
     { data: comments, error: ce },
     { data: depRows },
     secRows,
+    { data: profileRows },
   ] = await Promise.all([
     supabase.from('tasks').select('*').eq('org_id', orgId).is('deleted_at', null).order('position').order('created_at'),
     supabase.from('subtasks').select('*').eq('org_id', orgId).order('position'),
     supabase.from('comments').select('*').eq('org_id', orgId).order('created_at'),
     supabase.from('task_dependencies').select('*').eq('org_id', orgId).then(r => r).catch(() => ({ data: [], error: null })),
     fetchSectionRows(orgId),
+    supabase.from('profiles').select('id, display_name'),
   ])
+
+  // Build id → display name lookup for assignee resolution
+  const profileById = {}
+  for (const p of profileRows ?? []) profileById[p.id] = p.display_name
   if (te) throw te
   if (se) throw se
   if (ce) throw ce
@@ -68,7 +74,7 @@ export async function fetchTasks(orgId) {
     depMap[d.task_id].push(d.depends_on_id)
   }
 
-  return (tasks ?? []).map(r => toTask(r, secMap[r.section_id], subMap[r.id], cmtMap[r.id], depMap[r.id]))
+  return (tasks ?? []).map(r => toTask(r, secMap[r.section_id], subMap[r.id], cmtMap[r.id], depMap[r.id], profileById))
 }
 
 // ── Upsert (full task + related) ────────────────────────────────
@@ -89,7 +95,6 @@ export async function upsertTask(orgId, task, sectionRows) {
     id: task.id, org_id: orgId, project_id: task.pid,
     section_id: secRow?.id ?? null,
     title: task.title, description: task.desc ?? '',
-    assignee_name: Array.isArray(task.who) ? JSON.stringify(task.who) : task.who ?? '',
     assignee_ids: assigneeIds,
     priority: task.pri ?? 'medium',
     start_date: task.startDate || null,
@@ -146,9 +151,8 @@ export async function updateTaskField(orgId, taskId, patch) {
       db[col] = v ?? (typeof v === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
     }
   }
-  // Serialize who array for DB — write both name (compat) and IDs
+  // Resolve who names → UUIDs
   if ('who' in patch) {
-    db.assignee_name = Array.isArray(patch.who) ? JSON.stringify(patch.who) : patch.who ?? ''
     const names = Array.isArray(patch.who) ? patch.who : patch.who ? [patch.who] : []
     if (names.length > 0) {
       const { data: profiles } = await supabase

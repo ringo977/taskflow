@@ -31,18 +31,24 @@ export async function seedOrg(orgId, { projs, ports, secs, tasks }) {
   }
   if (secRows.length) await supabase.from('sections').upsert(secRows)
 
-  // Fetch section rows for task mapping
-  const { data: allSecRows } = await supabase.from('sections').select('*').eq('org_id', orgId)
+  // Fetch section rows + profiles for task mapping
+  const [{ data: allSecRows }, { data: profileRows }] = await Promise.all([
+    supabase.from('sections').select('*').eq('org_id', orgId),
+    supabase.from('profiles').select('id, display_name'),
+  ])
+  const profileByName = {}
+  for (const p of profileRows ?? []) profileByName[p.display_name] = p.id
 
   // Bulk insert tasks
   if (tasks.length) {
     await supabase.from('tasks').upsert(tasks.map(task => {
       const secRow = (allSecRows ?? []).find(s => s.project_id === task.pid && s.name === task.sec)
+      const names = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
       return {
         id: task.id, org_id: orgId, project_id: task.pid,
         section_id: secRow?.id ?? null,
         title: task.title, description: task.desc ?? '',
-        assignee_name: task.who ?? '',
+        assignee_ids: names.map(n => profileByName[n]).filter(Boolean),
         priority: task.pri ?? 'medium',
         start_date: task.startDate || null,
         due_date: task.due || null,

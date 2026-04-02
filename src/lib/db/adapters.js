@@ -31,12 +31,18 @@ export const toProject = (r, memberNames) => ({
   sectionAccess: r.section_access ?? {},
 })
 
-export const toTask = (r, secName, subs, cmts, deps) => ({
+export const toTask = (r, secName, subs, cmts, deps, profileById = {}) => {
+  const ids = Array.isArray(r.assignee_ids) ? r.assignee_ids : []
+  // Resolve names from IDs; fall back to legacy assignee_name if IDs not yet populated
+  const who = ids.length > 0
+    ? ids.map(id => profileById[id]).filter(Boolean)
+    : parseWho(r.assignee_name)
+  return {
   id: r.id, pid: r.project_id,
   sec: secName ?? '',
   title: r.title, desc: r.description ?? '',
-  who: parseWho(r.assignee_name),
-  whoIds: Array.isArray(r.assignee_ids) ? r.assignee_ids : [],
+  who,
+  whoIds: ids,
   pri: r.priority,
   startDate: r.start_date ?? null,
   due: r.due_date ?? null,
@@ -54,4 +60,5 @@ export const toTask = (r, secName, subs, cmts, deps) => ({
   subs: subs ?? [],
   cmts: cmts ?? [],
   deps: deps ?? [],
-})
+  }
+}
