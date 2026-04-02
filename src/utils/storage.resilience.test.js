@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { storage, sidebarStorage, seedStorage, signupOrgStorage } from './storage'
+import { storage, sidebarStorage as _sidebarStorage, seedStorage as _seedStorage, signupOrgStorage as _signupOrgStorage } from './storage'
 
 /**
  * Resilience tests for the storage layer.

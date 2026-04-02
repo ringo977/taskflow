@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { AIError, AI_ERROR_MESSAGES } from './ai'
+import { AI_ERROR_MESSAGES } from './ai'
 
 /**
  * Resilience tests for the AI module.
@@ -9,7 +9,7 @@ import { AIError, AI_ERROR_MESSAGES } from './ai'
  */
 
 describe('AI resilience', () => {
-  let callAI, generateSubtasks, createTaskFromText, summariseProject, isAIEnabled
+  let callAI, generateSubtasks, createTaskFromText, summariseProject
 
   // ── Proxy URL edge cases (no fetch needed) ──────────────────
 

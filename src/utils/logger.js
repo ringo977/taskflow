@@ -35,6 +35,7 @@ export function logger(module) {
   const tag = fmt(module)
   return {
     /** Informational — routine events (startup, cleanup). */
+    // eslint-disable-next-line no-console
     info: (...args) => console.info(tag, ...args),
 
     /** Non-critical — recoverable failures, intentional fallbacks. */

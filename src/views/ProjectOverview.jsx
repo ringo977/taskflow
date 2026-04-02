@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { logger } from '@/utils/logger'
+import { useState, useCallback, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
 // eslint-disable-next-line no-unused-vars
 import { fmtDate } from '@/utils/format'
-import { getInitials } from '@/utils/initials'
 import Avatar from '@/components/Avatar'
 // eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
@@ -17,7 +15,6 @@ import GoalsPanel from '@/components/GoalsPanel'
 import Badge from '@/components/Badge'
 // reportPdf is loaded lazily on button click to avoid bundling jsPDF (360KB) eagerly
 
-const log = logger('ProjectOverview')
 
 const STATUS_CFG = {
   on_track:  { label: 'on_track',  color: 'var(--c-success)', bg: 'color-mix(in srgb, var(--c-success) 10%, transparent)' },
