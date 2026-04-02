@@ -36,6 +36,7 @@ export const toTask = (r, secName, subs, cmts, deps) => ({
   sec: secName ?? '',
   title: r.title, desc: r.description ?? '',
   who: parseWho(r.assignee_name),
+  whoIds: Array.isArray(r.assignee_ids) ? r.assignee_ids : [],
   pri: r.priority,
   startDate: r.start_date ?? null,
   due: r.due_date ?? null,

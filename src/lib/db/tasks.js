@@ -21,9 +21,10 @@ const subToRow = (orgId, taskId) => (s, i) => ({
   title: s.t, done: s.done, position: i,
 })
 
-const cmtToRow = (orgId, taskId) => c => ({
+const cmtToRow = (orgId, taskId, userId) => c => ({
   id: c.id, org_id: orgId, task_id: taskId,
   author_name: c.who, body: c.txt,
+  author_id: userId ?? null,
   created_at: c.d ? `${c.d}T00:00:00Z` : new Date().toISOString(),
 })
 
@@ -73,11 +74,22 @@ export async function fetchTasks(orgId) {
 
 export async function upsertTask(orgId, task, sectionRows) {
   const secRow = sectionRows?.find(s => s.project_id === task.pid && s.name === task.sec)
+
+  // Resolve assignee names → UUIDs via profiles
+  const names = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+  let assigneeIds = []
+  if (names.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles').select('id, display_name').in('display_name', names)
+    assigneeIds = (profiles ?? []).map(p => p.id)
+  }
+
   const { error } = await supabase.from('tasks').upsert({
     id: task.id, org_id: orgId, project_id: task.pid,
     section_id: secRow?.id ?? null,
     title: task.title, description: task.desc ?? '',
     assignee_name: Array.isArray(task.who) ? JSON.stringify(task.who) : task.who ?? '',
+    assignee_ids: assigneeIds,
     priority: task.pri ?? 'medium',
     start_date: task.startDate || null,
     due_date: task.due || null,
@@ -93,8 +105,10 @@ export async function upsertTask(orgId, task, sectionRows) {
   })
   if (error) throw error
 
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? null
   await _persistRelated(task.id, orgId, task.subs, 'subtasks', subToRow(orgId, task.id))
-  await _persistRelated(task.id, orgId, task.cmts, 'comments', cmtToRow(orgId, task.id))
+  await _persistRelated(task.id, orgId, task.cmts, 'comments', cmtToRow(orgId, task.id, userId))
 }
 
 // ── Selective field update ──────────────────────────────────────
@@ -119,13 +133,25 @@ export async function updateTaskField(orgId, taskId, patch) {
       db[col] = v ?? (typeof v === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
     }
   }
-  // Serialize who array for DB
-  if ('who' in patch) db.assignee_name = Array.isArray(patch.who) ? JSON.stringify(patch.who) : patch.who ?? ''
+  // Serialize who array for DB — write both name (compat) and IDs
+  if ('who' in patch) {
+    db.assignee_name = Array.isArray(patch.who) ? JSON.stringify(patch.who) : patch.who ?? ''
+    const names = Array.isArray(patch.who) ? patch.who : patch.who ? [patch.who] : []
+    if (names.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles').select('id, display_name').in('display_name', names)
+      db.assignee_ids = (profiles ?? []).map(p => p.id)
+    } else {
+      db.assignee_ids = []
+    }
+  }
   const { error } = await supabase.from('tasks').update(db).eq('id', taskId)
   if (error) throw error
 
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? null
   if ('subs' in patch) await _persistRelated(taskId, orgId, patch.subs, 'subtasks', subToRow(orgId, taskId))
-  if ('cmts' in patch) await _persistRelated(taskId, orgId, patch.cmts, 'comments', cmtToRow(orgId, taskId))
+  if ('cmts' in patch) await _persistRelated(taskId, orgId, patch.cmts, 'comments', cmtToRow(orgId, taskId, userId))
   if ('attachments' in patch) {
     await supabase.from('tasks').update({ attachments: patch.attachments ?? [] }).eq('id', taskId)
   }
