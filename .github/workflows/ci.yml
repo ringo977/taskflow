@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Migration lint (dropped columns + ordering invariants)
+        run: npm run migration:lint
+
       - name: Lint
         run: npm run lint
 
