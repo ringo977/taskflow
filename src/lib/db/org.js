@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 import { logger } from '@/utils/logger'
 import { signupOrgStorage } from '@/utils/storage'
+import { writeAudit } from './audit'
 
 const log = logger('Org')
 
@@ -130,19 +131,31 @@ export async function addOrgMember(orgId, email, role = 'member') {
     if (error.message?.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
     throw error
   }
+  writeAudit(orgId, {
+    action: 'member_role_changed', entityType: 'member', entityId: email,
+    diff: { action: 'added', role },
+  })
 }
 
 export async function removeOrgMember(orgId, userId) {
-  return rpcOrFallback('remove_org_member', { p_org_id: orgId, p_user_id: userId }, async () => {
+  await rpcOrFallback('remove_org_member', { p_org_id: orgId, p_user_id: userId }, async () => {
     const { error } = await supabase.from('org_members').delete().eq('org_id', orgId).eq('user_id', userId)
     if (error) throw error
+  })
+  writeAudit(orgId, {
+    action: 'member_role_changed', entityType: 'member', entityId: userId,
+    diff: { action: 'removed' },
   })
 }
 
 export async function updateOrgMemberRole(orgId, userId, role) {
-  return rpcOrFallback('update_org_member_role', { p_org_id: orgId, p_user_id: userId, p_role: role }, async () => {
+  await rpcOrFallback('update_org_member_role', { p_org_id: orgId, p_user_id: userId, p_role: role }, async () => {
     const { error } = await supabase.from('org_members').update({ role }).eq('org_id', orgId).eq('user_id', userId)
     if (error) throw error
+  })
+  writeAudit(orgId, {
+    action: 'member_role_changed', entityType: 'member', entityId: userId,
+    diff: { action: 'role_updated', to: role },
   })
 }
 

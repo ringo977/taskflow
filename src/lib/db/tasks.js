@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 import { toTask } from './adapters'
 import { fetchSectionRows } from './sections'
+import { writeAudit } from './audit'
 
 // ── Shared helper: persist subtasks or comments ─────────────────
 // Eliminates the duplication between upsertTask and updateTaskField.
@@ -109,6 +110,18 @@ export async function upsertTask(orgId, task, sectionRows) {
   const userId = user?.id ?? null
   await _persistRelated(task.id, orgId, task.subs, 'subtasks', subToRow(orgId, task.id))
   await _persistRelated(task.id, orgId, task.cmts, 'comments', cmtToRow(orgId, task.id, userId))
+
+  // Audit — distinguish create vs update by presence of createdAt
+  const isNew = !task.createdAt
+  writeAudit(orgId, {
+    action:     isNew ? 'task_created' : 'task_updated',
+    entityType: 'task',
+    entityId:   task.id,
+    entityName: task.title,
+    diff: isNew
+      ? { created: { title: task.title, who: task.who, pri: task.pri, due: task.due ?? null } }
+      : { updated: { title: task.title, who: task.who, pri: task.pri, due: task.due ?? null } },
+  })
 }
 
 // ── Selective field update ──────────────────────────────────────
@@ -154,6 +167,31 @@ export async function updateTaskField(orgId, taskId, patch) {
   if ('cmts' in patch) await _persistRelated(taskId, orgId, patch.cmts, 'comments', cmtToRow(orgId, taskId, userId))
   if ('attachments' in patch) {
     await supabase.from('tasks').update({ attachments: patch.attachments ?? [] }).eq('id', taskId)
+  }
+
+  // Audit — emit targeted events for the most meaningful field changes
+  if ('done' in patch) {
+    writeAudit(orgId, {
+      action: patch.done ? 'task_completed' : 'task_updated',
+      entityType: 'task', entityId: taskId,
+      diff: { field: 'done', to: patch.done },
+    })
+  } else if ('who' in patch) {
+    writeAudit(orgId, {
+      action: 'task_assigned',
+      entityType: 'task', entityId: taskId,
+      diff: { field: 'who', to: patch.who },
+    })
+  } else if ('title' in patch || 'pri' in patch || 'due' in patch) {
+    const changed = {}
+    if ('title' in patch) changed.title = patch.title
+    if ('pri'   in patch) changed.pri   = patch.pri
+    if ('due'   in patch) changed.due   = patch.due ?? null
+    writeAudit(orgId, {
+      action: 'task_updated',
+      entityType: 'task', entityId: taskId,
+      diff: { fields: changed },
+    })
   }
 }
 
