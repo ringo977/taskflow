@@ -19,7 +19,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
       <span style={{ fontSize: 13, color: 'var(--tx3)', flexShrink: 0 }}>{done}/{tasks.length}</span>
       {memberNames.length > 0 && <AvatarGroup names={memberNames} size={26} />}
       <div style={{ flex: 1 }} />
-      <div className="view-tabs" style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+      <div className="view-tabs" style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden', flexShrink: 0 }}>
         {VIEWS.map(([lb, v], i, arr) => (
           <button key={v} onClick={() => setView(v)} style={{
             padding: '5px 12px', fontSize: 12, border: 'none',

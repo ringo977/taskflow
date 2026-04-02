@@ -106,11 +106,14 @@ test.describe('Multi-assignee rendering', () => {
     await projectLink.click()
     await page.waitForTimeout(1000)
 
-    // Switch to Timeline
-    const tlTab = page.locator('text=Timeline').first()
+    // Switch to Timeline — use scrollIntoViewIfNeeded + force:true because
+    // the header is a crowded flex row and the tab group can be clipped by
+    // sibling elements in narrow CI viewports.
+    const tlTab = page.locator('.view-tabs button').filter({ hasText: /^Timeline$/ }).first()
     const hasTl = await tlTab.isVisible().catch(() => false)
     if (hasTl) {
-      await tlTab.click()
+      await tlTab.scrollIntoViewIfNeeded()
+      await tlTab.click({ force: true })
       await page.waitForTimeout(1000)
     }
 
