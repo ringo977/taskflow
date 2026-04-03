@@ -16,11 +16,13 @@ test.describe('Viewer read-only enforcement', () => {
     await nav.projects(page).click()
     await waitForProjectList(page)
 
-    const anyProject = page.locator('text=MiMic Lab')
-      .or(page.locator('text=PHOENIX'))
-      .or(page.locator('text=BiomimX'))
-      .or(page.locator('text=BuonMarrow'))
-    const count = await anyProject.count()
+    // The sidebar renders projects as .row-interactive items with a colored dot
+    // (8×8 circle) and a project name. Wait for at least one to appear.
+    const projectItems = page.locator('.row-interactive').filter({
+      has: page.locator('div[style*="border-radius: 50%"][style*="width: 8"]'),
+    })
+    await projectItems.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
+    const count = await projectItems.count()
     expect(count).toBeGreaterThan(0)
   })
 
