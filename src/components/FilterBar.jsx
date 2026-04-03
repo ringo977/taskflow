@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
+import { usePartners } from '@/hooks/usePartners'
 
-const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all' }
+const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', partner: 'all' }
 
-export default function FilterBar({ filters, setFilters, tasks = [] }) {
+export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
   const active = Object.values(filters).some(v => v && v !== 'all' && v !== '')
 
+  const { orgPartners } = usePartners(orgId, projectId)
   const allTags = [...new Map(tasks.flatMap(tk => tk.tags ?? []).map(tg => [tg.name, tg])).values()]
 
   const [localQ, setLocalQ] = useState(filters.q || '')
@@ -47,6 +49,12 @@ export default function FilterBar({ filters, setFilters, tasks = [] }) {
         <select value={filters.tag || 'all'} onChange={e => setFilters(f => ({ ...f, tag: e.target.value }))} aria-label={t.tags ?? 'Tags'} style={{ fontSize: 13, padding: '7px 10px' }}>
           <option value="all">{t.tags ?? 'Tags'}</option>
           {allTags.map(tg => <option key={tg.name} value={tg.name}>{tg.name}</option>)}
+        </select>
+      )}
+      {orgPartners.length > 0 && (
+        <select value={filters.partner || 'all'} onChange={e => setFilters(f => ({ ...f, partner: e.target.value }))} aria-label={t.partnerTeam ?? 'Partner'} style={{ fontSize: 13, padding: '7px 10px' }}>
+          <option value="all">{t.partnerTeam ?? 'Partner'}</option>
+          {orgPartners.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       )}
       {active && <button onClick={() => setFilters(EMPTY)} style={{ fontSize: 12, padding: '5px 10px', color: 'var(--c-danger)', borderColor: 'var(--bd2)' }}>{t.resetFilters}</button>}

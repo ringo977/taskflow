@@ -4,14 +4,17 @@ import { applyFilters, applyVisibilityFilter } from '@/utils/filters'
 import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
+import { usePartners } from '@/hooks/usePartners'
 
 const BOARD_PAGE_SIZE = 20
 
-export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang }) {
+export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang, orgId }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
   const readOnly = !canEditTasks(projectRole)
+  const { orgPartners } = usePartners(orgId, project?.id)
+  const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)
   const [dropIdx, setDropIdx] = useState(null)
@@ -172,6 +175,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                     q={q}
                     lang={lang}
                     blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
+                    partnerName={task.partnerId && partnerById[task.partnerId]?.name}
                   />
                 </div>
               </div>

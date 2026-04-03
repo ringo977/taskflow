@@ -19,6 +19,11 @@ export function applyFilters(tasks, filters = {}) {
     // Assignee filter
     if (filters.who && filters.who !== 'all' && !(Array.isArray(task.who) ? task.who : [task.who]).includes(filters.who)) return false
 
+    // Partner filter
+    if (filters.partner && filters.partner !== 'all') {
+      if ((task.partnerId ?? null) !== filters.partner) return false
+    }
+
     // Tag filter
     if (filters.tag && filters.tag !== 'all') {
       if (!(task.tags ?? []).some(tg => tg.name === filters.tag)) return false

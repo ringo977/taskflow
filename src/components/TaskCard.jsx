@@ -6,7 +6,7 @@ import AvatarGroup from './AvatarGroup'
 import Badge from './Badge'
 import Checkbox from './Checkbox'
 
-export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked }) {
+export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, partnerName }) {
   const ov       = isOverdue(task.due) && !task.done
   const doneSubs = task.subs.filter(s => s.done).length
   return (
@@ -37,6 +37,7 @@ export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
             <Badge pri={task.pri} />
             {task.milestone && <span style={{ fontSize: 11, color: 'var(--c-brand)' }}>◆</span>}
+            {partnerName && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500 }}>{partnerName}</span>}
             {blocked && <span style={{ fontSize: 12, color: 'var(--c-warning)' }}>⊘</span>}
             {task.due && <span style={{ fontSize: 12, color: ov ? 'var(--c-danger)' : 'var(--tx3)' }}>{fmtDate(task.due, lang)}{ov ? ' ⚠' : ''}</span>}
             {task.subs.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✓ {doneSubs}/{task.subs.length}</span>}

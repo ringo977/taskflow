@@ -49,7 +49,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
+      {view !== 'overview' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
       {view === 'overview' && (
         <ProjectOverview project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
@@ -60,13 +60,13 @@ function ProjectContent({
         <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
           onMove={moveTask} onReorder={reorderTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
-          onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} />
+          onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} orgId={ui.activeOrgId} />
       )}
       {view === 'lista' && (
         <ListView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}
           onToggle={togTask} onMove={moveTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
-          filters={filters} lang={lang} />
+          filters={filters} lang={lang} orgId={ui.activeOrgId} />
       )}
       {view === 'timeline' && (
         <TimelineView tasks={pTasks} secs={pSecs} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles}
@@ -126,7 +126,7 @@ export default function MainContent({
         )}
         {nav === 'mytasks' && (
           <>
-            <FilterBar filters={filters} setFilters={setFilters} tasks={tasks} />
+            <FilterBar filters={filters} setFilters={setFilters} tasks={tasks} orgId={ui.activeOrgId} />
             <MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters}
               onOpen={setSelId} onToggle={togTask} lang={lang} />
           </>

@@ -11,6 +11,7 @@ import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
 import Pagination from '@/components/Pagination'
 import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
+import { usePartners } from '@/hooks/usePartners'
 
 const SORT_OPTIONS = [
   { id: 'none', label: { it: 'Predefinito', en: 'Default' } },
@@ -32,7 +33,7 @@ function sortTasks(tasks, sortId) {
   return sorted
 }
 
-export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang }) {
+export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang, orgId }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
@@ -42,6 +43,8 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
   const [collapsed, setCollapsed] = useState({})
   const [sortBy, setSortBy] = useState('none')
   const [selected, setSelected] = useState(new Set())
+  const { orgPartners } = usePartners(orgId, project?.id)
+  const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
   const q = filters.q
 
   const commitAdd = (sec) => {
@@ -150,6 +153,11 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
                       {Array.isArray(task.who) && task.who.length > 1
                         ? <AvatarGroup names={task.who} size={20} />
                         : <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={20} />}
+                      {task.partnerId && partnerById[task.partnerId] && (
+                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500, flexShrink: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={partnerById[task.partnerId].name}>
+                          {partnerById[task.partnerId].name}
+                        </span>
+                      )}
                       {(project?.customFields ?? []).map(f => {
                         const v = (task.customValues ?? {})[f.id]
                         return v ? <span key={f.id} style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${f.name}: ${v}`}>{v}</span> : null

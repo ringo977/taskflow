@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 248720,
-    "comment": "220.81 kB actual → 242.89 kB budget"
+    "maxBytes": 254353,
+    "comment": "231.23 kB actual → 254.35 kB budget (partners hook in shared chunks)"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -72,12 +72,12 @@
     "comment": "13.49 kB actual → 14.84 kB budget"
   },
   "BoardView.js": {
-    "maxBytes": 10461,
-    "comment": "9.29 kB actual → 10.22 kB budget"
+    "maxBytes": 10901,
+    "comment": "9.91 kB actual → 10.90 kB budget (partner badge in cards)"
   },
   "ListView.js": {
-    "maxBytes": 9050,
-    "comment": "8.03 kB actual → 8.84 kB budget"
+    "maxBytes": 9559,
+    "comment": "8.69 kB actual → 9.56 kB budget (partner column added)"
   },
   "PortfoliosView.js": {
     "maxBytes": 8036,
