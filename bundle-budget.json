@@ -40,12 +40,16 @@
     "comment": "32.83 kB actual → 36.12 kB budget"
   },
   "HomeDashboard.js": {
-    "maxBytes": 33659,
-    "comment": "29.88 kB actual → 32.87 kB budget"
+    "maxBytes": 27742,
+    "comment": "25.22 kB actual → 27.74 kB budget"
   },
   "ProjectSupervisionPage.js": {
-    "maxBytes": 32278,
-    "comment": "28.66 kB actual → 31.52 kB budget"
+    "maxBytes": 33275,
+    "comment": "30.25 kB actual → 33.28 kB budget"
+  },
+  "DashboardWidgetGrid.js": {
+    "maxBytes": 7601,
+    "comment": "6.91 kB actual → 7.60 kB budget"
   },
   "PeopleView.js": {
     "maxBytes": 25841,
