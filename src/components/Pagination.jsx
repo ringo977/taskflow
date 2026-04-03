@@ -6,7 +6,7 @@ import { useLang } from '@/i18n'
  *
  * @param {{ page, totalPages, total, startIndex, endIndex, canPrev, canNext, onPrev, onNext }} props
  */
-export default function Pagination({ page, totalPages, total, startIndex, endIndex, canPrev, canNext, onPrev, onNext }) {
+export default function Pagination({ page: _page, totalPages, total, startIndex, endIndex, canPrev, canNext, onPrev, onNext }) {
   const t = useLang()
   if (totalPages <= 1) return null
 

@@ -49,8 +49,7 @@ vi.mock('@/constants', () => ({
 }))
 
 import { useNavigate, useLocation } from 'react-router-dom'
-import { parseRoute, buildPath } from '@/utils/routing'
-import { EMPTY_FILTERS, seedFor, oget } from '@/constants'
+import { EMPTY_FILTERS } from '@/constants'
 
 // ── Setup ─────────────────────────────────────────────────────
 function setupMocks(initialPathname = '/projects/p1/board') {
