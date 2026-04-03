@@ -207,7 +207,7 @@ export const PriorityWidget = ({ data, t }) => (
             <PieChart>
               <Pie
                 data={data} cx="50%" cy="50%"
-                innerRadius={50} outerRadius={75}
+                innerRadius="40%" outerRadius="60%"
                 paddingAngle={3} dataKey="value"
               >
                 {data.map((d, i) => <Cell key={i} fill={d.color} />)}
@@ -325,7 +325,7 @@ export const StatusDistWidget = ({ data, t }) => (
         : (
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={2} dataKey="value">
+              <Pie data={data} cx="50%" cy="50%" innerRadius="40%" outerRadius="60%" paddingAngle={2} dataKey="value">
                 {data.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
               <Tooltip content={<ChartTooltip />} />

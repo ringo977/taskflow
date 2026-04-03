@@ -184,6 +184,7 @@ mark { background: color-mix(in srgb, var(--c-warning) 25%, transparent); color:
   /* Dashboard grids — stack on mobile */
   .dash-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
   .dash-grid  { grid-template-columns: 1fr !important; }
+  .dash-widgets > * { width: 100% !important; }
 
   /* Overview — stack columns */
   .overview-layout { flex-direction: column !important; padding: 14px !important; }

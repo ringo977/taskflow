@@ -487,7 +487,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
       </div>
 
       {/* Dynamic widgets grid */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 0 }}>
+      <div className="dash-widgets" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 0 }}>
         {layout.map((widget, idx) => renderWidget(widget.id, idx, widget.visible))}
       </div>
 
