@@ -1,7 +1,7 @@
 import { supabase } from '../supabase'
 import { toTask } from './adapters'
 import { fetchSectionRows } from './sections'
-import { writeAudit } from './audit'
+import { writeAuditSoft } from './audit'
 import { validate, TaskUpsertSchema, TaskPatchSchema } from './schemas'
 
 // ── Shared helper: persist subtasks or comments ─────────────────
@@ -120,7 +120,7 @@ export async function upsertTask(orgId, task, sectionRows) {
 
   // Audit — distinguish create vs update by presence of createdAt
   const isNew = !t.createdAt
-  writeAudit(orgId, {
+  await writeAuditSoft(orgId, {
     action:     isNew ? 'task_created' : 'task_updated',
     entityType: 'task',
     entityId:   t.id,
@@ -178,13 +178,13 @@ export async function updateTaskField(orgId, taskId, patch) {
 
   // Audit — emit targeted events for the most meaningful field changes
   if ('done' in p) {
-    writeAudit(orgId, {
+    await writeAuditSoft(orgId, {
       action: p.done ? 'task_completed' : 'task_updated',
       entityType: 'task', entityId: taskId,
       diff: { field: 'done', to: p.done },
     })
   } else if ('who' in p) {
-    writeAudit(orgId, {
+    await writeAuditSoft(orgId, {
       action: 'task_assigned',
       entityType: 'task', entityId: taskId,
       diff: { field: 'who', to: p.who },
@@ -194,7 +194,7 @@ export async function updateTaskField(orgId, taskId, patch) {
     if ('title' in p) changed.title = p.title
     if ('pri'   in p) changed.pri   = p.pri
     if ('due'   in p) changed.due   = p.due ?? null
-    writeAudit(orgId, {
+    await writeAuditSoft(orgId, {
       action: 'task_updated',
       entityType: 'task', entityId: taskId,
       diff: { fields: changed },
@@ -212,6 +212,10 @@ export async function updateTaskDeps(orgId, taskId, depIds) {
     )
     if (error) throw error
   }
+  await writeAuditSoft(orgId, {
+    action: 'task_deps_changed', entityType: 'task', entityId: taskId,
+    diff: { deps: depIds },
+  })
 }
 
 // ── Move & reorder ──────────────────────────────────────────────
@@ -221,6 +225,10 @@ export async function moveTaskToSection(orgId, taskId, secName, projectId, secti
   await supabase.from('tasks').update({
     section_id: secRow?.id ?? null, updated_at: new Date().toISOString(),
   }).eq('id', taskId)
+  await writeAuditSoft(orgId, {
+    action: 'task_moved', entityType: 'task', entityId: taskId,
+    diff: { field: 'section', to: secName },
+  })
 }
 
 export async function updateTaskPositions(updates) {

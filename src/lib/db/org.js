@@ -1,7 +1,7 @@
 import { supabase } from '../supabase'
 import { logger } from '@/utils/logger'
 import { signupOrgStorage } from '@/utils/storage'
-import { writeAudit } from './audit'
+import { writeAuditSoft } from './audit'
 import { validate, OrgRoleSchema, ProjectRoleSchema } from './schemas'
 
 const log = logger('Org')
@@ -133,7 +133,7 @@ export async function addOrgMember(orgId, email, role = 'member') {
     if (error.message?.includes('ALREADY_MEMBER')) throw new Error('ALREADY_MEMBER')
     throw error
   }
-  writeAudit(orgId, {
+  await writeAuditSoft(orgId, {
     action: 'member_role_changed', entityType: 'member', entityId: email,
     diff: { action: 'added', role },
   })
@@ -144,7 +144,7 @@ export async function removeOrgMember(orgId, userId) {
     const { error } = await supabase.from('org_members').delete().eq('org_id', orgId).eq('user_id', userId)
     if (error) throw error
   })
-  writeAudit(orgId, {
+  await writeAuditSoft(orgId, {
     action: 'member_role_changed', entityType: 'member', entityId: userId,
     diff: { action: 'removed' },
   })
@@ -156,7 +156,7 @@ export async function updateOrgMemberRole(orgId, userId, role) {
     const { error } = await supabase.from('org_members').update({ role }).eq('org_id', orgId).eq('user_id', userId)
     if (error) throw error
   })
-  writeAudit(orgId, {
+  await writeAuditSoft(orgId, {
     action: 'member_role_changed', entityType: 'member', entityId: userId,
     diff: { action: 'role_updated', to: role },
   })

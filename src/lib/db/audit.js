@@ -1,30 +1,38 @@
 /**
  * Audit log writer.
  *
- * All writes are fire-and-forget: a failure never blocks the main
- * operation. The audit log is best-effort for UX purposes; it is
- * NOT a substitute for database-level triggers for strict compliance.
+ * Writes are now **blocking with retry**: transient failures (network,
+ * rate limit, 5xx) are retried up to 3 times with exponential backoff.
+ * Non-transient errors (constraint violation, auth) still fail fast.
+ *
+ * The caller can choose blocking (`await writeAudit(...)`) or
+ * fire-and-forget (`writeAudit(...).catch(...)`) depending on
+ * whether the audit is critical for that operation.
  *
  * Actions:
- *   task_created        task_updated      task_deleted
- *   task_completed      task_assigned
+ *   task_created        task_updated        task_deleted
+ *   task_completed      task_assigned       task_moved
+ *   task_deps_changed   task_reordered
+ *   section_updated
  *   comment_added       comment_deleted
  *   member_role_changed
  */
 
 import { supabase } from '../supabase'
 import { logger } from '@/utils/logger'
+import { withRetry } from '@/utils/retry'
 
 const log = logger('Audit')
 
 /**
- * Write a single audit entry. Never throws — errors are logged only.
+ * Write a single audit entry with retry on transient failures.
  *
  * @param {string} orgId
  * @param {{ action, entityType, entityId, entityName?, diff? }} entry
+ * @throws on persistent failures (after retries exhausted)
  */
 export async function writeAudit(orgId, { action, entityType, entityId, entityName, diff }) {
-  try {
+  await withRetry(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('audit_log').insert({
       org_id:      orgId,
@@ -35,9 +43,23 @@ export async function writeAudit(orgId, { action, entityType, entityId, entityNa
       entity_name: entityName ?? null,
       diff:        diff ?? null,
     })
-    if (error) log.warn('audit write failed:', error.message)
+    if (error) throw error
+  }, { label: `audit:${action}`, maxAttempts: 3 })
+}
+
+/**
+ * Write audit, but suppress errors — for non-critical audit events where
+ * the main operation must not fail because of audit logging.
+ * Logs warnings on failure but never throws.
+ *
+ * @param {string} orgId
+ * @param {{ action, entityType, entityId, entityName?, diff? }} entry
+ */
+export async function writeAuditSoft(orgId, entry) {
+  try {
+    await writeAudit(orgId, entry)
   } catch (err) {
-    log.warn('audit write error:', err.message ?? err)
+    log.warn(`audit:${entry.action} failed after retries:`, err.message ?? err)
   }
 }
 
