@@ -32,12 +32,12 @@
     "comment": "74.04 kB actual → 81.44 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 66603,
-    "comment": "59.13 kB actual → 65.04 kB budget"
+    "maxBytes": 73293,
+    "comment": "66.63 kB actual → 73.29 kB budget (partners panel added)"
   },
   "TaskPanel.js": {
-    "maxBytes": 36986,
-    "comment": "32.83 kB actual → 36.12 kB budget"
+    "maxBytes": 37620,
+    "comment": "34.20 kB actual → 37.62 kB budget (partner selector added)"
   },
   "HomeDashboard.js": {
     "maxBytes": 27742,

@@ -454,5 +454,25 @@ const en = {
   supProjectDates: 'Project dates',
   supStartDate: 'Start date',
   supEndDate: 'End date',
+
+  // Partners / Teams
+  partners: 'Partners / Teams',
+  addPartner: 'New partner',
+  noPartners: 'No partners linked',
+  linkPartner: '+ Link existing partner…',
+  unlinkPartner: 'Unlink',
+  partnerName: 'Name',
+  contactName: 'Contact name',
+  contactEmail: 'Contact email',
+  partnerNotes: 'Notes',
+  partnerTeam: 'Partner/Team',
+  noPartner: '—',
+  partnerRole: 'Role',
+  type_team: 'Team',
+  type_partner: 'Partner',
+  type_vendor: 'Vendor',
+  type_lab: 'Lab',
+  type_department: 'Department',
+  type_client: 'Client',
 }
 export default en

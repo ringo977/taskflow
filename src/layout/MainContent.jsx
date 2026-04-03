@@ -53,7 +53,8 @@ function ProjectContent({
       {view === 'overview' && (
         <ProjectOverview project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
-          myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject} />
+          myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject}
+          orgId={ui.activeOrgId} />
       )}
       {view === 'board' && (
         <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}

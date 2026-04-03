@@ -69,6 +69,7 @@ export const TaskUpsertSchema = z.object({
   position:     z.number().int().min(0).catch(0),
   customValues: z.record(z.any()).catch({}),
   visibility:   visibility,
+  partnerId:    z.string().optional().nullable(),
   pid:          z.string().min(1),
   sec:          z.string().optional().nullable(),
   subs:         z.array(z.object({
@@ -98,6 +99,7 @@ export const TaskPatchSchema = z.object({
   activity:     z.array(z.any()).optional(),
   position:     z.number().int().min(0).optional(),
   customValues: z.record(z.any()).optional(),
+  partnerId:    z.string().optional().nullable(),
   visibility:   visibility.optional(),
   attachments:  z.array(z.any()).optional(),
   subs:         z.array(z.object({
@@ -173,6 +175,18 @@ export const RecurringControlUpsertSchema = z.object({
   actionType:       controlActionType,
   templateTaskData: z.any().optional().nullable(),
   active:           z.boolean().catch(true),
+}).passthrough()
+
+const partnerType = z.enum(['team', 'partner', 'vendor', 'lab', 'department', 'client']).catch('partner')
+
+export const PartnerUpsertSchema = z.object({
+  id:            z.string().optional(),
+  name:          str(255),
+  type:          partnerType,
+  contactName:   optStr(255),
+  contactEmail:  optStr(255),
+  notes:         optStr(5000),
+  isActive:      z.boolean().catch(true),
 }).passthrough()
 
 export const SectionNameSchema = str(255)

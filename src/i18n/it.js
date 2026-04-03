@@ -454,5 +454,25 @@ const it = {
   supProjectDates: 'Date progetto',
   supStartDate: 'Data inizio',
   supEndDate: 'Data fine',
+
+  // Partners / Teams
+  partners: 'Partner / Team',
+  addPartner: 'Nuovo partner',
+  noPartners: 'Nessun partner collegato',
+  linkPartner: '+ Collega partner esistente…',
+  unlinkPartner: 'Scollega',
+  partnerName: 'Nome',
+  contactName: 'Referente',
+  contactEmail: 'Email referente',
+  partnerNotes: 'Note',
+  partnerTeam: 'Partner/Team',
+  noPartner: '—',
+  partnerRole: 'Ruolo',
+  type_team: 'Team',
+  type_partner: 'Partner',
+  type_vendor: 'Fornitore',
+  type_lab: 'Laboratorio',
+  type_department: 'Dipartimento',
+  type_client: 'Cliente',
 }
 export default it

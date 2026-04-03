@@ -13,6 +13,7 @@ import Checkbox from '@/components/Checkbox'
 import TimeTracker from '@/components/TimeTracker'
 import ApprovalSection from '@/components/ApprovalSection'
 
+import { usePartners } from '@/hooks/usePartners'
 import AttachmentsSection from './taskpanel/AttachmentsSection'
 import CustomFieldsSection from './taskpanel/CustomFieldsSection'
 import ActivityLog from './taskpanel/ActivityLog'
@@ -28,6 +29,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const [showDepPicker, setShowDepPicker] = useState(false)
   const [mentionQuery, setMentionQuery] = useState(null)
   const [confirmDel, setConfirmDel] = useState(false)
+  const { orgPartners } = usePartners(orgId, task?.pid)
   const commentRef = useRef(null)
   const proj = projects.find(p => p.id === task.pid)
   const me = orgUsers.find(u => u.email === currentUser?.email)
@@ -182,6 +184,15 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
               style={{ accentColor: 'var(--c-brand)' }} />
             <span style={{ color: 'var(--tx2)' }}>{task.milestone ? (t.milestoneYes ?? 'Yes') : (t.milestoneNo ?? 'No')}</span>
           </label>
+
+          <span style={{ color: 'var(--tx3)' }}>{t.partnerTeam ?? 'Partner/Team'}</span>
+          <select value={task.partnerId ?? ''} onChange={e => onUpd(task.id, { partnerId: e.target.value || null })} disabled={readOnly}
+            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)', opacity: readOnly ? 0.5 : 1 }}>
+            <option value="">{t.noPartner ?? '—'}</option>
+            {orgPartners.filter(p => p.isActive).map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
 
           <span style={{ color: 'var(--tx3)' }}>{t.section}</span>
           <span style={{ color: 'var(--tx2)' }}>{task.sec}</span>

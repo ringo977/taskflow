@@ -37,7 +37,8 @@ export default function ModalLayer({
       {showAdd && (
         <AddModal secs={pSecs} templates={proj?.taskTemplates ?? []}
           onAdd={addTask} onClose={() => { setShowAdd(false); setAddDue('') }}
-          aiLoad={aiLoad} onAICreate={ui.aiCreate} currentUser={user} defaultDue={addDue} />
+          aiLoad={aiLoad} onAICreate={ui.aiCreate} currentUser={user} defaultDue={addDue}
+          project={proj} orgId={activeOrgId} />
       )}
       {showCmdK && (
         <CommandPalette tasks={tasks} projects={projs}

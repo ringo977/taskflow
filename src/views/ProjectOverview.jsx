@@ -8,6 +8,8 @@ import Avatar from '@/components/Avatar'
 // eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
 import ProjectMembersPanel from '@/components/ProjectMembersPanel'
+import PartnersPanel from '@/components/PartnersPanel'
+import { usePartners } from '@/hooks/usePartners'
 import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
 import FormsPanel from '@/components/FormsPanel'
@@ -72,7 +74,7 @@ function SaveTemplateButton({ tasks, proj, onUpdProject, t }) {
   )
 }
 
-export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang: _lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject }) {
+export default function ProjectOverview({ project, tasks, sections, onUpdProj, onOpen, lang: _lang, currentUser, myProjectRoles = {}, onDeleteProject, onArchiveProject, orgId }) {
   const t = useLang()
   const USERS = useOrgUsers()
   const me = USERS.find(u => u.email === currentUser?.email)
@@ -83,6 +85,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
   const [resUrl, setResUrl]   = useState('')
   const [confirmDel, setConfirmDel] = useState(false)
   const canManage = isAdmin || (isManager && myProjectRoles[project?.id] === 'owner')
+  const { orgPartners, projectPartners, loading: partnersLoading, save: savePartner, remove: removePartner, link: linkPartner, unlink: unlinkPartner } = usePartners(orgId, project?.id)
 
   const proj = project
   if (!proj) return null
@@ -289,6 +292,13 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
 
         {/* Members */}
         <ProjectMembersPanel projectId={proj.id} orgUsers={USERS} sectionTitleStyle={sectionTitleStyle} t={t} canManage={isAdmin || (isManager && myProjectRoles[proj.id] === 'owner')} />
+
+        {/* Partners */}
+        <PartnersPanel
+          orgPartners={orgPartners} projectPartners={projectPartners} loading={partnersLoading}
+          onSave={savePartner} onRemove={removePartner} onLink={linkPartner} onUnlink={unlinkPartner}
+          projectId={proj.id} canManage={canManage} sectionTitleStyle={sectionTitleStyle}
+        />
 
         {/* Permissions */}
         {canManage && (
