@@ -231,7 +231,6 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
               style={{ fontSize: 12, padding: '6px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }}>
               <option value="standard">{t.supTypeStandard ?? 'Standard'}</option>
               <option value="supervised">{t.supTypeSupervised ?? 'Supervised'}</option>
-              <option value="eu_project">{t.supTypeEuProject ?? 'EU Project'}</option>
             </select>
           </div>
         )}

@@ -429,6 +429,5 @@ const it = {
   supProjectType: 'Tipo progetto',
   supTypeStandard: 'Standard',
   supTypeSupervised: 'Supervisionato',
-  supTypeEuProject: 'Progetto EU',
 }
 export default it

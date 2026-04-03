@@ -12,6 +12,6 @@ BEGIN
   ) THEN
     ALTER TABLE projects
       ADD CONSTRAINT projects_project_type_check
-      CHECK (project_type IN ('standard', 'supervised', 'eu_project'));
+      CHECK (project_type IN ('standard', 'supervised'));
   END IF;
 END $$;
