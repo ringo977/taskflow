@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { toPortfolio, toProject, toTask } from './adapters'
 
-// ── parseWho (tested through toTask) ───────────────────────
+// ── assignee_ids resolution (via toTask) ───────────────────────
 
-describe('parseWho (via toTask)', () => {
-  const quick = (assignee_name) =>
-    toTask({ id: 't', project_id: 'p', title: 'T', priority: 'low', done: false, assignee_name }).who
+describe('assignee_ids resolution (via toTask)', () => {
+  const quick = (assignee_ids, profileById = {}) =>
+    toTask({ id: 't', project_id: 'p', title: 'T', priority: 'low', done: false, assignee_ids }, '', [], [], [], profileById).who
+
+  const profiles = { 'uuid-alice': 'Alice', 'uuid-bob': 'Bob' }
 
   it('null → empty array', () => {
     expect(quick(null)).toEqual([])
@@ -15,44 +17,32 @@ describe('parseWho (via toTask)', () => {
     expect(quick(undefined)).toEqual([])
   })
 
-  it('empty string → empty array', () => {
-    expect(quick('')).toEqual([])
-  })
-
-  it('plain string → single-element array', () => {
-    expect(quick('Alice')).toEqual(['Alice'])
-  })
-
-  it('array passthrough', () => {
-    expect(quick(['Alice', 'Bob'])).toEqual(['Alice', 'Bob'])
-  })
-
-  it('empty array passthrough', () => {
+  it('empty array → empty array', () => {
     expect(quick([])).toEqual([])
   })
 
-  it('JSON array string → parsed array', () => {
-    expect(quick('["Alice","Bob"]')).toEqual(['Alice', 'Bob'])
+  it('single UUID resolves to display name', () => {
+    expect(quick(['uuid-alice'], profiles)).toEqual(['Alice'])
   })
 
-  it('JSON empty array string → empty array', () => {
-    expect(quick('[]')).toEqual([])
+  it('multiple UUIDs resolve to display names', () => {
+    expect(quick(['uuid-alice', 'uuid-bob'], profiles)).toEqual(['Alice', 'Bob'])
   })
 
-  it('malformed JSON → wraps as string', () => {
-    expect(quick('[invalid')).toEqual(['[invalid'])
+  it('unknown UUID filtered from who', () => {
+    expect(quick(['uuid-alice', 'uuid-unknown'], profiles)).toEqual(['Alice'])
   })
 
-  it('JSON object string → wraps as string (not array)', () => {
-    expect(quick('{"name":"Alice"}')).toEqual(['{"name":"Alice"}'])
+  it('no profileById → empty names', () => {
+    expect(quick(['uuid-alice'])).toEqual([])
+  })
+
+  it('non-array value → empty array', () => {
+    expect(quick('not-an-array')).toEqual([])
   })
 
   it('number 0 (falsy) → empty array', () => {
     expect(quick(0)).toEqual([])
-  })
-
-  it('whitespace string → single-element array', () => {
-    expect(quick('  ')).toEqual(['  '])
   })
 })
 
@@ -97,10 +87,12 @@ describe('toProject', () => {
 })
 
 describe('toTask', () => {
+  const profiles = { 'uuid-marco': 'Marco' }
+
   it('maps DB row to task shape with all fields', () => {
     const row = {
       id: 't1', project_id: 'p1', title: 'Test task',
-      description: 'desc', assignee_name: 'Marco', priority: 'high',
+      description: 'desc', assignee_ids: ['uuid-marco'], priority: 'high',
       start_date: '2026-01-01', due_date: '2026-01-15', done: false,
       recurrence: 'weekly', attachments: [{ path: 'a.pdf' }],
       tags: [{ name: 'urgent' }], activity: [], position: 3,
@@ -110,11 +102,12 @@ describe('toTask', () => {
     const cmts = [{ id: 'c1', who: 'Marco', txt: 'hello', d: '2026-01-01' }]
     const deps = ['t2']
 
-    const task = toTask(row, 'In Progress', subs, cmts, deps)
+    const task = toTask(row, 'In Progress', subs, cmts, deps, profiles)
     expect(task.id).toBe('t1')
     expect(task.pid).toBe('p1')
     expect(task.sec).toBe('In Progress')
     expect(task.who).toEqual(['Marco'])
+    expect(task.whoIds).toEqual(['uuid-marco'])
     expect(task.subs).toHaveLength(1)
     expect(task.cmts).toHaveLength(1)
     expect(task.deps).toEqual(['t2'])
@@ -127,6 +120,7 @@ describe('toTask', () => {
     expect(task.sec).toBe('')
     expect(task.desc).toBe('')
     expect(task.who).toEqual([])
+    expect(task.whoIds).toEqual([])
     expect(task.startDate).toBeNull()
     expect(task.due).toBeNull()
     expect(task.recurrence).toBeNull()

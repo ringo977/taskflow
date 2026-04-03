@@ -4,90 +4,99 @@ import { toPortfolio, toProject, toTask } from './adapters'
 /**
  * Resilience tests for DB adapters.
  *
- * Cover: legacy/incomplete JSONB, null/undefined fields,
- * parseWho edge cases, milestone without due date,
- * multi-assignee null/empty arrays, and forward-compat
- * with unknown fields.
+ * Cover: assignee_ids UUID resolution, legacy/incomplete JSONB,
+ * null/undefined fields, milestone without due date,
+ * multi-assignee edge cases, and forward-compat with unknown fields.
  */
 
-// ── parseWho edge cases (tested indirectly through toTask) ────
+// ── assignee_ids resolution ─────────────────────────────────────
 
-describe('parseWho (via toTask)', () => {
+describe('assignee_ids resolution (via toTask)', () => {
   const base = {
     id: 't1', project_id: 'p1', title: 'T', description: '',
     priority: 'medium', done: false, milestone: false,
     position: 0,
   }
 
-  it('returns empty array for null assignee_name', () => {
-    const t = toTask({ ...base, assignee_name: null })
+  const profiles = {
+    'uuid-alice': 'Alice',
+    'uuid-bob': 'Bob',
+    'uuid-charlie': 'Charlie',
+  }
+
+  it('returns empty array when assignee_ids is null', () => {
+    const t = toTask({ ...base, assignee_ids: null }, '', [], [], [], profiles)
+    expect(t.who).toEqual([])
+    expect(t.whoIds).toEqual([])
+  })
+
+  it('returns empty array when assignee_ids is undefined', () => {
+    const t = toTask({ ...base }, '', [], [], [], profiles)
+    expect(t.who).toEqual([])
+    expect(t.whoIds).toEqual([])
+  })
+
+  it('returns empty array when assignee_ids is empty array', () => {
+    const t = toTask({ ...base, assignee_ids: [] }, '', [], [], [], profiles)
     expect(t.who).toEqual([])
   })
 
-  it('returns empty array for undefined assignee_name', () => {
-    const t = toTask({ ...base, assignee_name: undefined })
-    expect(t.who).toEqual([])
-  })
-
-  it('returns empty array for empty string assignee_name', () => {
-    const t = toTask({ ...base, assignee_name: '' })
-    expect(t.who).toEqual([])
-  })
-
-  it('wraps plain string in array', () => {
-    const t = toTask({ ...base, assignee_name: 'Alice' })
+  it('resolves single UUID to display name', () => {
+    const t = toTask({ ...base, assignee_ids: ['uuid-alice'] }, '', [], [], [], profiles)
     expect(t.who).toEqual(['Alice'])
+    expect(t.whoIds).toEqual(['uuid-alice'])
   })
 
-  it('passes through array directly', () => {
-    const t = toTask({ ...base, assignee_name: ['Alice', 'Bob'] })
+  it('resolves multiple UUIDs to display names', () => {
+    const t = toTask(
+      { ...base, assignee_ids: ['uuid-alice', 'uuid-bob', 'uuid-charlie'] },
+      '', [], [], [], profiles
+    )
+    expect(t.who).toEqual(['Alice', 'Bob', 'Charlie'])
+  })
+
+  it('filters out UUIDs not found in profileById', () => {
+    const t = toTask(
+      { ...base, assignee_ids: ['uuid-alice', 'uuid-unknown', 'uuid-bob'] },
+      '', [], [], [], profiles
+    )
     expect(t.who).toEqual(['Alice', 'Bob'])
+    expect(t.whoIds).toEqual(['uuid-alice', 'uuid-unknown', 'uuid-bob'])
   })
 
-  it('parses JSON array string', () => {
-    const t = toTask({ ...base, assignee_name: '["Alice","Bob"]' })
-    expect(t.who).toEqual(['Alice', 'Bob'])
+  it('returns empty names when profileById is empty', () => {
+    const t = toTask(
+      { ...base, assignee_ids: ['uuid-alice'] },
+      '', [], [], [], {}
+    )
+    expect(t.who).toEqual([])
+    expect(t.whoIds).toEqual(['uuid-alice'])
   })
 
-  it('wraps JSON non-array string in array', () => {
-    // JSON.parse('"Alice"') returns "Alice" (a string, not array)
-    const t = toTask({ ...base, assignee_name: '"Alice"' })
-    expect(t.who).toEqual(['"Alice"']) // wraps the raw string since parsed is not array
-  })
-
-  it('wraps invalid JSON string in array', () => {
-    const t = toTask({ ...base, assignee_name: '{not valid json}' })
-    expect(t.who).toEqual(['{not valid json}'])
-  })
-
-  it('handles JSON object string (not array)', () => {
-    const t = toTask({ ...base, assignee_name: '{"name":"Alice"}' })
-    expect(t.who).toEqual(['{"name":"Alice"}'])
-  })
-
-  it('returns empty array for false (boolean)', () => {
-    const t = toTask({ ...base, assignee_name: false })
+  it('returns empty names when profileById is not provided', () => {
+    const t = toTask({ ...base, assignee_ids: ['uuid-alice'] })
     expect(t.who).toEqual([])
   })
 
-  it('returns empty array for 0 (number)', () => {
-    const t = toTask({ ...base, assignee_name: 0 })
-    expect(t.who).toEqual([])
+  it('handles large team (15 members)', () => {
+    const bigProfiles = {}
+    const ids = []
+    for (let i = 0; i < 15; i++) {
+      const uuid = `uuid-user-${i}`
+      bigProfiles[uuid] = `User ${i}`
+      ids.push(uuid)
+    }
+    const t = toTask({ ...base, assignee_ids: ids }, '', [], [], [], bigProfiles)
+    expect(t.who).toHaveLength(15)
   })
 
-  it('handles array with null/empty elements', () => {
-    const t = toTask({ ...base, assignee_name: ['Alice', null, '', 'Bob'] })
-    expect(t.who).toEqual(['Alice', null, '', 'Bob'])
-  })
-
-  it('handles JSON array string with spaces', () => {
-    const t = toTask({ ...base, assignee_name: '[ "Alice" , "Bob" ]' })
-    expect(t.who).toEqual(['Alice', 'Bob'])
-  })
-
-  it('handles empty JSON array string', () => {
-    const t = toTask({ ...base, assignee_name: '[]' })
-    expect(t.who).toEqual([])
+  it('ignores legacy assignee_name field entirely', () => {
+    // Even if assignee_name is somehow still present, it should be ignored
+    const t = toTask(
+      { ...base, assignee_name: 'Legacy Name', assignee_ids: ['uuid-alice'] },
+      '', [], [], [], profiles
+    )
+    expect(t.who).toEqual(['Alice'])
   })
 })
 
@@ -218,46 +227,5 @@ describe('incomplete/legacy row shapes', () => {
       section_access: { 'In Progress': 'editors', 'Done': 'all' },
     })
     expect(p.sectionAccess).toEqual({ 'In Progress': 'editors', 'Done': 'all' })
-  })
-})
-
-// ── Multi-assignee edge cases in filters/transforms ──────────
-
-describe('multi-assignee edge cases', () => {
-  const base = {
-    id: 't1', project_id: 'p1', title: 'T',
-    priority: 'medium', done: false, position: 0,
-  }
-
-  it('null assignee_name → who=[]', () => {
-    expect(toTask({ ...base, assignee_name: null }).who).toEqual([])
-  })
-
-  it('empty array assignee_name → who=[]', () => {
-    expect(toTask({ ...base, assignee_name: [] }).who).toEqual([])
-  })
-
-  it('single string → who=[string]', () => {
-    expect(toTask({ ...base, assignee_name: 'Solo' }).who).toEqual(['Solo'])
-  })
-
-  it('array with one element', () => {
-    expect(toTask({ ...base, assignee_name: ['Solo'] }).who).toEqual(['Solo'])
-  })
-
-  it('large team (10+ members)', () => {
-    const team = Array.from({ length: 15 }, (_, i) => `User${i}`)
-    expect(toTask({ ...base, assignee_name: team }).who).toHaveLength(15)
-  })
-
-  it('JSON string of large team', () => {
-    const team = Array.from({ length: 10 }, (_, i) => `User${i}`)
-    const t = toTask({ ...base, assignee_name: JSON.stringify(team) })
-    expect(t.who).toHaveLength(10)
-  })
-
-  it('assignee with special chars (unicode, commas)', () => {
-    const t = toTask({ ...base, assignee_name: ['María García', 'O\'Brien', 'Jean-Pierre'] })
-    expect(t.who).toEqual(['María García', 'O\'Brien', 'Jean-Pierre'])
   })
 })

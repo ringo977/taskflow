@@ -5,14 +5,6 @@
  * and match the rest of the codebase conventions.
  */
 
-/** Normalise assignee_name to an array. DB may store string, JSON array, or null. */
-function parseWho(v) {
-  if (!v) return []
-  if (Array.isArray(v)) return v
-  try { const a = JSON.parse(v); if (Array.isArray(a)) return a } catch {}
-  return v ? [v] : []
-}
-
 export const toPortfolio = r => ({
   id: r.id, name: r.name, color: r.color, desc: r.description ?? '',
   status: r.status ?? 'active',
@@ -32,11 +24,9 @@ export const toProject = (r, memberNames) => ({
 })
 
 export const toTask = (r, secName, subs, cmts, deps, profileById = {}) => {
+  // assignee_ids is the sole source of truth (assignee_name dropped in migration 027)
   const ids = Array.isArray(r.assignee_ids) ? r.assignee_ids : []
-  // Resolve names from IDs; fall back to legacy assignee_name if IDs not yet populated
-  const who = ids.length > 0
-    ? ids.map(id => profileById[id]).filter(Boolean)
-    : parseWho(r.assignee_name)
+  const who = ids.map(id => profileById[id]).filter(Boolean)
   return {
   id: r.id, pid: r.project_id,
   sec: secName ?? '',
