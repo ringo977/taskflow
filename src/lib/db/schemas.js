@@ -129,6 +129,7 @@ export const ProjectUpsertSchema = z.object({
   forms:          z.array(z.any()).catch([]),
   rules:          z.array(z.any()).catch([]),
   goals:          z.array(z.any()).catch([]),
+  project_type:   z.enum(['standard', 'supervised', 'eu_project']).catch('standard'),
 }).passthrough()
 
 export const PortfolioUpsertSchema = z.object({

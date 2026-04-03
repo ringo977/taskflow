@@ -1,6 +1,13 @@
 import { useLang } from '@/i18n'
 import { isOverdue } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
+import {
+  buildUserTaskMap, buildProjectById, filterMyOpen, filterOverdue,
+  filterDueOn, filterDueInRange, filterUpcomingDeadlines,
+  computeProjectHealth, computeProjectStats, computeOverdueByProject,
+  computeWorkload, computeTasksPerPerson, computeStatusDistribution,
+  computeSectionCompletion,
+} from '@/utils/selectors'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
@@ -135,21 +142,16 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   const weStr  = weEnd.toISOString().slice(0, 10)
   const greeting = now.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  const mine     = useMemo(() => tasks.filter(task => (Array.isArray(task.who) ? task.who.includes(currentUser.name) : task.who === currentUser.name) && !task.done), [tasks, currentUser.name])
-  const overdue  = useMemo(() => mine.filter(task => isOverdue(task.due)), [mine])
-  const dueToday = useMemo(() => mine.filter(task => task.due === ts), [mine, ts])
-  const dueWeek       = useMemo(() => mine.filter(task => task.due && task.due > ts && task.due <= weStr), [mine, ts, weStr])
+  const mine     = useMemo(() => filterMyOpen(tasks, currentUser.name), [tasks, currentUser.name])
+  const overdue  = useMemo(() => filterOverdue(mine), [mine])
+  const dueToday = useMemo(() => filterDueOn(mine, ts), [mine, ts])
+  const dueWeek       = useMemo(() => filterDueInRange(mine, ts, weStr), [mine, ts, weStr])
   const completedCount = useMemo(() => tasks.filter(task => task.done).length, [tasks])
 
   // ── New widget data ─────────────────────────────────────────
 
   // Upcoming deadlines: all open tasks due within next 7 days, sorted by date
-  const upcomingDeadlines = useMemo(() => {
-    return tasks
-      .filter(task => !task.done && task.due && task.due >= ts && task.due <= weStr)
-      .sort((a, b) => a.due.localeCompare(b.due))
-      .slice(0, 15)
-  }, [tasks, ts, weStr])
+  const upcomingDeadlines = useMemo(() => filterUpcomingDeadlines(tasks, ts, weStr), [tasks, ts, weStr])
 
   // Recent activity: derive from activity log (real timestamps), task ids, and comments
   const recentActivity = useMemo(() => {
@@ -209,42 +211,18 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   }, [tasks])
 
   // Project health scores (always show, even with 0 tasks)
-  const projectHealthData = useMemo(() => {
-    return projects.map(p => {
-      const pt = tasks.filter(tk => tk.pid === p.id)
-      const total = pt.length
-      const done = pt.filter(tk => tk.done).length
-      const od = pt.filter(tk => !tk.done && isOverdue(tk.due)).length
-      const pct = total > 0 ? Math.round(done / total * 100) : 0
-      const odPct = total > 0 ? od / total : 0
-      const health = total === 0 ? 'good' : odPct > 0.25 ? 'critical' : odPct > 0.10 ? 'warning' : 'good'
-      return { ...p, total, done, pct, overdue: od, health }
-    }).slice(0, 6)
-  }, [tasks, projects])
+  const projectHealthData = useMemo(() => computeProjectHealth(tasks, projects), [tasks, projects])
 
   // ── Chart data ────────────────────────────────────────────────
 
   // Shared per-user task lookup: computed once, reused by barData, workloadData, and team section
-  const userTaskMap = useMemo(() => {
-    const map = {}
-    for (const u of USERS) {
-      map[u.name] = tasks.filter(task => Array.isArray(task.who) ? task.who.includes(u.name) : task.who === u.name)
-    }
-    return map
-  }, [tasks, USERS])
+  const userTaskMap = useMemo(() => buildUserTaskMap(tasks, USERS), [tasks, USERS])
 
   // Shared per-project lookup: O(1) access instead of repeated .find()
-  const projectById = useMemo(() => {
-    const map = {}
-    for (const p of projects) map[p.id] = p
-    return map
-  }, [projects])
+  const projectById = useMemo(() => buildProjectById(projects), [projects])
 
   // 1. Bar: tasks per person (open vs done)
-  const barData = useMemo(() => USERS.map(u => {
-    const ut = userTaskMap[u.name] ?? []
-    return { name: u.name.split(' ')[0], open: ut.filter(t => !t.done).length, done: ut.filter(t => t.done).length, color: u.color }
-  }).filter(d => d.open + d.done > 0), [USERS, userTaskMap])
+  const barData = useMemo(() => computeTasksPerPerson(userTaskMap, USERS), [USERS, userTaskMap])
 
   // 2. Donut: tasks by priority
   const priLabels = useMemo(() => ({ high: t.high, medium: t.medium, low: t.low }), [t.high, t.medium, t.low])
@@ -279,11 +257,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   })
 
   // 4. Project progress table
-  const projStats = useMemo(() => projects.map(p => {
-    const pt   = tasks.filter(task => task.pid === p.id)
-    const done = pt.filter(task => task.done).length
-    return { ...p, total: pt.length, done, pct: pt.length ? Math.round(done / pt.length * 100) : 0 }
-  }), [tasks, projects])
+  const projStats = useMemo(() => computeProjectStats(tasks, projects), [tasks, projects])
 
   // 5. Burndown chart: remaining open tasks over last 30 days
   // Use real completion date from activity log; fall back to due date for legacy tasks
@@ -308,17 +282,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   }, [tasks, burndownPid, t, lang, now])
 
   // 6. Status distribution: tasks by section name
-  const statusData = useMemo(() => {
-    const counts = {}
-    const statusColors = ['var(--c-brand)', 'var(--c-warning)', 'var(--c-success)', 'var(--tx3)', 'var(--c-purple)', 'var(--c-lime)']
-    for (const task of tasks) {
-      const sec = task.sec ?? 'Other'
-      counts[sec] = (counts[sec] ?? 0) + 1
-    }
-    return Object.entries(counts).map(([name, value], i) => ({
-      name, value, color: statusColors[i % statusColors.length],
-    }))
-  }, [tasks])
+  const statusData = useMemo(() => computeStatusDistribution(tasks), [tasks])
 
   // 7. Weekly velocity: tasks completed per week (last 8 weeks)
   // Use real completion date from activity log; fall back to due date for legacy tasks
@@ -344,37 +308,14 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   }, [tasks, t, lang, now])
 
   // 8. Overdue by project: horizontal bar
-  const overdueByProj = useMemo(() => {
-    return projects.map(p => {
-      const od = tasks.filter(tk => tk.pid === p.id && !tk.done && isOverdue(tk.due)).length
-      return { name: p.name.length > 14 ? p.name.slice(0, 14) + '…' : p.name, overdue: od, color: p.color }
-    }).filter(d => d.overdue > 0).sort((a, b) => b.overdue - a.overdue).slice(0, 6)
-  }, [tasks, projects])
+  const overdueByProj = useMemo(() => computeOverdueByProject(tasks, projects), [tasks, projects])
 
   // 9. Workload capacity: open tasks per person with threshold indicator
   const WORKLOAD_THRESHOLD = 8
-  const workloadData = useMemo(() => {
-    return USERS.map(u => {
-      const open = (userTaskMap[u.name] ?? []).filter(tk => !tk.done).length
-      const level = open > WORKLOAD_THRESHOLD ? 'overloaded' : open > WORKLOAD_THRESHOLD / 2 ? 'balanced' : 'light'
-      return { name: u.name.split(' ')[0], open, color: u.color, level }
-    }).filter(d => d.open > 0).sort((a, b) => b.open - a.open)
-  }, [USERS, userTaskMap])
+  const workloadData = useMemo(() => computeWorkload(userTaskMap, USERS, WORKLOAD_THRESHOLD), [USERS, userTaskMap])
 
   // 10. Section completion: stacked bars per project showing section distribution
-  const sectionCompletionData = useMemo(() => {
-    return projects.slice(0, 6).map(p => {
-      const pt = tasks.filter(tk => tk.pid === p.id)
-      const secCounts = {}
-      for (const tk of pt) {
-        const sec = tk.sec ?? 'Other'
-        if (!secCounts[sec]) secCounts[sec] = { total: 0, done: 0 }
-        secCounts[sec].total++
-        if (tk.done) secCounts[sec].done++
-      }
-      return { project: p, sections: secCounts, total: pt.length }
-    }).filter(d => d.total > 0)
-  }, [tasks, projects])
+  const sectionCompletionData = useMemo(() => computeSectionCompletion(tasks, projects), [tasks, projects])
 
   const StatCard = ({ label, value, color, onClick }) => (
     <div onClick={onClick} className="row-interactive"

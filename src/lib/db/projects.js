@@ -57,7 +57,7 @@ export async function upsertProject(orgId, proj) {
     custom_fields: p.customFields,
     updated_at: new Date().toISOString(),
   }
-  // Extended columns (require migration 020)
+  // Extended columns (require migration 020+)
   const extended = {
     task_templates: p.taskTemplates,
     visibility: p.visibility,
@@ -65,6 +65,7 @@ export async function upsertProject(orgId, proj) {
     forms: p.forms,
     rules: p.rules,
     goals: p.goals,
+    project_type: p.project_type,
   }
   // Try full payload first; fall back to core if extended columns don't exist yet
   const { error } = await supabase.from('projects').upsert({ ...core, ...extended })

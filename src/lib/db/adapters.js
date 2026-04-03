@@ -21,6 +21,7 @@ export const toProject = (r, memberNames) => ({
   taskTemplates: r.task_templates ?? [],
   visibility: r.visibility ?? 'all',
   sectionAccess: r.section_access ?? {},
+  project_type: r.project_type ?? 'standard',
 })
 
 export const toTask = (r, secName, subs, cmts, deps, profileById = {}) => {
