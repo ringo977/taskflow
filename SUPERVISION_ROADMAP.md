@@ -272,11 +272,13 @@ Aggiornare il manuale utente (`manualContent.jsx`) con la sezione supervision. A
 
 Verificare i criteri V1 dal brief:
 
-- [ ] Deliverables Register e Deadlines Cockpit in produzione
-- [ ] Test unit/integration ed E2E verdi
-- [ ] Impatto bundle documentato e dentro budget
-- [ ] Nessuna regressione core
-- [ ] Layer usabile senza complessità aggiuntiva evidente
+- [x] Deliverables Register e Deadlines Cockpit in produzione ✓
+- [x] Test unit/integration ed E2E verdi (669 unit + 7 e2e suite) ✓
+- [x] Impatto bundle documentato e dentro budget (ProjectSupervisionPage 30.25 kB, HomeDashboard ridotto a 25.22 kB) ✓
+- [x] Nessuna regressione core (tutti i 669 test verdi) ✓
+- [x] Layer usabile senza complessità aggiuntiva evidente (lazy-loaded, no vendor deps) ✓
+
+**V1 COMPLETATA — aprile 2026**
 
 ---
 
