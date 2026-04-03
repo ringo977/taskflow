@@ -41,6 +41,8 @@ export default function MfaPage({ onComplete, lang }) {
       })
 
     return () => clearTimeout(timeout)
+  // Mount-only: MFA enrollment must run once. All missing deps are stable
+  // state setters (setQrCode, setSecret, setFactorId, setStep, setErr).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

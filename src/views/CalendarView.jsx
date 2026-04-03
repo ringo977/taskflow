@@ -42,14 +42,14 @@ export default function CalendarView({ tasks, projects, project, currentUser, my
   const getProj = pid => projects.find(p => p.id === pid)
   const overdue = filtered.filter(task => !task.done && isOverdue(task.due))
 
-  const upcoming = useMemo(() =>
-    filtered.filter(task => {
+  const upcoming = useMemo(() => {
+    const ref = new Date(todayStr + 'T12:00:00')
+    return filtered.filter(task => {
       if (task.done || !task.due) return false
-      const diff = (new Date(task.due + 'T12:00:00') - today) / 864e5
+      const diff = (new Date(task.due + 'T12:00:00') - ref) / 864e5
       return diff >= 0 && diff <= 7
-    }).sort((a, b) => a.due.localeCompare(b.due)),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [filtered, todayStr])
+    }).sort((a, b) => a.due.localeCompare(b.due))
+  }, [filtered, todayStr])
 
   const upcomingByDay = useMemo(() => {
     const groups = []

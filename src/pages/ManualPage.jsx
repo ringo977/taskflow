@@ -1138,6 +1138,8 @@ export default function ManualPage() {
     }, { rootMargin: '-20% 0px -60% 0px' })
     keys.forEach(k => { const el = document.getElementById(k); if (el) obs.observe(el) })
     return () => obs.disconnect()
+  // `keys` is derived from `lang` (section IDs change per language),
+  // so `lang` is the true dependency. `setActiveSection` is a stable setter.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
 

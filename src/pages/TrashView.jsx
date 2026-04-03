@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { fetchTrash, restoreItem, permanentlyDelete } from '@/lib/db'
@@ -12,9 +12,11 @@ export default function TrashView({ orgId, onReload }) {
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState(null)
 
-  const load = () => fetchTrash(orgId).then(setData).catch(e => log.warn('fetchTrash failed:', e.message))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load() }, [orgId])
+  const load = useCallback(
+    () => fetchTrash(orgId).then(setData).catch(e => log.warn('fetchTrash failed:', e.message)),
+    [orgId]
+  )
+  useEffect(() => { load() }, [load])
 
   const handleRestore = async (table, id) => {
     setBusy(true)

@@ -102,6 +102,9 @@ export const useProjectActions = ({
         toast(tr.msgSaveError, 'error')
       }
     },
+    // Deps are manually managed: ESLint wants db functions (upsertProject,
+    // addProjectMember, etc.) which are stable module imports. Listing them
+    // would add noise without changing behavior.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       projs,

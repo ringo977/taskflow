@@ -8,19 +8,18 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const timers = useRef({})
 
-  const addToast = useCallback((message, type = 'info', duration = 3500) => {
-    const id = ++toastId
-    setToasts(prev => [...prev, { id, message, type, exiting: false, duration }])
-    timers.current[id] = setTimeout(() => dismiss(id), duration)
-    return id
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const dismiss = useCallback((id) => {
     clearTimeout(timers.current[id])
     setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t))
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 300)
   }, [])
+
+  const addToast = useCallback((message, type = 'info', duration = 3500) => {
+    const id = ++toastId
+    setToasts(prev => [...prev, { id, message, type, exiting: false, duration }])
+    timers.current[id] = setTimeout(() => dismiss(id), duration)
+    return id
+  }, [dismiss])
 
   return (
     <ToastCtx.Provider value={addToast}>

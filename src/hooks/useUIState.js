@@ -16,6 +16,8 @@ export function useUIState({ activeOrgId }) {
   const location = useLocation()
 
   // ── State Initialization from URL ───────────────────────────────────────
+  // Intentionally captures only the initial URL on mount. Including
+  // `location.pathname` would re-parse on every navigation and clobber state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initRoute = useMemo(() => parseRoute(location.pathname), [])
   const [nav, setNav] = useState(initRoute.nav)
@@ -123,6 +125,9 @@ export function useUIState({ activeOrgId }) {
     if (r.pid && r.pid !== pid && r.pid !== '-') setPid(r.pid)
     if (r.view && r.view !== view && r.view !== '-') setView(r.view)
     setSelId(r.taskId && r.taskId !== '-' ? r.taskId : null)
+  // Bi-directional sync: this effect reads nav/pid/view for comparison but
+  // must NOT depend on them — doing so would create an infinite loop since
+  // the effect sets those same values. Only `location.pathname` is semantic.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 

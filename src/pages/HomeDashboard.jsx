@@ -126,7 +126,8 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
   }
 
   const todayKey = new Date().toISOString().slice(0, 10)
-  // Stable Date object that only changes when the calendar date rolls over
+  // Stable Date object keyed on `todayKey` (YYYY-MM-DD string) so it only
+  // re-creates when the calendar day rolls over, not on every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now    = useMemo(() => new Date(), [todayKey])
   const ts     = todayKey
