@@ -960,5 +960,63 @@ export function content(lang) {
         <p>Organization admins can transfer project ownership to any member. In ProjectOverview → Members panel, click a member's role and select "Owner". The previous owner is automatically demoted to Editor.</p>
       </>
     ),
+
+    supervision: L ? (
+      <>
+        <h3>Cos'è la supervisione</h3>
+        <p>La supervisione è un layer opzionale per i progetti che richiedono governance strutturata. Quando un progetto ha tipo <strong>Supervisionato</strong>, compare una tab aggiuntiva "Supervision" nell'header progetto con quattro sotto-viste: Cockpit, Deliverable, Timeline e Controlli ricorrenti.</p>
+
+        <h3>Attivare la supervisione</h3>
+        <p>Vai in Panoramica progetto → barra laterale destra → Tipo progetto. Seleziona <strong>Supervisionato</strong>. Compariranno anche i campi data di inizio e fine progetto. Solo admin e manager possono modificare il tipo.</p>
+
+        <h3>Cockpit</h3>
+        <p>Il cockpit mostra 5 card con indicatori a colpo d'occhio:</p>
+        <ul>
+          <li><strong>Milestone in arrivo</strong> — task con flag milestone, non completati, entro la finestra temporale</li>
+          <li><strong>Deliverable in arrivo</strong> — deliverable non accettati, con data di scadenza nella finestra</li>
+          <li><strong>Task scaduti</strong> — task aperti con scadenza passata</li>
+          <li><strong>Task senza owner</strong> — task senza assegnatario</li>
+          <li><strong>Deliverable in ritardo</strong> — deliverable con stato "delayed" o scadenza passata</li>
+        </ul>
+        <p>Usa il selettore finestra (7/14/30 giorni) per regolare l'orizzonte delle card "in arrivo".</p>
+
+        <h3>Registro Deliverable</h3>
+        <p>Un registro tabellare con codice, titolo, proprietario, scadenza, stato e task collegati. Puoi filtrare per codice, titolo o proprietario. Clicca <strong>+ Aggiungi</strong> per creare un deliverable con form inline. Gli stati disponibili sono: bozza, in corso, revisione interna, consegnato, accettato, in ritardo.</p>
+
+        <h3>Timeline supervisione</h3>
+        <p>Una timeline lineare orizzontale che mostra milestone (viola), deliverable (brand) e controlli ricorrenti (arancione) su un asse temporale. La linea rossa verticale "TODAY" indica oggi. Le voci scadute sono evidenziate in rosso. Selettore finestra: 30/60/90 giorni.</p>
+
+        <h3>Controlli ricorrenti</h3>
+        <p>Checklist periodiche per la governance del progetto. Ogni controllo ha: titolo, frequenza (settimanale, mensile, personalizzata), prossima scadenza e tipo azione (solo promemoria o crea task). Quando un controllo è "due", compare un badge arancione sulla tab. Clicca ▶ per eseguirlo: se il tipo è "crea task", viene creato un task automaticamente dal template; in entrambi i casi la prossima scadenza avanza al periodo successivo.</p>
+      </>
+    ) : (
+      <>
+        <h3>What is supervision</h3>
+        <p>Supervision is an optional layer for projects requiring structured governance. When a project has type <strong>Supervised</strong>, an additional "Supervision" tab appears in the project header with four sub-views: Cockpit, Deliverables, Timeline, and Recurring Controls.</p>
+
+        <h3>Enabling supervision</h3>
+        <p>Go to Project Overview → right sidebar → Project type. Select <strong>Supervised</strong>. Start and end date fields will also appear. Only admins and managers can change the project type.</p>
+
+        <h3>Cockpit</h3>
+        <p>The cockpit shows 5 at-a-glance metric cards:</p>
+        <ul>
+          <li><strong>Upcoming milestones</strong> — tasks flagged as milestones, not completed, within the time window</li>
+          <li><strong>Upcoming deliverables</strong> — deliverables not accepted, with due dates within the window</li>
+          <li><strong>Overdue tasks</strong> — open tasks with past due dates</li>
+          <li><strong>Ownerless tasks</strong> — tasks with no assignee</li>
+          <li><strong>Delayed deliverables</strong> — deliverables with "delayed" status or past due dates</li>
+        </ul>
+        <p>Use the window selector (7/14/30 days) to adjust the horizon for "upcoming" cards.</p>
+
+        <h3>Deliverables register</h3>
+        <p>A tabular register with code, title, owner, due date, status, and linked tasks. You can filter by code, title, or owner. Click <strong>+ Add</strong> to create a deliverable with an inline form. Available statuses: draft, in progress, internal review, submitted, accepted, delayed.</p>
+
+        <h3>Supervision timeline</h3>
+        <p>A linear horizontal timeline showing milestones (purple), deliverables (brand color), and recurring controls (orange) on a time axis. The red vertical "TODAY" line marks the current day. Overdue items are highlighted in red. Window selector: 30/60/90 days.</p>
+
+        <h3>Recurring controls</h3>
+        <p>Periodic checklists for project governance. Each control has: title, frequency (weekly, monthly, custom), next due date, and action type (reminder only or create task). When a control is due, an orange badge appears on the tab. Click ▶ to execute: if the action type is "create task", a task is automatically created from the template; in both cases the next due date advances to the next period.</p>
+      </>
+    ),
   }
 }

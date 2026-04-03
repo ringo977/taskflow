@@ -1,6 +1,6 @@
 # TaskFlow — Consolidation Playbook
 
-> Stato: v0.5.0 · 142 file sorgente · 24k LOC · 644 unit test · 6 suite E2E
+> Stato: v0.5.1 · ~150 file sorgente · ~25k LOC · 669 unit test · 7 suite E2E
 > Data: aprile 2026
 
 TaskFlow non ha più come collo di bottiglia le feature. I tre colli di bottiglia attuali sono disciplina operativa, stabilità dell'esperienza e complessità accumulata. Questo documento definisce le regole operative per i prossimi cicli di sviluppo.
@@ -76,15 +76,15 @@ La zona grigia — componenti con side effect pesanti — va coperta da integrat
 
 | Metrica | Valore |
 |---|---|
-| File sorgente (src/) | 142 |
-| Linee di codice | 24.337 |
-| Hook custom | 21 |
-| Viste / pagine | 8 viste + 21 pagine |
-| Moduli DB | 15 |
-| Test unitari | 644 |
-| Suite E2E | 6 |
-| Chunk bundle | 40 |
-| Bundle totale | 2.063 kB |
+| File sorgente (src/) | ~150 |
+| Linee di codice | ~25.000 |
+| Hook custom | 23 |
+| Viste / pagine | 8 viste + 22 pagine |
+| Moduli DB | 17 |
+| Test unitari | 669 |
+| Suite E2E | 7 |
+| Chunk bundle | 42 |
+| Bundle totale | 2.116 kB |
 
 ### I 10 file più grandi
 
@@ -92,7 +92,7 @@ La zona grigia — componenti con side effect pesanti — va coperta da integrat
 |---|---|
 | manualContent.jsx | 964 |
 | RulesPanel.jsx | 579 |
-| HomeDashboard.jsx | 544 |
+| HomeDashboard.jsx + DashboardWidgetGrid.jsx | 370 + 240 |
 | PeopleView.jsx | 514 |
 | TimelineView.jsx | 480 |
 | DashboardWidgets.jsx | 453 |
@@ -124,6 +124,7 @@ TaskFlow copre queste aree. Per ognuna: livello di rischio, requisiti minimi su 
 | Permessi e auth | permissions.js, LoginPage, MfaPage, org.js | Alto | E2E auth obbligatorio | Chi ha accesso ai secret |
 | Audit | audit.js, retry.js | Basso | Unit test retry | Chiunque |
 | Goals e time tracking | GoalsPanel, TimeTracker | Medio | Unit test logica | Chiunque |
+| Supervisione progetto | ProjectSupervisionPage, DeadlinesCockpit, DeliverablesRegister, RecurringControlsPanel, SupervisionTimeline | Medio | E2E supervision + unit test hook | Chi conosce il governance model |
 | Manuale | ManualPage, manualContent | Basso | Nessuno specifico | Chiunque |
 
 Oggi il team è piccolo e la review è informale. La colonna "review suggerito" diventa operativa quando si aggiungono contributor — a quel punto ogni area ad alto rischio dovrebbe avere almeno un reviewer designato.
@@ -163,4 +164,4 @@ Questi non sono task — sono direzioni. La priorità dipende da quello che emer
 
 **Operativa**: Aggiungere un environment di staging se il deploy diventa più frequente. Valutare TypeScript incrementale (strict su `src/utils/` e `src/lib/db/` prima, il resto dopo). Automatizzare il changelog da commit convenzionali.
 
-**Complessità**: Splittare RulesPanel (579 LOC) e HomeDashboard (544 LOC) seguendo il pattern usato per TaskPanel e ManualPage. Valutare se FormsPanel e DashboardWidgets possono diventare lazy-loaded. Rivedere i 21 hook per consolidare quelli con sovrapposizioni.
+**Complessità**: Splittare RulesPanel (579 LOC) seguendo il pattern usato per TaskPanel e ManualPage. HomeDashboard è stato splittato in v0.5.1 (DashboardWidgetGrid lazy). Valutare se FormsPanel e DashboardWidgets possono diventare lazy-loaded. Rivedere i 23 hook per consolidare quelli con sovrapposizioni.

@@ -26,6 +26,7 @@ export const T = {
       trash: 'Cestino e recupero',
       settings: 'Impostazioni',
       roles: 'Ruoli e permessi',
+      supervision: 'Supervisione progetto',
     },
   },
   en: {
@@ -55,6 +56,7 @@ export const T = {
       trash: 'Trash & Recovery',
       settings: 'Settings',
       roles: 'Roles & Permissions',
+      supervision: 'Project Supervision',
     },
   },
 }
