@@ -104,7 +104,7 @@ const en = {
   dblClickRename: 'Double-click to rename', deleteSection: 'Delete section',
   sectionNamePlaceholder: 'Section name…', addSectionLabel: 'Add section', emptySection: 'No tasks in this section',
   // List
-  sort: 'Sort', nSelected: 'selected',
+  sort: 'Sort', nSelected: 'selected', prev: 'Prev', next: 'Next', showMore: 'Show more',
   // Inbox
   justNow: 'just now', unreadLabel: 'unread', markAllRead: 'Mark all read',
   noNotifications: 'No notifications',

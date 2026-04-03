@@ -5,6 +5,8 @@ import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
 
+const BOARD_PAGE_SIZE = 20
+
 export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
@@ -19,6 +21,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   const [newSecName, setNewSecName] = useState('')
   const [editingSec, setEditingSec] = useState(null)
   const [editSecName, setEditSecName] = useState('')
+  const [colLimit, setColLimit] = useState({})  // per-column visible limit
   const q = filters.q
   const cardRefs = useRef({})
 
@@ -104,6 +107,9 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
       {secs.map(sec => {
         const filtered = applyFilters(visibleTasks.filter(t => t.sec === sec), filters)
         const total    = visibleTasks.filter(t => t.sec === sec).length
+        const limit    = colLimit[sec] ?? BOARD_PAGE_SIZE
+        const shown    = filtered.slice(0, limit)
+        const hasMore  = filtered.length > limit
         const isOver   = over === sec
 
         cardRefs.current[sec] = []
@@ -150,7 +156,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
               </div>
             </div>
 
-            {filtered.map((task, i) => (
+            {shown.map((task, i) => (
               <div key={task.id}>
                 {isOver && dropIdx === i && drag !== task.id && (
                   <div style={{ height: 3, background: 'var(--c-brand)', borderRadius: 2, margin: '2px 0', transition: 'all 0.1s' }} />
@@ -170,8 +176,20 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                 </div>
               </div>
             ))}
-            {isOver && dropIdx === filtered.length && (
+            {isOver && dropIdx === shown.length && (
               <div style={{ height: 3, background: 'var(--c-brand)', borderRadius: 2, margin: '2px 0' }} />
+            )}
+            {hasMore && (
+              <button
+                onClick={() => setColLimit(prev => ({ ...prev, [sec]: limit + BOARD_PAGE_SIZE }))}
+                style={{
+                  width: '100%', padding: '8px 0', margin: '4px 0', fontSize: 12,
+                  color: 'var(--accent)', background: 'transparent',
+                  border: '1px dashed var(--bd3)', borderRadius: 'var(--r1)',
+                  cursor: 'pointer', fontWeight: 500,
+                }}>
+                {t.showMore ?? 'Show more'} ({filtered.length - limit})
+              </button>
             )}
 
             {filtered.length === 0 && !q && (

@@ -104,7 +104,7 @@ const it = {
   dblClickRename: 'Doppio clic per rinominare', deleteSection: 'Elimina sezione',
   sectionNamePlaceholder: 'Nome sezione…', addSectionLabel: 'Aggiungi sezione', emptySection: 'Nessun task in questa sezione',
   // List
-  sort: 'Ordina', nSelected: 'selezionati',
+  sort: 'Ordina', nSelected: 'selezionati', prev: 'Prec', next: 'Succ', showMore: 'Mostra altri',
   // Inbox
   justNow: 'ora', unreadLabel: 'non letti', markAllRead: 'Segna tutti letti',
   noNotifications: 'Nessuna notifica',

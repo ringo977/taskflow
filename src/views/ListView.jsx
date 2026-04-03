@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, isOverdue, applyVisibilityFilter } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'
@@ -9,6 +9,8 @@ import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
+import Pagination from '@/components/Pagination'
+import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
 
 const SORT_OPTIONS = [
   { id: 'none', label: { it: 'Predefinito', en: 'Default' } },
@@ -62,6 +64,21 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
 
   const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
 
+  // Build flat sorted+filtered list for pagination
+  const allFiltered = useMemo(() => {
+    const out = []
+    for (const sec of secs) {
+      const all = visibleTasks.filter(task => task.sec === sec)
+      out.push(...sortTasks(applyFilters(all, filters), sortBy))
+    }
+    return out
+  }, [visibleTasks, secs, filters, sortBy])
+
+  const pg = usePagination(allFiltered, DEFAULT_PAGE_SIZE)
+
+  // Build set of paged task IDs for fast lookup
+  const pagedIds = useMemo(() => new Set(pg.paged.map(t => t.id)), [pg.paged])
+
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '14px 22px' }}>
       {/* Toolbar */}
@@ -83,9 +100,15 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
         )}
       </div>
 
+      <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total}
+        startIndex={pg.startIndex} endIndex={pg.endIndex}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPrev={pg.prev} onNext={pg.next} />
+
       {secs.map(sec => {
         const all      = visibleTasks.filter(task => task.sec === sec)
         const filtered = sortTasks(applyFilters(all, filters), sortBy)
+        const paged    = filtered.filter(task => pagedIds.has(task.id))
         const isC      = collapsed[sec]
 
         return (
@@ -97,9 +120,9 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
               <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{q ? `${filtered.length}/${all.length}` : all.length}</span>
             </div>
 
-            {!isC && (
+            {!isC && paged.length > 0 && (
               <>
-                {filtered.map(task => {
+                {paged.map(task => {
                   const ov = isOverdue(task.due) && !task.done
                   const isBlocked = (task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))
                   const isSel = selected.has(task.id)
@@ -135,7 +158,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
                   )
                 })}
 
-                {filtered.length === 0 && !q && (
+                {all.length === 0 && !q && (
                   <div style={{ padding: '12px 10px', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>{t.emptySection ?? 'No tasks yet'}</div>
                 )}
 
@@ -159,6 +182,11 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
           </div>
         )
       })}
+
+      <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total}
+        startIndex={pg.startIndex} endIndex={pg.endIndex}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPrev={pg.prev} onNext={pg.next} />
     </div>
   )
 }
