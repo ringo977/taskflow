@@ -140,6 +140,24 @@ export const PortfolioUpsertSchema = z.object({
   status:      projectStatus,
 }).passthrough()
 
+// ── Supervision ───────────────────────────────────────────────
+
+const deliverableStatus = z.enum([
+  'draft', 'in_progress', 'internal_review', 'submitted', 'accepted', 'delayed',
+]).catch('draft')
+
+export const DeliverableUpsertSchema = z.object({
+  id:                  uuid.optional(),
+  code:                str(50),
+  title:               str(255),
+  description:         optStr(5000),
+  owner:               optStr(255),
+  dueDate:             isoDate,
+  status:              deliverableStatus,
+  linkedMilestoneRef:  z.string().optional().nullable(),
+  notes:               optStr(5000),
+}).passthrough()
+
 export const SectionNameSchema = str(255)
 
 export const OrgRoleSchema = orgRole

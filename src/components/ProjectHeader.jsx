@@ -10,6 +10,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
   const VIEWS = [
     [t.overview, 'overview'], [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
+    ...(proj?.project_type && proj.project_type !== 'standard' ? [[t.supervision, 'supervision']] : []),
   ]
   return (
     <div className="project-header" style={{ padding: '12px 20px', borderBottom: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg1)', flexShrink: 0 }}>

@@ -14,6 +14,7 @@ const CalendarView = lazy(() => import('@/views/CalendarView'))
 const TimelineView = lazy(() => import('@/views/TimelineView'))
 const ProjectOverview = lazy(() => import('@/views/ProjectOverview'))
 const ProjectHeader = lazy(() => import('@/components/ProjectHeader'))
+const ProjectSupervisionPage = lazy(() => import('@/supervision/pages/ProjectSupervisionPage'))
 const SummaryPanel = lazy(() => import('@/components/SummaryPanel'))
 
 const ChunkFallback = () => (
@@ -48,7 +49,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
+      {view !== 'overview' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} />}
       {view === 'overview' && (
         <ProjectOverview project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
@@ -73,6 +74,10 @@ function ProjectContent({
       {view === 'calendario' && (
         <CalendarView tasks={tasks} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}
           onUpd={updTask} onAddTaskOnDate={openAddOnDate} filters={filters} lang={lang} />
+      )}
+      {view === 'supervision' && (
+        <ProjectSupervisionPage project={proj} tasks={pTasks} orgId={ui.activeOrgId}
+          onOpenTask={setSelId} lang={lang} />
       )}
     </>
   )
