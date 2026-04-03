@@ -451,5 +451,8 @@ const en = {
   supNoControls: 'No recurring controls yet',
   supDueNow: 'Due',
   supControlDescription: 'Description',
+  supProjectDates: 'Project dates',
+  supStartDate: 'Start date',
+  supEndDate: 'End date',
 }
 export default en

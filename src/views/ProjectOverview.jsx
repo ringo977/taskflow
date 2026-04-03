@@ -235,6 +235,27 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
           </div>
         )}
 
+        {/* Project dates (supervised only) */}
+        {proj.project_type === 'supervised' && (
+          <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t.supProjectDates ?? 'Project dates'}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 10, color: 'var(--tx3)', display: 'block', marginBottom: 3 }}>{t.supStartDate ?? 'Start date'}</label>
+                <input type="date" value={proj.startDate ?? ''}
+                  onChange={e => onUpdProj(proj.id, { startDate: e.target.value || null })}
+                  style={{ fontSize: 12, padding: '6px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, color: 'var(--tx3)', display: 'block', marginBottom: 3 }}>{t.supEndDate ?? 'End date'}</label>
+                <input type="date" value={proj.endDate ?? ''}
+                  onChange={e => onUpdProj(proj.id, { endDate: e.target.value || null })}
+                  style={{ fontSize: 12, padding: '6px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }} />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Progress */}
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>

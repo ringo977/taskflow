@@ -66,6 +66,8 @@ export async function upsertProject(orgId, proj) {
     rules: p.rules,
     goals: p.goals,
     project_type: p.project_type,
+    start_date: p.startDate ?? null,
+    end_date: p.endDate ?? null,
   }
   // Try full payload first; fall back to core if extended columns don't exist yet
   const { error } = await supabase.from('projects').upsert({ ...core, ...extended })

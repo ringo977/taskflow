@@ -451,5 +451,8 @@ const it = {
   supNoControls: 'Nessun controllo ricorrente',
   supDueNow: 'Scaduto',
   supControlDescription: 'Descrizione',
+  supProjectDates: 'Date progetto',
+  supStartDate: 'Data inizio',
+  supEndDate: 'Data fine',
 }
 export default it

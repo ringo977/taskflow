@@ -130,6 +130,8 @@ export const ProjectUpsertSchema = z.object({
   rules:          z.array(z.any()).catch([]),
   goals:          z.array(z.any()).catch([]),
   project_type:   z.enum(['standard', 'supervised']).catch('standard'),
+  startDate:      isoDate,
+  endDate:        isoDate,
 }).passthrough()
 
 export const PortfolioUpsertSchema = z.object({

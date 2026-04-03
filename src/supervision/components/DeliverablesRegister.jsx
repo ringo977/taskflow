@@ -33,9 +33,16 @@ export default function DeliverablesRegister({ deliverables, loading, onSave, on
       (d.owner ?? '').toLowerCase().includes(filter.toLowerCase()))
     : deliverables
 
+  const [saveError, setSaveError] = useState(null)
+
   const handleSave = async (data) => {
-    await onSave(data)
-    setEditing(null)
+    try {
+      setSaveError(null)
+      await onSave(data)
+      setEditing(null)
+    } catch (err) {
+      setSaveError(err.message ?? 'Save failed')
+    }
   }
 
   if (loading) return <div style={{ padding: 24, color: 'var(--tx3)', fontSize: 13 }}>Loading…</div>
@@ -59,6 +66,11 @@ export default function DeliverablesRegister({ deliverables, loading, onSave, on
       </div>
 
       {/* Form (inline) */}
+      {saveError && (
+        <div style={{ padding: '8px 12px', marginBottom: 8, background: 'color-mix(in srgb, var(--c-danger) 10%, transparent)', border: '1px solid var(--c-danger)', borderRadius: 'var(--r1)', fontSize: 12, color: 'var(--c-danger)' }}>
+          {saveError}
+        </div>
+      )}
       {editing && (
         <DeliverableForm
           deliverable={editing === 'new' ? null : editing}
