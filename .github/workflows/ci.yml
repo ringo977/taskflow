@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Security audit (fails on critical)
+        run: npm audit --audit-level=critical
+
       - name: Migration lint (dropped columns + ordering invariants)
         run: npm run migration:lint
 

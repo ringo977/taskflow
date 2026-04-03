@@ -15,8 +15,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Wait for CI to pass before deploying
+  ci-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI workflow
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: validate
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: ci-gate
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -29,6 +42,10 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Security audit (fails on critical)
+        run: npm audit --audit-level=critical
+
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
