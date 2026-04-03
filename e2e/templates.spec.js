@@ -1,6 +1,7 @@
 // @ts-check
 import { test, expect } from '@playwright/test'
 import { login } from './fixtures/auth.js'
+import { openFirstProject } from './fixtures/helpers.js'
 
 /**
  * E2E: Task creation from template
@@ -12,31 +13,30 @@ import { login } from './fixtures/auth.js'
  * - Verify dates are cleared (audit fix)
  */
 
+/** Click the add-task button and wait for the modal to appear. Returns false if no add button. */
+async function openAddModal(page) {
+  const addBtn = page.locator('button').filter({ hasText: /Aggiungi|Add|Nuova|New|\+/ }).first()
+  const hasAdd = await addBtn.isVisible().catch(() => false)
+  if (!hasAdd) return false
+
+  await addBtn.click()
+  await page.locator('[class*="modal"], [role="dialog"]').first()
+    .waitFor({ state: 'visible', timeout: 5_000 })
+  return true
+}
+
 test.describe('Task templates', () => {
   test('add task button opens modal', async ({ page }) => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    // Navigate to a project
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
+    const hasProject = await openFirstProject(page)
+    if (!hasProject) return
 
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
-    if (hasProject) {
-      await projectLink.click()
-      await page.waitForTimeout(1000)
-    }
+    const opened = await openAddModal(page)
+    if (!opened) return // viewer role, no add button
 
-    // Look for add task button (+ or "Aggiungi" or "Add")
-    const addBtn = page.locator('button').filter({ hasText: /Aggiungi|Add|Nuova|New|\+/ }).first()
-    const hasAdd = await addBtn.isVisible().catch(() => false)
-    if (!hasAdd) return // viewer role, no add button
-
-    await addBtn.click()
-    await page.waitForTimeout(500)
-
-    // Modal should appear
+    // Modal should be visible (already asserted in openAddModal)
     const modal = page.locator('[class*="modal"], [role="dialog"]').first()
     await expect(modal).toBeVisible()
   })
@@ -45,23 +45,11 @@ test.describe('Task templates', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    // Navigate to a project
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
+    const hasProject = await openFirstProject(page)
+    if (!hasProject) return
 
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
-    if (hasProject) {
-      await projectLink.click()
-      await page.waitForTimeout(1000)
-    }
-
-    const addBtn = page.locator('button').filter({ hasText: /Aggiungi|Add|Nuova|New|\+/ }).first()
-    const hasAdd = await addBtn.isVisible().catch(() => false)
-    if (!hasAdd) return
-
-    await addBtn.click()
-    await page.waitForTimeout(500)
+    const opened = await openAddModal(page)
+    if (!opened) return
 
     // Look for template dropdown or selector
     const templateSelect = page.locator('select, [class*="template"]').filter({ hasText: /template|Template|Modello/ })
@@ -75,23 +63,11 @@ test.describe('Task templates', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    // Navigate to a project
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
+    const hasProject = await openFirstProject(page)
+    if (!hasProject) return
 
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
-    if (hasProject) {
-      await projectLink.click()
-      await page.waitForTimeout(1000)
-    }
-
-    const addBtn = page.locator('button').filter({ hasText: /Aggiungi|Add|Nuova|New|\+/ }).first()
-    const hasAdd = await addBtn.isVisible().catch(() => false)
-    if (!hasAdd) return
-
-    await addBtn.click()
-    await page.waitForTimeout(500)
+    const opened = await openAddModal(page)
+    if (!opened) return
 
     // Find title input
     const titleInput = page.locator('input[placeholder*="titolo"], input[placeholder*="title"], input[placeholder*="Task"], input').first()

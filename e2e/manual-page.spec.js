@@ -55,22 +55,20 @@ test.describe('Manual page', () => {
 
     const wasIt = await page.locator('text=Per iniziare').first().isVisible().catch(() => false)
     await langBtn.click()
-    await page.waitForTimeout(300)
 
     if (wasIt) {
-      await expect(page.locator('text=Getting Started').first()).toBeVisible()
+      await expect(page.locator('text=Getting Started').first()).toBeVisible({ timeout: 5_000 })
     } else {
-      await expect(page.locator('text=Per iniziare').first()).toBeVisible()
+      await expect(page.locator('text=Per iniziare').first()).toBeVisible({ timeout: 5_000 })
     }
   })
 
   test('TOC click scrolls to section', async ({ page }) => {
     const tocItem = page.locator('a[href="#tasks"]').first()
     await tocItem.click()
-    await page.waitForTimeout(500)
 
     const section = page.locator('#tasks')
-    await expect(section).toBeInViewport()
+    await expect(section).toBeInViewport({ timeout: 5_000 })
   })
 
   test('back to app link exists', async ({ page }) => {
@@ -83,9 +81,13 @@ test.describe('Manual page', () => {
 
     const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'))
     await themeBtn.click()
-    await page.waitForTimeout(200)
+    // Wait until the attribute actually changes
+    await page.waitForFunction(
+      (prev) => document.documentElement.getAttribute('data-theme') !== prev,
+      before,
+      { timeout: 5_000 }
+    )
     const after = await page.evaluate(() => document.documentElement.getAttribute('data-theme'))
-
     expect(after).not.toBe(before)
   })
 })

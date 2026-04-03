@@ -1,6 +1,7 @@
 // @ts-check
 import { test, expect } from '@playwright/test'
 import { login } from './fixtures/auth.js'
+import { openFirstProject } from './fixtures/helpers.js'
 
 /**
  * E2E: Multi-assignee across views
@@ -15,20 +16,21 @@ test.describe('Multi-assignee rendering', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    // Home is the default view after login
-    await page.locator('text=Home').first().click()
-    await page.waitForTimeout(1500)
-
-    // Collect any JS errors
+    // Collect any JS errors (register BEFORE navigation)
     const errors = []
     page.on('pageerror', e => errors.push(e.message))
+
+    // Home is the default view after login
+    await page.locator('text=Home').first().click()
+    // Wait for dashboard to fully render (Customize button = lazy chunk loaded)
+    await page.locator('button').filter({ hasText: /Customize|Personalizza/ })
+      .waitFor({ timeout: 15_000 }).catch(() => {})
 
     // Dashboard should show widgets
     const content = await page.content()
     expect(content).toContain('Home')
 
     // No ".split is not a function" errors
-    await page.waitForTimeout(500)
     const splitErrors = errors.filter(e => e.includes('split is not a function'))
     expect(splitErrors).toHaveLength(0)
   })
@@ -41,7 +43,7 @@ test.describe('Multi-assignee rendering', () => {
     page.on('pageerror', e => errors.push(e.message))
 
     await page.locator('text=I miei task').or(page.locator('text=My Tasks')).first().click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState('networkidle')
 
     // Should show the my tasks view (possibly empty)
     expect(errors.filter(e => e.includes('split'))).toHaveLength(0)
@@ -55,7 +57,7 @@ test.describe('Multi-assignee rendering', () => {
     page.on('pageerror', e => errors.push(e.message))
 
     await page.locator('text=People').first().click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState('networkidle')
 
     // Should render people cards
     expect(errors.filter(e => e.includes('split') || e.includes('not a function'))).toHaveLength(0)
@@ -68,22 +70,15 @@ test.describe('Multi-assignee rendering', () => {
     const errors = []
     page.on('pageerror', e => errors.push(e.message))
 
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
-
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
+    const hasProject = await openFirstProject(page)
     if (!hasProject) return
-
-    await projectLink.click()
-    await page.waitForTimeout(1000)
 
     // Switch to Calendar
     const calTab = page.locator('text=Calendar, text=Calendario').first()
     const hasCal = await calTab.isVisible().catch(() => false)
     if (hasCal) {
       await calTab.click()
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState('networkidle')
     }
 
     expect(errors.filter(e => e.includes('split') || e.includes('not a function'))).toHaveLength(0)
@@ -96,15 +91,8 @@ test.describe('Multi-assignee rendering', () => {
     const errors = []
     page.on('pageerror', e => errors.push(e.message))
 
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
-
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
+    const hasProject = await openFirstProject(page)
     if (!hasProject) return
-
-    await projectLink.click()
-    await page.waitForTimeout(1000)
 
     // Switch to Timeline — use scrollIntoViewIfNeeded + force:true because
     // the header is a crowded flex row and the tab group can be clipped by
@@ -114,7 +102,7 @@ test.describe('Multi-assignee rendering', () => {
     if (hasTl) {
       await tlTab.scrollIntoViewIfNeeded()
       await tlTab.click({ force: true })
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState('networkidle')
     }
 
     expect(errors.filter(e => e.includes('split') || e.includes('not a function'))).toHaveLength(0)

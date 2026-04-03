@@ -20,7 +20,25 @@ async function goHome(page) {
 async function enterEditMode(page) {
   const customizeBtn = page.locator('button').filter({ hasText: /Customize|Personalizza/ })
   await customizeBtn.click()
-  await page.waitForTimeout(300)
+  // Wait for edit-mode controls to appear
+  await page.locator('button[title="Resize"]').first().waitFor({ state: 'visible', timeout: 5_000 })
+}
+
+/**
+ * Click resize on first widget and wait for localStorage to update.
+ * Returns the layout array after the resize.
+ */
+async function resizeFirstWidget(page) {
+  const layoutBefore = await page.evaluate(() => localStorage.getItem('tf_dashboard_layout'))
+  const resizeBtn = page.locator('button[title="Resize"]').first()
+  await resizeBtn.click()
+  // Wait until localStorage value changes (resize triggers a synchronous setState + persist)
+  await page.waitForFunction(
+    (prev) => localStorage.getItem('tf_dashboard_layout') !== prev,
+    layoutBefore,
+    { timeout: 5_000 }
+  )
+  return JSON.parse(await page.evaluate(() => localStorage.getItem('tf_dashboard_layout') ?? '[]'))
 }
 
 test.describe('Dashboard layout', () => {
@@ -42,42 +60,22 @@ test.describe('Dashboard layout', () => {
   test('widget size cycles in edit mode', async ({ page }) => {
     await enterEditMode(page)
 
-    // In edit mode, resize button (◫) appears
-    const resizeBtn = page.locator('button[title="Resize"]').first()
-    await expect(resizeBtn).toBeVisible({ timeout: 3000 })
-
     // Read layout before resize
     const beforeLayout = await page.evaluate(() =>
       JSON.parse(localStorage.getItem('tf_dashboard_layout') ?? '[]')
     )
-    const firstWidget = beforeLayout[0]
-    const sizeBefore = firstWidget?.size ?? 'half'
+    const sizeBefore = beforeLayout[0]?.size ?? 'half'
 
-    // Click resize
-    await resizeBtn.click()
-    await page.waitForTimeout(300)
-
-    // Layout should have changed
-    const afterLayout = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('tf_dashboard_layout') ?? '[]')
-    )
-    const sizeAfter = afterLayout[0]?.size
-    expect(sizeAfter).not.toBe(sizeBefore)
+    // Click resize and wait for change
+    const afterLayout = await resizeFirstWidget(page)
+    expect(afterLayout[0]?.size).not.toBe(sizeBefore)
   })
 
   test('layout persists in localStorage', async ({ page }) => {
     await enterEditMode(page)
 
-    // Click resize on first widget
-    const resizeBtn = page.locator('button[title="Resize"]').first()
-    await resizeBtn.click()
-    await page.waitForTimeout(300)
-
-    // Check localStorage
-    const saved = await page.evaluate(() => localStorage.getItem('tf_dashboard_layout'))
-    expect(saved).toBeTruthy()
-
-    const layout = JSON.parse(saved)
+    // Click resize on first widget — waits for localStorage update
+    const layout = await resizeFirstWidget(page)
     expect(Array.isArray(layout)).toBe(true)
     expect(layout.length).toBeGreaterThan(0)
     expect(layout[0]).toHaveProperty('id')
@@ -88,10 +86,7 @@ test.describe('Dashboard layout', () => {
     await enterEditMode(page)
 
     // Change layout
-    const resizeBtn = page.locator('button[title="Resize"]').first()
-    await resizeBtn.click()
-    await page.waitForTimeout(300)
-
+    await resizeFirstWidget(page)
     const beforeReload = await page.evaluate(() => localStorage.getItem('tf_dashboard_layout'))
 
     // Reload page — session should still be valid
@@ -108,15 +103,8 @@ test.describe('Dashboard layout', () => {
     await enterEditMode(page)
 
     // Change the first widget from 'half' → 'full'
-    const resizeBtn = page.locator('button[title="Resize"]').first()
-    await resizeBtn.click()
-    await page.waitForTimeout(500)
-
-    // Capture which widget was changed and verify it's now 'full'
-    const beforeReset = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('tf_dashboard_layout') ?? '[]')
-    )
-    const changedWidget = beforeReset[0]
+    const afterResize = await resizeFirstWidget(page)
+    const changedWidget = afterResize[0]
     expect(changedWidget.size).toBe('full')
 
     // Reset button appears only in edit mode
@@ -124,8 +112,14 @@ test.describe('Dashboard layout', () => {
     const hasReset = await resetBtn.isVisible({ timeout: 2000 }).catch(() => false)
 
     if (hasReset) {
+      const layoutBefore = await page.evaluate(() => localStorage.getItem('tf_dashboard_layout'))
       await resetBtn.click()
-      await page.waitForTimeout(1000)
+      // Wait for localStorage to change after reset
+      await page.waitForFunction(
+        (prev) => localStorage.getItem('tf_dashboard_layout') !== prev,
+        layoutBefore,
+        { timeout: 5_000 }
+      )
 
       // Verify the widget we changed is back to its default size
       const afterReset = await page.evaluate(() =>

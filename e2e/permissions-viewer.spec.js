@@ -1,6 +1,7 @@
 // @ts-check
 import { test, expect } from '@playwright/test'
 import { login } from './fixtures/auth.js'
+import { openFirstProject, waitForProjectList } from './fixtures/helpers.js'
 
 /**
  * E2E: Viewer read-only permissions flow
@@ -23,7 +24,7 @@ test.describe('Viewer read-only enforcement', () => {
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
     await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(2000)
+    await waitForProjectList(page)
 
     // Look for known seed project names or any clickable project element
     const anyProject = page.locator('text=MiMic Lab')
@@ -38,20 +39,8 @@ test.describe('Viewer read-only enforcement', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    // This test validates the readOnly UI pattern exists
-    // We check that the TaskPanel component renders the "View only" badge
-    // when projectRole is viewer by checking the component output
-
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
-
-    // Open first project
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
+    const hasProject = await openFirstProject(page)
     if (!hasProject) return // skip if no projects
-
-    await projectLink.click()
-    await page.waitForTimeout(1000)
 
     // Check if "View only" badge exists somewhere
     // (it won't show for owners/editors, but the component is wired correctly)
@@ -66,22 +55,15 @@ test.describe('Viewer read-only enforcement', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
-
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
+    const hasProject = await openFirstProject(page)
     if (!hasProject) return
-
-    await projectLink.click()
-    await page.waitForTimeout(1000)
 
     // Look for Board view tab
     const boardTab = page.locator('text=Board').first()
     const hasBoard = await boardTab.isVisible().catch(() => false)
     if (hasBoard) {
       await boardTab.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
     }
 
     // Verify board columns render
@@ -92,7 +74,7 @@ test.describe('Viewer read-only enforcement', () => {
     // No JS errors should have occurred
     const errors = []
     page.on('pageerror', e => errors.push(e.message))
-    await page.waitForTimeout(500)
+    await page.waitForLoadState('networkidle')
     expect(errors).toHaveLength(0)
   })
 
@@ -100,22 +82,15 @@ test.describe('Viewer read-only enforcement', () => {
     const ok = await login(page)
     test.skip(!ok, 'Supabase unreachable — skipping auth-dependent test')
 
-    await page.locator('text=Progetti').first().click()
-    await page.waitForTimeout(500)
-
-    const projectLink = page.locator('[class*="card"], [class*="project-row"]').first()
-    const hasProject = await projectLink.isVisible().catch(() => false)
+    const hasProject = await openFirstProject(page)
     if (!hasProject) return
-
-    await projectLink.click()
-    await page.waitForTimeout(1000)
 
     // Switch to List view
     const listTab = page.locator('text=List, text=Lista').first()
     const hasList = await listTab.isVisible().catch(() => false)
     if (hasList) {
       await listTab.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
     }
 
     // Page should not have crashed
