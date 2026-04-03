@@ -40,6 +40,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Bundle size check
+        run: npm run bundle-size
+
   # ── E2E smoke: always runs, no auth needed ───────────────────
   e2e-smoke:
     runs-on: ubuntu-latest

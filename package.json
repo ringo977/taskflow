@@ -19,7 +19,9 @@
     "e2e:smoke": "npx playwright test --project=smoke",
     "e2e:auth": "npx playwright test --project=auth",
     "e2e:ui": "npx playwright test --ui",
-    "migration:lint": "node scripts/migration-lint.js"
+    "migration:lint": "node scripts/migration-lint.js",
+    "bundle-size": "node scripts/bundle-size.js",
+    "bundle-size:update": "node scripts/bundle-size.js --update"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
