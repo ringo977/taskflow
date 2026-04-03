@@ -48,11 +48,11 @@ export default function ProjectSupervisionPage({ project, tasks, orgId, onOpenTa
   }, [addTask, advance])
 
   return (
-    <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+    <div data-testid="supervision-page" style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
       {/* Sub-tab bar */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderBottom: '2px solid var(--bd3)' }}>
         {SUB_TABS.map(tab => (
-          <button key={tab} onClick={() => setSubTab(tab)}
+          <button key={tab} data-testid={`sup-tab-${tab}`} onClick={() => setSubTab(tab)}
             style={{
               padding: '8px 18px', fontSize: 13, fontWeight: subTab === tab ? 600 : 400,
               border: 'none', background: 'transparent', cursor: 'pointer',
@@ -62,7 +62,7 @@ export default function ProjectSupervisionPage({ project, tasks, orgId, onOpenTa
             }}>
             {tabLabels[tab]}
             {tab === 'recurring' && dueControls.length > 0 && (
-              <span style={{
+              <span data-testid="due-controls-badge" style={{
                 marginLeft: 6, fontSize: 10, fontWeight: 600,
                 background: 'var(--c-warning)', color: '#fff',
                 borderRadius: 8, padding: '1px 5px', verticalAlign: 'middle',

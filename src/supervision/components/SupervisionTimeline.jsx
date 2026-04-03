@@ -154,12 +154,12 @@ export default function SupervisionTimeline({ tasks, deliverables, controls, onO
   }
 
   return (
-    <div>
+    <div data-testid="supervision-timeline">
       {/* Window selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.supWindow}:</span>
         {WINDOWS.map(w => (
-          <button key={w} onClick={() => setWindow(w)}
+          <button key={w} data-testid={`timeline-window-${w}`} onClick={() => setWindow(w)}
             style={{
               padding: '3px 10px', fontSize: 12, border: '1px solid var(--bd3)',
               borderRadius: 'var(--r1)', cursor: 'pointer',

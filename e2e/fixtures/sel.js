@@ -33,11 +33,41 @@ export const mfa = {
 
 // ── Project header ─────────────────────────────────────────────
 export const tabs = {
-  overview:   (page) => tid(page, 'tab-overview'),
-  list:       (page) => tid(page, 'tab-lista'),
-  board:      (page) => tid(page, 'tab-board'),
-  timeline:   (page) => tid(page, 'tab-timeline'),
-  calendar:   (page) => tid(page, 'tab-calendario'),
+  overview:    (page) => tid(page, 'tab-overview'),
+  list:        (page) => tid(page, 'tab-lista'),
+  board:       (page) => tid(page, 'tab-board'),
+  timeline:    (page) => tid(page, 'tab-timeline'),
+  calendar:    (page) => tid(page, 'tab-calendario'),
+  supervision: (page) => tid(page, 'tab-supervision'),
+}
+
+// ── Supervision ───────────────────────────────────────────────
+export const sup = {
+  page:               (page) => tid(page, 'supervision-page'),
+  tabCockpit:         (page) => tid(page, 'sup-tab-cockpit'),
+  tabDeliverables:    (page) => tid(page, 'sup-tab-deliverables'),
+  tabTimeline:        (page) => tid(page, 'sup-tab-timeline'),
+  tabRecurring:       (page) => tid(page, 'sup-tab-recurring'),
+  dueControlsBadge:   (page) => tid(page, 'due-controls-badge'),
+  // cockpit
+  cockpit:            (page) => tid(page, 'deadlines-cockpit'),
+  cockpitWindow:      (page) => tid(page, 'cockpit-window-selector'),
+  cardMilestones:     (page) => tid(page, 'card-milestones'),
+  cardDelUpcoming:    (page) => tid(page, 'card-deliverables-upcoming'),
+  cardOverdue:        (page) => tid(page, 'card-overdue'),
+  cardOwnerless:      (page) => tid(page, 'card-ownerless'),
+  cardDelayed:        (page) => tid(page, 'card-delayed'),
+  // deliverables
+  addDeliverable:     (page) => tid(page, 'btn-add-deliverable'),
+  deliverablesFilter: (page) => tid(page, 'deliverables-filter'),
+  deliverablesTable:  (page) => tid(page, 'deliverables-table'),
+  // recurring
+  addControl:         (page) => tid(page, 'btn-add-control'),
+  controlForm:        (page) => tid(page, 'control-form'),
+  inputControlTitle:  (page) => tid(page, 'input-control-title'),
+  btnSaveControl:     (page) => tid(page, 'btn-save-control'),
+  // timeline
+  timeline:           (page) => tid(page, 'supervision-timeline'),
 }
 
 export const btn = {

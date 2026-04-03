@@ -18,9 +18,9 @@ import {
 const WINDOWS = [7, 14, 30]
 
 // ── Small card widget ──────────────────────────────────────────────
-function CockpitCard({ title, count, color, children }) {
+function CockpitCard({ title, count, color, children, testId }) {
   return (
-    <div style={{
+    <div data-testid={testId} style={{
       background: 'var(--bg2)', border: '1px solid var(--bd3)',
       borderRadius: 'var(--r2)', padding: 14, minWidth: 0,
     }}>
@@ -100,9 +100,9 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
   const noItems = t.supNoItems
 
   return (
-    <div>
+    <div data-testid="deadlines-cockpit">
       {/* Window selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+      <div data-testid="cockpit-window-selector" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.supWindow}:</span>
         {WINDOWS.map(w => (
           <button key={w} onClick={() => setWindow(w)}
@@ -122,7 +122,7 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
 
         {/* Upcoming milestones */}
-        <CockpitCard title={t.supMilestonesUpcoming} count={upcomingMilestones.length} color="var(--c-purple)">
+        <CockpitCard testId="card-milestones" title={t.supMilestonesUpcoming} count={upcomingMilestones.length} color="var(--c-purple)">
           {upcomingMilestones.length === 0
             ? <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{noItems}</span>
             : upcomingMilestones.map(m => (
@@ -132,7 +132,7 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
         </CockpitCard>
 
         {/* Upcoming deliverables */}
-        <CockpitCard title={t.supDeliverablesUpcoming} count={upcomingDeliverables.length} color="var(--c-brand)">
+        <CockpitCard testId="card-deliverables-upcoming" title={t.supDeliverablesUpcoming} count={upcomingDeliverables.length} color="var(--c-brand)">
           {upcomingDeliverables.length === 0
             ? <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{noItems}</span>
             : upcomingDeliverables.map(d => (
@@ -142,7 +142,7 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
         </CockpitCard>
 
         {/* Overdue tasks */}
-        <CockpitCard title={t.supTasksOverdue} count={overdueTasks.length} color="var(--c-danger)">
+        <CockpitCard testId="card-overdue" title={t.supTasksOverdue} count={overdueTasks.length} color="var(--c-danger)">
           {overdueTasks.length === 0
             ? <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{noItems}</span>
             : overdueTasks.slice(0, 15).map(tk => (
@@ -152,7 +152,7 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
         </CockpitCard>
 
         {/* Ownerless tasks */}
-        <CockpitCard title={t.supTasksNoOwner} count={ownerlessTasks.length} color="var(--c-warning)">
+        <CockpitCard testId="card-ownerless" title={t.supTasksNoOwner} count={ownerlessTasks.length} color="var(--c-warning)">
           {ownerlessTasks.length === 0
             ? <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{noItems}</span>
             : ownerlessTasks.slice(0, 15).map(tk => (
@@ -162,7 +162,7 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
         </CockpitCard>
 
         {/* Delayed deliverables */}
-        <CockpitCard title={t.supDeliverablesDelayed} count={delayedDeliverables.length} color="var(--c-danger)">
+        <CockpitCard testId="card-delayed" title={t.supDeliverablesDelayed} count={delayedDeliverables.length} color="var(--c-danger)">
           {delayedDeliverables.length === 0
             ? <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{noItems}</span>
             : delayedDeliverables.map(d => (

@@ -52,6 +52,7 @@ export default function DeliverablesRegister({ deliverables, loading, onSave, on
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <input
+          data-testid="deliverables-filter"
           type="text" placeholder="Filter…" value={filter}
           onChange={e => setFilter(e.target.value)}
           style={{ flex: 1, maxWidth: 260, padding: '6px 10px', fontSize: 13, border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', background: 'var(--bg1)', color: 'var(--tx1)' }}
@@ -86,7 +87,7 @@ export default function DeliverablesRegister({ deliverables, loading, onSave, on
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table data-testid="deliverables-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--bd3)', textAlign: 'left' }}>
                 <th style={thStyle}>{t.supCode}</th>

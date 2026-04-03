@@ -36,8 +36,8 @@ function RecurringControlForm({ control, onSave, onCancel, lang: _lang }) {
   const fieldStyle = { fontSize: 12, padding: '6px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)' }
 
   return (
-    <div style={{ background: 'var(--bg2)', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.supControlTitle}
+    <div data-testid="control-form" style={{ background: 'var(--bg2)', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <input data-testid="input-control-title" value={title} onChange={e => setTitle(e.target.value)} placeholder={t.supControlTitle}
         style={fieldStyle} autoFocus onKeyDown={e => e.key === 'Enter' && submit()} />
       <input value={description} onChange={e => setDescription(e.target.value)} placeholder={t.supControlDescription}
         style={fieldStyle} />
@@ -71,7 +71,7 @@ function RecurringControlForm({ control, onSave, onCancel, lang: _lang }) {
       </div>
       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
         <button onClick={onCancel} style={{ fontSize: 12, padding: '4px 12px' }}>{t.cancel}</button>
-        <button onClick={submit} disabled={!title.trim()}
+        <button data-testid="btn-save-control" onClick={submit} disabled={!title.trim()}
           style={{ fontSize: 12, padding: '4px 12px', background: title.trim() ? 'var(--tx1)' : 'var(--bd2)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: title.trim() ? 'pointer' : 'default', fontWeight: 500 }}>
           {control?.id ? t.supEdit : t.create}
         </button>
@@ -145,7 +145,7 @@ export default function RecurringControlsPanel({ controls, dueControls, onSave, 
           )}
         </span>
         {!editing && (
-          <button onClick={() => setEditing('new')}
+          <button data-testid="btn-add-control" onClick={() => setEditing('new')}
             style={{ fontSize: 12, padding: '4px 12px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 500 }}>
             + {t.supAddControl}
           </button>
