@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 import { toPortfolio, toProject } from './adapters'
 import { logger } from '@/utils/logger'
+import { validate, ProjectUpsertSchema, PortfolioUpsertSchema } from './schemas'
 
 const log = logger('DB:Projects')
 
@@ -14,10 +15,11 @@ export async function fetchPortfolios(orgId) {
   return (data ?? []).map(toPortfolio)
 }
 
-export async function upsertPortfolio(orgId, p) {
+export async function upsertPortfolio(orgId, pf) {
+  const p = validate(PortfolioUpsertSchema, pf)
   const { error } = await supabase.from('portfolios').upsert({
     id: p.id, org_id: orgId, name: p.name, color: p.color,
-    description: p.desc ?? '', status: p.status ?? 'active',
+    description: p.desc ?? '', status: p.status,
     updated_at: new Date().toISOString(),
   })
   if (error) throw error
@@ -43,25 +45,26 @@ export async function fetchProjects(orgId) {
   return (data ?? []).map(r => toProject(r, [...(membersByPid[r.id] ?? [])]))
 }
 
-export async function upsertProject(orgId, p) {
+export async function upsertProject(orgId, proj) {
+  const p = validate(ProjectUpsertSchema, proj)
   const core = {
     id: p.id, org_id: orgId, name: p.name, color: p.color,
-    status: p.status ?? 'active',
-    status_label: p.statusLabel ?? 'on_track',
+    status: p.status,
+    status_label: p.statusLabel,
     portfolio_id: p.portfolio ?? null,
     description: p.description ?? '',
-    resources: p.resources ?? [],
-    custom_fields: p.customFields ?? [],
+    resources: p.resources,
+    custom_fields: p.customFields,
     updated_at: new Date().toISOString(),
   }
   // Extended columns (require migration 020)
   const extended = {
-    task_templates: p.taskTemplates ?? [],
-    visibility: p.visibility ?? 'all',
-    section_access: p.sectionAccess ?? {},
-    forms: p.forms ?? [],
-    rules: p.rules ?? [],
-    goals: p.goals ?? [],
+    task_templates: p.taskTemplates,
+    visibility: p.visibility,
+    section_access: p.sectionAccess,
+    forms: p.forms,
+    rules: p.rules,
+    goals: p.goals,
   }
   // Try full payload first; fall back to core if extended columns don't exist yet
   const { error } = await supabase.from('projects').upsert({ ...core, ...extended })

@@ -2,6 +2,7 @@ import { supabase } from '../supabase'
 import { logger } from '@/utils/logger'
 import { signupOrgStorage } from '@/utils/storage'
 import { writeAudit } from './audit'
+import { validate, OrgRoleSchema, ProjectRoleSchema } from './schemas'
 
 const log = logger('Org')
 
@@ -123,6 +124,7 @@ export async function ensureOrgMembership(userId) {
 // ── Member CRUD ─────────────────────────────────────────────────
 
 export async function addOrgMember(orgId, email, role = 'member') {
+  validate(OrgRoleSchema, role)
   const { error } = await supabase.rpc('add_org_member_by_email', {
     p_org_id: orgId, p_email: email, p_role: role,
   })
@@ -149,6 +151,7 @@ export async function removeOrgMember(orgId, userId) {
 }
 
 export async function updateOrgMemberRole(orgId, userId, role) {
+  validate(OrgRoleSchema, role)
   await rpcOrFallback('update_org_member_role', { p_org_id: orgId, p_user_id: userId, p_role: role }, async () => {
     const { error } = await supabase.from('org_members').update({ role }).eq('org_id', orgId).eq('user_id', userId)
     if (error) throw error
@@ -220,6 +223,7 @@ export async function fetchProjectMembers(projectId) {
 }
 
 export async function addProjectMember(projectId, userId, role = 'member') {
+  validate(ProjectRoleSchema, role)
   const { error } = await supabase.rpc('add_project_member', { p_project_id: projectId, p_user_id: userId, p_role: role })
   if (error) throw error
 }

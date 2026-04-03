@@ -1,4 +1,5 @@
 import { supabase } from '../supabase'
+import { validate, SectionNameSchema } from './schemas'
 
 export async function fetchSectionRows(orgId) {
   const { data, error } = await supabase
@@ -23,7 +24,9 @@ export async function upsertSections(orgId, projectId, names) {
     await supabase.from('sections').delete().eq('org_id', orgId).eq('project_id', projectId)
     return
   }
-  const rows = names.map((name, i) => ({
+  // Validate each section name
+  const validNames = names.map(n => validate(SectionNameSchema, n))
+  const rows = validNames.map((name, i) => ({
     id: `${projectId}_s${i}`, org_id: orgId,
     project_id: projectId, name, position: i,
   }))

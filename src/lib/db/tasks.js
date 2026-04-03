@@ -2,6 +2,7 @@ import { supabase } from '../supabase'
 import { toTask } from './adapters'
 import { fetchSectionRows } from './sections'
 import { writeAudit } from './audit'
+import { validate, TaskUpsertSchema, TaskPatchSchema } from './schemas'
 
 // ── Shared helper: persist subtasks or comments ─────────────────
 // Eliminates the duplication between upsertTask and updateTaskField.
@@ -80,10 +81,11 @@ export async function fetchTasks(orgId) {
 // ── Upsert (full task + related) ────────────────────────────────
 
 export async function upsertTask(orgId, task, sectionRows) {
-  const secRow = sectionRows?.find(s => s.project_id === task.pid && s.name === task.sec)
+  const t = validate(TaskUpsertSchema, task)
+  const secRow = sectionRows?.find(s => s.project_id === t.pid && s.name === t.sec)
 
   // Resolve assignee names → UUIDs via profiles
-  const names = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+  const names = Array.isArray(t.who) ? t.who : t.who ? [t.who] : []
   let assigneeIds = []
   if (names.length > 0) {
     const { data: profiles } = await supabase
@@ -92,40 +94,40 @@ export async function upsertTask(orgId, task, sectionRows) {
   }
 
   const { error } = await supabase.from('tasks').upsert({
-    id: task.id, org_id: orgId, project_id: task.pid,
+    id: t.id, org_id: orgId, project_id: t.pid,
     section_id: secRow?.id ?? null,
-    title: task.title, description: task.desc ?? '',
+    title: t.title, description: t.desc ?? '',
     assignee_ids: assigneeIds,
-    priority: task.pri ?? 'medium',
-    start_date: task.startDate || null,
-    due_date: task.due || null,
-    done: task.done ?? false,
-    milestone: task.milestone ?? false,
-    attachments: task.attachments ?? [],
-    tags: task.tags ?? [],
-    activity: task.activity ?? [],
-    position: task.position ?? 0,
-    custom_values: task.customValues ?? {},
-    visibility: task.visibility ?? 'all',
+    priority: t.pri,
+    start_date: t.startDate,
+    due_date: t.due,
+    done: t.done,
+    milestone: t.milestone,
+    attachments: t.attachments,
+    tags: t.tags,
+    activity: t.activity,
+    position: t.position,
+    custom_values: t.customValues,
+    visibility: t.visibility,
     updated_at: new Date().toISOString(),
   })
   if (error) throw error
 
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id ?? null
-  await _persistRelated(task.id, orgId, task.subs, 'subtasks', subToRow(orgId, task.id))
-  await _persistRelated(task.id, orgId, task.cmts, 'comments', cmtToRow(orgId, task.id, userId))
+  await _persistRelated(t.id, orgId, t.subs, 'subtasks', subToRow(orgId, t.id))
+  await _persistRelated(t.id, orgId, t.cmts, 'comments', cmtToRow(orgId, t.id, userId))
 
   // Audit — distinguish create vs update by presence of createdAt
-  const isNew = !task.createdAt
+  const isNew = !t.createdAt
   writeAudit(orgId, {
     action:     isNew ? 'task_created' : 'task_updated',
     entityType: 'task',
-    entityId:   task.id,
-    entityName: task.title,
+    entityId:   t.id,
+    entityName: t.title,
     diff: isNew
-      ? { created: { title: task.title, who: task.who, pri: task.pri, due: task.due ?? null } }
-      : { updated: { title: task.title, who: task.who, pri: task.pri, due: task.due ?? null } },
+      ? { created: { title: t.title, who: t.who, pri: t.pri, due: t.due } }
+      : { updated: { title: t.title, who: t.who, pri: t.pri, due: t.due } },
   })
 }
 
@@ -142,22 +144,23 @@ const FIELD_MAP = {
 }
 
 export async function updateTaskField(orgId, taskId, patch) {
+  const p = validate(TaskPatchSchema, patch)
   const db = { updated_at: new Date().toISOString() }
   for (const [client, col] of Object.entries(FIELD_MAP)) {
-    if (client in patch) {
-      const v = patch[client]
+    if (client in p) {
+      const v = p[client]
       // Empty strings are invalid for date columns — coerce to null
       if ((col === 'start_date' || col === 'due_date') && !v) { db[col] = null; continue }
       db[col] = v ?? (typeof v === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
     }
   }
   // Resolve who names → UUIDs
-  if ('who' in patch) {
-    const names = Array.isArray(patch.who) ? patch.who : patch.who ? [patch.who] : []
+  if ('who' in p) {
+    const names = Array.isArray(p.who) ? p.who : p.who ? [p.who] : []
     if (names.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles').select('id, display_name').in('display_name', names)
-      db.assignee_ids = (profiles ?? []).map(p => p.id)
+      db.assignee_ids = (profiles ?? []).map(pr => pr.id)
     } else {
       db.assignee_ids = []
     }
@@ -167,30 +170,30 @@ export async function updateTaskField(orgId, taskId, patch) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id ?? null
-  if ('subs' in patch) await _persistRelated(taskId, orgId, patch.subs, 'subtasks', subToRow(orgId, taskId))
-  if ('cmts' in patch) await _persistRelated(taskId, orgId, patch.cmts, 'comments', cmtToRow(orgId, taskId, userId))
-  if ('attachments' in patch) {
-    await supabase.from('tasks').update({ attachments: patch.attachments ?? [] }).eq('id', taskId)
+  if ('subs' in p) await _persistRelated(taskId, orgId, p.subs, 'subtasks', subToRow(orgId, taskId))
+  if ('cmts' in p) await _persistRelated(taskId, orgId, p.cmts, 'comments', cmtToRow(orgId, taskId, userId))
+  if ('attachments' in p) {
+    await supabase.from('tasks').update({ attachments: p.attachments ?? [] }).eq('id', taskId)
   }
 
   // Audit — emit targeted events for the most meaningful field changes
-  if ('done' in patch) {
+  if ('done' in p) {
     writeAudit(orgId, {
-      action: patch.done ? 'task_completed' : 'task_updated',
+      action: p.done ? 'task_completed' : 'task_updated',
       entityType: 'task', entityId: taskId,
-      diff: { field: 'done', to: patch.done },
+      diff: { field: 'done', to: p.done },
     })
-  } else if ('who' in patch) {
+  } else if ('who' in p) {
     writeAudit(orgId, {
       action: 'task_assigned',
       entityType: 'task', entityId: taskId,
-      diff: { field: 'who', to: patch.who },
+      diff: { field: 'who', to: p.who },
     })
-  } else if ('title' in patch || 'pri' in patch || 'due' in patch) {
+  } else if ('title' in p || 'pri' in p || 'due' in p) {
     const changed = {}
-    if ('title' in patch) changed.title = patch.title
-    if ('pri'   in patch) changed.pri   = patch.pri
-    if ('due'   in patch) changed.due   = patch.due ?? null
+    if ('title' in p) changed.title = p.title
+    if ('pri'   in p) changed.pri   = p.pri
+    if ('due'   in p) changed.due   = p.due ?? null
     writeAudit(orgId, {
       action: 'task_updated',
       entityType: 'task', entityId: taskId,
