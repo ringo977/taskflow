@@ -50,6 +50,32 @@ UPDATE/DELETE RLS policies using `author_id = auth.uid()`.
 
 ---
 
+## Indexes
+
+Indexes are spread across several migrations. Summary of all explicit indexes:
+
+| Migration | Index | Table.Column(s) | Type |
+|-----------|-------|------------------|------|
+| `014` | `idx_tasks_not_deleted` | `tasks(org_id) WHERE deleted_at IS NULL` | Partial B-tree |
+| `014` | `idx_projects_not_deleted` | `projects(org_id) WHERE deleted_at IS NULL` | Partial B-tree |
+| `014` | `idx_portfolios_not_deleted` | `portfolios(org_id) WHERE deleted_at IS NULL` | Partial B-tree |
+| `025` | `idx_tasks_assignee_ids` | `tasks(assignee_ids)` | GIN |
+| `025` | `idx_comments_author_id` | `comments(author_id)` | B-tree |
+| `026` | `idx_audit_log_org_time` | `audit_log(org_id, created_at)` | B-tree |
+| `026` | `idx_audit_log_entity` | `audit_log(entity_type, entity_id)` | B-tree |
+| `026` | `idx_audit_log_user` | `audit_log(user_id)` | B-tree |
+| `029` | `idx_subtasks_task_id` | `subtasks(task_id)` | B-tree |
+| `029` | `idx_subtasks_org_id` | `subtasks(org_id)` | B-tree |
+| `029` | `idx_comments_task_id` | `comments(task_id)` | B-tree |
+| `029` | `idx_comments_org_id` | `comments(org_id)` | B-tree |
+| `029` | `idx_task_dependencies_task_id` | `task_dependencies(task_id)` | B-tree |
+| `029` | `idx_task_dependencies_org_id` | `task_dependencies(org_id)` | B-tree |
+| `029` | `idx_sections_org_project` | `sections(org_id, project_id)` | Composite B-tree |
+| `029` | `idx_tasks_project_id` | `tasks(project_id)` | B-tree |
+| `029` | `idx_project_members_project_id` | `project_members(project_id)` | B-tree |
+
+---
+
 ## Schema cache note
 
 After any `DROP COLUMN` migration is applied to a hosted Supabase project,

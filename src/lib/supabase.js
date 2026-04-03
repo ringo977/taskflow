@@ -1,10 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ?? 'https://ygcmvdvoflfslnccwrrf.supabase.co'
-const SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnY212ZHZvZmxmc2xuY2N3cnJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjQ3NTMsImV4cCI6MjA4OTUwMDc1M30.Abz9C88PL32BpnLKqyewvJRrVoZQ0_KThZ1in5AgmnI'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Missing Supabase env vars. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
+  )
+}
 
 /** Dedicated key avoids clashes with other Supabase apps / old corrupted sb-* session blobs */
 const AUTH_STORAGE_KEY = 'taskflow-auth'
