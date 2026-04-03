@@ -222,6 +222,20 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
           </div>
         </div>
 
+        {/* Project type */}
+        {canManage && (
+          <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t.supProjectType ?? 'Project type'}</div>
+            <select value={proj.project_type ?? 'standard'}
+              onChange={e => onUpdProj(proj.id, { project_type: e.target.value })}
+              style={{ fontSize: 12, padding: '6px 8px', width: '100%', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx2)' }}>
+              <option value="standard">{t.supTypeStandard ?? 'Standard'}</option>
+              <option value="supervised">{t.supTypeSupervised ?? 'Supervised'}</option>
+              <option value="eu_project">{t.supTypeEuProject ?? 'EU Project'}</option>
+            </select>
+          </div>
+        )}
+
         {/* Progress */}
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>

@@ -426,5 +426,9 @@ const en = {
   supSubmitted: 'Submitted',
   supAccepted: 'Accepted',
   supDelayed: 'Delayed',
+  supProjectType: 'Project type',
+  supTypeStandard: 'Standard',
+  supTypeSupervised: 'Supervised',
+  supTypeEuProject: 'EU Project',
 }
 export default en

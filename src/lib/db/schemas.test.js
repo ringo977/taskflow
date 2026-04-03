@@ -58,9 +58,9 @@ describe('TaskUpsertSchema', () => {
       .toThrow(/Validation failed/)
   })
 
-  it('rejects invalid UUID', () => {
-    expect(() => validate(TaskUpsertSchema, { ...validTask, id: 'not-a-uuid' }))
-      .toThrow(/Invalid UUID/)
+  it('rejects empty id', () => {
+    expect(() => validate(TaskUpsertSchema, { ...validTask, id: '' }))
+      .toThrow(/Validation failed/)
   })
 
   it('coerces invalid priority to medium', () => {

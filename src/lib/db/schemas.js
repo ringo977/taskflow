@@ -54,7 +54,7 @@ const hexColor = z.string()
 // ── Entity schemas ─────────────────────────────────────────────
 
 export const TaskUpsertSchema = z.object({
-  id:           uuid,
+  id:           z.string().min(1),
   title:        str(500),
   desc:         optStr(10_000),
   who:          z.union([z.string(), z.array(z.string())]).optional().nullable(),
@@ -114,7 +114,7 @@ export const TaskPatchSchema = z.object({
 }).passthrough()
 
 export const ProjectUpsertSchema = z.object({
-  id:             uuid,
+  id:             z.string().min(1),
   name:           str(255),
   color:          hexColor,
   status:         projectStatus,
@@ -133,7 +133,7 @@ export const ProjectUpsertSchema = z.object({
 }).passthrough()
 
 export const PortfolioUpsertSchema = z.object({
-  id:          uuid,
+  id:          z.string().min(1),
   name:        str(255),
   color:       hexColor,
   desc:        optStr(2000),

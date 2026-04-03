@@ -426,5 +426,9 @@ const it = {
   supSubmitted: 'Inviato',
   supAccepted: 'Accettato',
   supDelayed: 'In ritardo',
+  supProjectType: 'Tipo progetto',
+  supTypeStandard: 'Standard',
+  supTypeSupervised: 'Supervisionato',
+  supTypeEuProject: 'Progetto EU',
 }
 export default it
