@@ -474,5 +474,8 @@ const it = {
   type_lab: 'Laboratorio',
   type_department: 'Dipartimento',
   type_client: 'Cliente',
+  partnerEngagement: 'Coinvolgimento partner',
+  chartTasksPerPartner: 'Task per partner',
+  reportPartners: 'Coinvolgimento partner',
 }
 export default it

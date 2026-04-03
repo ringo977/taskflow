@@ -12,12 +12,13 @@ import {
   buildUserTaskMap, filterUpcomingDeadlines,
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson, computeStatusDistribution,
-  computeSectionCompletion,
+  computeSectionCompletion, computeTasksPerPartner,
 } from '@/utils/selectors'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
+import { usePartners } from '@/hooks/usePartners'
 import {
   DeadlinesWidget, ActivityWidget, HealthWidget,
-  TasksPerPersonWidget, PriorityWidget, ActivityChartWidget,
+  TasksPerPersonWidget, TasksPerPartnerWidget, PriorityWidget, ActivityChartWidget,
   ProgressWidget, BurndownWidget, StatusDistWidget,
   VelocityWidget, OverdueWidget, WorkloadWidget, SectionCompletionWidget,
 } from '@/components/DashboardWidgets'
@@ -41,10 +42,11 @@ function formatTimeAgo(ts, _t) {
 }
 
 export default function DashboardWidgetGrid({
-  tasks, projects, layout, setLayout, editing, onOpen, onNav, lang, now, ts, weStr,
+  tasks, projects, layout, setLayout, editing, onOpen, onNav, lang, now, ts, weStr, orgId,
 }) {
   const t = useLang()
   const USERS = useOrgUsers()
+  const { orgPartners } = usePartners(orgId)
   const [burndownPid, setBurndownPid] = useState('__all__')
   const [dragIdx, setDragIdx] = useState(null)
 
@@ -229,6 +231,9 @@ export default function DashboardWidgetGrid({
   // Section completion
   const sectionCompletionData = useMemo(() => computeSectionCompletion(tasks, projects), [tasks, projects])
 
+  // Tasks per partner
+  const partnerData = useMemo(() => computeTasksPerPartner(tasks, orgPartners), [tasks, orgPartners])
+
   // ── Widget content renderer ────────────────────────────────────
   const renderWidgetContent = (widgetId) => {
     switch (widgetId) {
@@ -245,6 +250,7 @@ export default function DashboardWidgetGrid({
       case 'overdueProj':      return <OverdueWidget data={overdueByProj} t={t} />
       case 'workload':         return <WorkloadWidget data={workloadData} threshold={WORKLOAD_THRESHOLD} t={t} />
       case 'sectionCompletion': return <SectionCompletionWidget data={sectionCompletionData} t={t} />
+      case 'tasksPartner':      return <TasksPerPartnerWidget data={partnerData} t={t} />
       default: return null
     }
   }

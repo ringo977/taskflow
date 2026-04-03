@@ -42,8 +42,14 @@ function ProjectContent({
         proj={proj} view={view} setView={setView} tasks={pTasks}
         onAddTask={() => { setAddDue(''); setShowAdd(true) }}
         onSummary={() => getSum(proj?.name, pTasks)}
-        onExport={() => {
-          import('@/utils/exportCsv').then(m => m.exportTasksCsv(pTasks, proj?.name, proj?.customFields, proj, user?.name))
+        onExport={async () => {
+          const [{ exportTasksCsv }, { fetchOrgPartners }] = await Promise.all([
+            import('@/utils/exportCsv'),
+            import('@/lib/db/partners'),
+          ])
+          const partners = ui.activeOrgId ? await fetchOrgPartners(ui.activeOrgId).catch(() => []) : []
+          const pMap = Object.fromEntries(partners.map(p => [p.id, p]))
+          exportTasksCsv(pTasks, proj?.name, proj?.customFields, proj, user?.name, pMap)
         }}
         portfolios={ports}
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
@@ -116,7 +122,7 @@ export default function MainContent({
     )}>
     <Suspense fallback={<ChunkFallback />}>
       <div className="mobile-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, position: 'relative' }}>
-        {nav === 'home' && <HomeDashboard tasks={tasks} projects={projs} secs={secs} currentUser={user} onOpen={setSelId} onNav={ui.goNav} lang={lang} />}
+        {nav === 'home' && <HomeDashboard tasks={tasks} projects={projs} secs={secs} currentUser={user} onOpen={setSelId} onNav={ui.goNav} lang={lang} orgId={ui.activeOrgId} />}
         {nav === 'projects' && projectContent}
         {nav === 'portfolios' && (
           proj && projs.find(p => p.id === pid)

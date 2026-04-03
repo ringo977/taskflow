@@ -14,7 +14,7 @@ import { WIDGET_REGISTRY, DEFAULT_LAYOUT } from './dashboardConfig'
 
 const DashboardWidgetGrid = lazy(() => import('./DashboardWidgetGrid'))
 
-export default function HomeDashboard({ tasks, projects, currentUser, onOpen, onNav, lang }) {
+export default function HomeDashboard({ tasks, projects, currentUser, onOpen, onNav, lang, orgId }) {
   const t = useLang()
   const USERS = useOrgUsers()
 
@@ -115,7 +115,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
         <DashboardWidgetGrid
           tasks={tasks} projects={projects} layout={layout} setLayout={setLayout}
           editing={editing} onOpen={onOpen} onNav={onNav} lang={lang}
-          now={now} ts={ts} weStr={weStr}
+          now={now} ts={ts} weStr={weStr} orgId={orgId}
         />
       </Suspense>
 

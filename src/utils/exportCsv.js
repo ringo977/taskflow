@@ -4,12 +4,12 @@ import { applyVisibilityFilter } from '@/utils/filters'
  * Export an array of tasks to a CSV file and trigger download.
  */
 
-export function exportTasksCsv(tasks, projectName, customFields = [], project = null, userName = null) {
+export function exportTasksCsv(tasks, projectName, customFields = [], project = null, userName = null, partnerMap = {}) {
   // Apply visibility filter if project and user are provided
   if (project && userName) {
     tasks = applyVisibilityFilter(tasks, project, userName)
   }
-  const baseCols = ['Title', 'Section', 'Assignee', 'Priority', 'Start Date', 'Due Date', 'Done', 'Tags', 'Description']
+  const baseCols = ['Title', 'Section', 'Assignee', 'Priority', 'Start Date', 'Due Date', 'Done', 'Tags', 'Partner', 'Description']
   const cfCols = customFields.map(f => f.name)
   const header = [...baseCols, ...cfCols]
 
@@ -30,6 +30,7 @@ export function exportTasksCsv(tasks, projectName, customFields = [], project = 
       t.due ?? '',
       t.done ? 'Yes' : 'No',
       (t.tags ?? []).map(tg => tg.name).join('; '),
+      partnerMap[t.partnerId]?.name ?? '',
       t.desc,
     ]
     const cf = customFields.map(f => (t.customValues ?? {})[f.id] ?? '')

@@ -20,6 +20,7 @@ export const WIDGET_REGISTRY = [
   { id: 'overdueProj', label: { it: 'Scaduti per progetto', en: 'Overdue by project' }, defaultSize: 'half' },
   { id: 'workload', label: { it: 'Carico lavoro', en: 'Workload' }, defaultSize: 'half' },
   { id: 'sectionCompletion', label: { it: 'Completamento sezioni', en: 'Section completion' }, defaultSize: 'half' },
+  { id: 'tasksPartner', label: { it: 'Task per partner', en: 'Tasks per partner' }, defaultSize: 'half' },
 ]
 
 export const DEFAULT_LAYOUT = WIDGET_REGISTRY.map(w => ({ id: w.id, visible: true, size: w.defaultSize }))

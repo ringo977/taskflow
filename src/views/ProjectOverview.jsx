@@ -274,11 +274,36 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
           </div>
         </div>
 
+        {/* Partner engagement */}
+        {projectPartners.length > 0 && (
+          <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>{t.partnerEngagement ?? 'Partner engagement'}</div>
+            {projectPartners.map(pp => {
+              const p = pp.partner
+              if (!p) return null
+              const ptTasks = pTasks.filter(tk => tk.partnerId === p.id)
+              const ptDone = ptTasks.filter(tk => tk.done).length
+              const ptPct = ptTasks.length ? Math.round(ptDone / ptTasks.length * 100) : 0
+              return (
+                <div key={p.id} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                    <span style={{ fontSize: 12, color: 'var(--tx1)', fontWeight: 500 }}>{p.name}</span>
+                    <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{ptDone}/{ptTasks.length}</span>
+                  </div>
+                  <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${ptPct}%`, background: 'var(--c-brand)', borderRadius: 2, transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* Report */}
         <button
           onClick={async () => {
             const { generateProjectReport } = await import('@/utils/reportPdf')
-            generateProjectReport(proj, pTasks, sections, t, _lang)
+            generateProjectReport(proj, pTasks, sections, t, _lang, orgPartners)
           }}
           aria-label="Generate PDF report"
           style={{

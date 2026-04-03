@@ -32,24 +32,24 @@
     "comment": "74.04 kB actual → 81.44 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 73293,
-    "comment": "66.63 kB actual → 73.29 kB budget (partners panel added)"
+    "maxBytes": 74349,
+    "comment": "67.59 kB actual → 74.35 kB budget (partner engagement card added)"
   },
   "TaskPanel.js": {
     "maxBytes": 37620,
     "comment": "34.20 kB actual → 37.62 kB budget (partner selector added)"
   },
   "HomeDashboard.js": {
-    "maxBytes": 27742,
-    "comment": "25.22 kB actual → 27.74 kB budget"
+    "maxBytes": 29359,
+    "comment": "26.69 kB actual → 29.36 kB budget (orgId prop for partner widget)"
   },
   "ProjectSupervisionPage.js": {
     "maxBytes": 33275,
     "comment": "30.25 kB actual → 33.28 kB budget"
   },
   "DashboardWidgetGrid.js": {
-    "maxBytes": 7601,
-    "comment": "6.91 kB actual → 7.60 kB budget"
+    "maxBytes": 7755,
+    "comment": "7.05 kB actual → 7.76 kB budget (partner widget case)"
   },
   "PeopleView.js": {
     "maxBytes": 25841,
@@ -88,8 +88,8 @@
     "comment": "6.94 kB actual → 7.63 kB budget"
   },
   "reportPdf.js": {
-    "maxBytes": 6682,
-    "comment": "5.93 kB actual → 6.53 kB budget"
+    "maxBytes": 7744,
+    "comment": "7.04 kB actual → 7.74 kB budget (partner section in PDF)"
   },
   "AddModal.js": {
     "maxBytes": 5816,

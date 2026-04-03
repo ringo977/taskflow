@@ -18,7 +18,7 @@ import { isOverdue } from '@/utils/filters'
  * @param {Object}  t         - i18n translations
  * @param {string}  lang      - 'en' | 'it'
  */
-export function generateProjectReport(project, tasks, sections, t, lang = 'it') {
+export function generateProjectReport(project, tasks, sections, t, lang = 'it', partners = []) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = doc.internal.pageSize.getWidth()
   const margin = 18
@@ -296,6 +296,53 @@ export function generateProjectReport(project, tasks, sections, t, lang = 'it') 
       doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
       if (barW > 0) {
         doc.setFillColor(...green)
+        doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
+      }
+      y += 7
+    })
+  }
+
+  // ── 7. Partner engagement ──
+  const partnerMap = Object.fromEntries(partners.map(p => [p.id, p]))
+  const partnerIds = [...new Set(pTasks.map(tk => tk.partnerId).filter(Boolean))]
+  if (partnerIds.length > 0) {
+    sectionHeader(t.reportPartners ?? 'Partner engagement')
+
+    partnerIds.sort((a, b) => {
+      const aCount = pTasks.filter(tk => tk.partnerId === a && !tk.done).length
+      const bCount = pTasks.filter(tk => tk.partnerId === b && !tk.done).length
+      return bCount - aCount
+    }).forEach(pid => {
+      const p = partnerMap[pid]
+      const name = p?.name ?? pid
+      checkSpace(10)
+      const ptTasks = pTasks.filter(tk => tk.partnerId === pid)
+      const ptDone = ptTasks.filter(tk => tk.done).length
+      const ptOpen = ptTasks.length - ptDone
+      const ptOd = ptTasks.filter(tk => !tk.done && isOverdue(tk.due)).length
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textDark)
+      doc.text(name, margin + 2, y)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...textMid)
+      const summary = `${ptOpen} ${t.reportOpenLower ?? 'open'}, ${ptDone} ${t.reportDoneLower ?? 'done'}`
+      doc.text(summary, margin + 55, y)
+
+      if (ptOd > 0) {
+        doc.setTextColor(...red)
+        doc.text(`${ptOd} ${t.reportOverdueLower ?? 'overdue'}`, margin + 120, y)
+      }
+
+      // Mini bar
+      const barMax = 25
+      const barW = ptTasks.length > 0 ? barMax * ptDone / ptTasks.length : 0
+      doc.setFillColor(240, 240, 240)
+      doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
+      if (barW > 0) {
+        doc.setFillColor(...accent)
         doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
       }
       y += 7

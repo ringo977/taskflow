@@ -136,6 +136,19 @@ export function computeStatusDistribution(tasks) {
   }))
 }
 
+// ── Partner-level metrics ────────────────────────────────────────
+
+/** Tasks per partner (open + done): [{ id, name, type, open, done, overdue }] */
+export function computeTasksPerPartner(tasks, partners) {
+  return partners.filter(p => p.isActive).map(p => {
+    const pt = tasks.filter(t => t.partnerId === p.id)
+    const open = pt.filter(t => !t.done).length
+    const done = pt.filter(t => t.done).length
+    const overdue = pt.filter(t => !t.done && isOverdue(t.due)).length
+    return { id: p.id, name: p.name.length > 16 ? p.name.slice(0, 16) + '…' : p.name, type: p.type, open, done, overdue }
+  }).filter(d => d.open + d.done > 0).sort((a, b) => (b.open + b.done) - (a.open + a.done))
+}
+
 /** Section completion per project: [{ project, sections: { [sec]: { total, done } }, total }] */
 export function computeSectionCompletion(tasks, projects, limit = 6) {
   return projects.slice(0, limit).map(p => {

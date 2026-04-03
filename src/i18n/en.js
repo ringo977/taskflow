@@ -474,5 +474,8 @@ const en = {
   type_lab: 'Lab',
   type_department: 'Department',
   type_client: 'Client',
+  partnerEngagement: 'Partner engagement',
+  chartTasksPerPartner: 'Tasks per partner',
+  reportPartners: 'Partner engagement',
 }
 export default en
