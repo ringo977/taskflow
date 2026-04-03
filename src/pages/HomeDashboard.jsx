@@ -469,7 +469,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
               {t.resetLayout ?? 'Reset layout'}
             </button>
           )}
-          <button onClick={() => setEditing(e => !e)}
+          <button data-testid="btn-customize" onClick={() => setEditing(e => !e)}
             style={{ fontSize: 12, padding: '4px 12px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)',
               background: editing ? 'var(--c-brand)' : 'transparent',
               color: editing ? '#fff' : 'var(--tx3)', cursor: 'pointer' }}>

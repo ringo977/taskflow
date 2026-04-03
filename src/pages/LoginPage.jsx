@@ -108,6 +108,7 @@ export default function LoginPage({ lang, setLang }) {
         <div>
           <label style={labelStyle}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john.doe@email.com"
+            data-testid="input-email"
             style={inputStyle} autoComplete="email" onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
         </div>
 
@@ -115,6 +116,7 @@ export default function LoginPage({ lang, setLang }) {
           <label style={labelStyle}>Password</label>
           <input type="password" value={pass} onChange={e => setPass(e.target.value)}
             placeholder={mode === 'signup' ? (isIt ? 'Min. 8 caratteri' : 'Min. 8 characters') : '••••••••'}
+            data-testid="input-password"
             style={inputStyle} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             onKeyDown={e => e.key === 'Enter' && mode === 'login' && doLogin()} />
         </div>
@@ -163,6 +165,7 @@ export default function LoginPage({ lang, setLang }) {
         <button
           onClick={mode === 'login' ? doLogin : doSignUp}
           disabled={loading || !canSubmit}
+          data-testid="btn-submit"
           style={{
             width: '100%', padding: '10px 20px',
             background: 'var(--c-brand)', color: '#fff',

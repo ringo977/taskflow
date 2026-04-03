@@ -6,6 +6,9 @@ import { test, expect } from '@playwright/test'
  *
  * The manual page is public (no auth needed), making it the simplest
  * E2E to verify rendering, theme persistence, and TOC navigation.
+ *
+ * NOTE: The manual page has its own inline theme/lang buttons, not
+ * the sidebar ones, so we still use content-based locators here.
  */
 
 test.describe('Manual page', () => {
@@ -16,8 +19,6 @@ test.describe('Manual page', () => {
 
   test('renders title and TOC', async ({ page }) => {
     await expect(page.locator('h1').filter({ hasText: /Manuale/ })).toBeVisible()
-
-    // TOC sidebar has sections
     const toc = page.locator('text=Per iniziare').or(page.locator('text=Getting Started'))
     await expect(toc.first()).toBeVisible()
   })
@@ -43,7 +44,6 @@ test.describe('Manual page', () => {
   test('theme persists in localStorage as tf_theme', async ({ page }) => {
     const themeBtn = page.locator('button').filter({ hasText: /🌙|☀️|⚙️/ }).first()
     await themeBtn.click()
-
     const stored = await page.evaluate(() => localStorage.getItem('tf_theme'))
     expect(stored).toBeTruthy()
     expect(['dark', 'light', 'auto']).toContain(stored)
@@ -66,7 +66,6 @@ test.describe('Manual page', () => {
   test('TOC click scrolls to section', async ({ page }) => {
     const tocItem = page.locator('a[href="#tasks"]').first()
     await tocItem.click()
-
     const section = page.locator('#tasks')
     await expect(section).toBeInViewport({ timeout: 5_000 })
   })
@@ -78,10 +77,8 @@ test.describe('Manual page', () => {
 
   test('data-theme attribute changes with toggle', async ({ page }) => {
     const themeBtn = page.locator('button').filter({ hasText: /🌙|☀️|⚙️/ }).first()
-
     const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'))
     await themeBtn.click()
-    // Wait until the attribute actually changes
     await page.waitForFunction(
       (prev) => document.documentElement.getAttribute('data-theme') !== prev,
       before,

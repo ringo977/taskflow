@@ -21,7 +21,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
       <div style={{ flex: 1 }} />
       <div className="view-tabs" style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden', flexShrink: 0 }}>
         {VIEWS.map(([lb, v], i, arr) => (
-          <button key={v} onClick={() => setView(v)} style={{
+          <button key={v} data-testid={`tab-${v}`} onClick={() => setView(v)} style={{
             padding: '5px 12px', fontSize: 12, border: 'none',
             borderRight: i < arr.length - 1 ? '1px solid var(--bd3)' : 'none',
             background: view === v ? 'var(--bg2)' : 'transparent',
@@ -41,7 +41,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
       )}
       <button onClick={onExport} title={t.exportCsv ?? 'Export CSV'} style={{ fontSize: 12, padding: '5px 10px', color: 'var(--tx3)', borderColor: 'var(--bd3)' }}>↓ CSV</button>
       <button onClick={onSummary} style={{ fontSize: 12, padding: '5px 12px', color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>{t.aiSummary}</button>
-      <button onClick={onAddTask} style={{ fontSize: 13, padding: '6px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 600 }}>{t.addTask}</button>
+      <button data-testid="btn-add-task" onClick={onAddTask} style={{ fontSize: 13, padding: '6px 14px', background: 'var(--tx1)', color: 'var(--bg1)', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 600 }}>{t.addTask}</button>
     </div>
   )
 }

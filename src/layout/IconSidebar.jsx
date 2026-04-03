@@ -21,6 +21,7 @@ const NavIcon = ({ id, label, active, onClick, children }) => (
   <button
     onClick={() => onClick(id)}
     aria-label={label}
+    data-testid={`nav-${id}`}
     className="hoverable"
     style={{
       width: '100%', padding: '10px 6px', borderRadius: 'var(--r1)', border: 'none',
@@ -86,6 +87,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
           onClick={() => window.open('/taskflow/manual', '_blank')}
           aria-label={t.manual ?? 'Manual'}
           title={t.manual ?? 'Manual'}
+          data-testid="btn-manual"
           className="hoverable"
           style={{ width: 36, height: 36, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, padding: 0 }}
         >
@@ -96,6 +98,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
         </button>
         <button
           aria-label="Toggle language"
+          data-testid="btn-lang"
           onClick={() => setLang(l => l === 'it' ? 'en' : 'it')}
           style={{ fontSize: 11, fontWeight: 600, padding: '4px 8px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', color: 'var(--tx3)', background: 'transparent', cursor: 'pointer' }}
         >
@@ -105,6 +108,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
           <button
             onClick={() => setTheme(t => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}
             aria-label="Theme"
+            data-testid="btn-theme"
             title={theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'}
             className="hoverable"
             style={{ width: 36, height: 36, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, padding: 0 }}
@@ -130,6 +134,7 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
           onClick={() => setShowLogout(true)}
           role="button"
           tabIndex={0}
+          data-testid="btn-user"
           className="hoverable"
           style={{ width: 36, height: 36, borderRadius: '50%', background: userColor + '28', color: userColor, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >

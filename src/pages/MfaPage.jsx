@@ -137,6 +137,7 @@ export default function MfaPage({ onComplete, lang }) {
               value={code}
               onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000 000"
+              data-testid="input-mfa"
               maxLength={6}
               autoFocus
               style={{ width: '100%', fontSize: 28, letterSpacing: '0.3em', textAlign: 'center', padding: '12px', fontVariantNumeric: 'tabular-nums', marginBottom: 14, borderRadius: 'var(--r1)' }}
@@ -152,6 +153,7 @@ export default function MfaPage({ onComplete, lang }) {
             <button
               onClick={doVerify}
               disabled={loading || code.length < 6}
+              data-testid="btn-mfa-verify"
               style={{
                 width: '100%', padding: '12px',
                 background: code.length === 6 ? 'var(--tx1)' : 'var(--bg2)',

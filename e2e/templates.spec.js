@@ -2,20 +2,15 @@
 import { test, expect } from '@playwright/test'
 import { login } from './fixtures/auth.js'
 import { openFirstProject } from './fixtures/helpers.js'
+import { btn } from './fixtures/sel.js'
 
 /**
  * E2E: Task creation from template
- *
- * Tests the template workflow:
- * - Open AddModal
- * - Select a template (if available)
- * - Verify fields are populated
- * - Verify dates are cleared (audit fix)
  */
 
 /** Click the add-task button and wait for the modal to appear. Returns false if no add button. */
 async function openAddModal(page) {
-  const addBtn = page.locator('button').filter({ hasText: /Aggiungi|Add|Nuova|New|\+/ }).first()
+  const addBtn = btn.addTask(page)
   const hasAdd = await addBtn.isVisible().catch(() => false)
   if (!hasAdd) return false
 
@@ -34,9 +29,8 @@ test.describe('Task templates', () => {
     if (!hasProject) return
 
     const opened = await openAddModal(page)
-    if (!opened) return // viewer role, no add button
+    if (!opened) return
 
-    // Modal should be visible (already asserted in openAddModal)
     const modal = page.locator('[class*="modal"], [role="dialog"]').first()
     await expect(modal).toBeVisible()
   })
@@ -51,11 +45,8 @@ test.describe('Task templates', () => {
     const opened = await openAddModal(page)
     if (!opened) return
 
-    // Look for template dropdown or selector
     const templateSelect = page.locator('select, [class*="template"]').filter({ hasText: /template|Template|Modello/ })
     const hasTemplates = await templateSelect.first().isVisible().catch(() => false)
-
-    // Templates may or may not exist in seed data — just verify no crash
     expect(true).toBe(true)
   })
 
@@ -69,10 +60,8 @@ test.describe('Task templates', () => {
     const opened = await openAddModal(page)
     if (!opened) return
 
-    // Find title input
     const titleInput = page.locator('input[placeholder*="titolo"], input[placeholder*="title"], input[placeholder*="Task"], input').first()
     await titleInput.fill('E2E Test Task')
-
     const value = await titleInput.inputValue()
     expect(value).toBe('E2E Test Task')
   })

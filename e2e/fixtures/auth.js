@@ -3,10 +3,10 @@
  *
  * Flow:
  *   1. Navigate to /taskflow/ → login page appears
- *   2. Fill email + password, click "Accedi" / "Sign in"
+ *   2. Fill email + password, click submit
  *   3. If MFA page appears, generate TOTP code from E2E_TOTP_SECRET
  *      and enter it in the 6-digit input
- *   4. Wait for the main app ("Home" in sidebar)
+ *   4. Wait for the main app (nav-home in sidebar)
  *
  * Env vars (or in .env.e2e):
  *   E2E_EMAIL        — test account email        (required)
@@ -15,6 +15,7 @@
  */
 
 import { TOTP } from 'otpauth'
+import { nav, login as loginSel, mfa as mfaSel } from './sel.js'
 
 /**
  * Login via the real app UI.
@@ -37,12 +38,12 @@ export async function login(page, { email, password, totpSecret } = {}) {
 
     // Wait for the app to finish its loading screen (up to 10s)
     // then check: already logged in, or login form?
-    const homeLocatorEarly = page.locator('text=Home')
-    const emailInput = page.locator('input[type="email"]')
+    const homeNav = nav.home(page)
+    const emailInput = loginSel.email(page)
 
     // Race: either the user is already logged in or the login form appears
     const initial = await Promise.race([
-      homeLocatorEarly.waitFor({ timeout: 20_000 }).then(() => 'home').catch(() => null),
+      homeNav.waitFor({ timeout: 20_000 }).then(() => 'home').catch(() => null),
       emailInput.waitFor({ timeout: 20_000 }).then(() => 'login').catch(() => null),
     ])
 
@@ -53,19 +54,18 @@ export async function login(page, { email, password, totpSecret } = {}) {
     }
 
     await emailInput.fill(e)
-    await page.locator('input[type="password"]').first().fill(p)
+    await loginSel.password(page).fill(p)
 
-    // Click "Accedi" or "Sign in" submit button
-    await page.locator('button:has-text("Accedi"), button:has-text("Sign in")').first().click()
+    // Click submit button
+    await loginSel.submit(page).click()
 
     // ── 3. Wait for either Home (no MFA) or MFA prompt ───────
-    const homeLocator = page.locator('text=Home')
-    const mfaInputLocator = page.locator('input[placeholder="000 000"]')
+    const mfaInput = mfaSel.input(page)
 
     // Race: main app vs MFA screen
     const winner = await Promise.race([
-      homeLocator.waitFor({ timeout: 15_000 }).then(() => 'home').catch(() => null),
-      mfaInputLocator.waitFor({ timeout: 15_000 }).then(() => 'mfa').catch(() => null),
+      homeNav.waitFor({ timeout: 15_000 }).then(() => 'home').catch(() => null),
+      mfaInput.waitFor({ timeout: 15_000 }).then(() => 'mfa').catch(() => null),
     ])
 
     if (winner === 'home') return true
@@ -78,16 +78,23 @@ export async function login(page, { email, password, totpSecret } = {}) {
       }
 
       const totp = new TOTP({ secret, digits: 6, period: 30 })
+
+      // Guard against TOTP window boundary: if we're in the last 3 seconds
+      // of a 30-second window, wait for the next window to avoid stale codes
+      const secondsInWindow = Math.floor(Date.now() / 1000) % 30
+      if (secondsInWindow >= 27) {
+        await page.waitForTimeout(31 - secondsInWindow)
+      }
+
       const code = totp.generate()
+      await mfaInput.fill(code)
 
-      await mfaInputLocator.fill(code)
-
-      // Click "Verifica" / "Verify" / "Conferma e accedi" / "Confirm & continue"
-      await page.locator('button:has-text("Verifica"), button:has-text("Verify"), button:has-text("Conferma"), button:has-text("Confirm")').first().click()
+      // Click verify button
+      await mfaSel.verify(page).click()
 
       // Wait for main app after MFA
       try {
-        await homeLocator.waitFor({ timeout: 15_000 })
+        await homeNav.waitFor({ timeout: 15_000 })
         return true
       } catch {
         console.warn('[e2e/auth] App did not render after MFA verification')

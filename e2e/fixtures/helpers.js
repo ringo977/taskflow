@@ -1,16 +1,19 @@
 /**
  * Shared E2E helpers and selectors.
  */
+import { nav } from './sel.js'
 
-/** Navigate to a sidebar section by label text */
-export async function navTo(page, label) {
-  await page.locator(`nav >> text=${label}, [class*="sidebar"] >> text=${label}`).first().click()
+/** Navigate to a sidebar section by data-testid */
+export async function navTo(page, id) {
+  const locator = nav[id]?.(page)
+  if (!locator) throw new Error(`Unknown nav id: ${id}`)
+  await locator.click()
   await page.waitForLoadState('networkidle')
 }
 
 /** Click a project in the project list */
 export async function openProject(page, name) {
-  await navTo(page, 'Progetti')
+  await navTo(page, 'projects')
   await page.locator(`text=${name}`).first().click()
   await page.waitForLoadState('networkidle')
 }
@@ -38,11 +41,11 @@ export async function waitForProjectList(page) {
 }
 
 /**
- * Navigate to Progetti, wait for list, click first project, wait for view tabs.
+ * Navigate to Projects, wait for list, click first project, wait for view tabs.
  * Returns true if a project was opened, false if none available.
  */
 export async function openFirstProject(page) {
-  await page.locator('text=Progetti').first().click()
+  await nav.projects(page).click()
   const projectLink = await waitForProjectList(page)
   const hasProject = await projectLink.isVisible().catch(() => false)
   if (!hasProject) return false
