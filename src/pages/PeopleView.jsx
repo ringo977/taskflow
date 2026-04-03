@@ -3,138 +3,17 @@ import { logger } from '@/utils/logger'
 import { useLang } from '@/i18n'
 import { useOrgUsers, useRefreshOrgUsers } from '@/context/OrgUsersCtx'
 import { isOverdue } from '@/utils/filters'
+import { getInitials } from '@/utils/initials'
 import { addOrgMember, removeOrgMember, updateOrgMemberRole, fetchMyMemberships, fetchPendingJoinRequests, approveJoinRequest, rejectJoinRequest, fetchPendingSignups, confirmUserEmail, deleteUserAccount } from '@/lib/db'
 import ConfirmModal from '@/components/ConfirmModal'
-import { getInitials } from '@/utils/initials'
+
+import { ROLES, isUUID, splitName } from './people/constants'
+import RoleBadge from './people/RoleBadge'
+import MemberCard from './people/MemberCard'
+import { ViewToggle, ProjectFilter, SortHeader } from './people/PeopleToolbar'
+import AdminSectionHeader from './people/AdminSectionHeader'
 
 const log = logger('PeopleView')
-
-const ROLES = ['admin', 'manager', 'member', 'guest']
-const ROLE_COLORS = { admin: 'var(--c-danger)', manager: 'var(--c-warning)', member: 'var(--accent)', guest: 'var(--tx3)' }
-const isUUID = id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-
-/** Split "First Last" → { first, last }. Last word = last name. */
-function splitName(fullName) {
-  const parts = (fullName ?? '').trim().split(/\s+/)
-  if (parts.length <= 1) return { first: parts[0] || '', last: '' }
-  return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] }
-}
-
-/* ── Shared sub-components ────────────────────────────────────── */
-
-function RoleBadge({ role }) {
-  return (
-    <span style={{ fontSize: 11, color: ROLE_COLORS[role] ?? 'var(--tx3)', background: (ROLE_COLORS[role] ?? 'var(--tx3)') + '18', padding: '2px 7px', borderRadius: 'var(--r1)', fontWeight: 500, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
-      {role}
-    </span>
-  )
-}
-
-function ViewToggle({ view, setView, t }) {
-  const btn = (v, label) => (
-    <button key={v} onClick={() => setView(v)}
-      style={{ fontSize: 12, fontWeight: 500, padding: '4px 12px', border: 'none', borderRadius: 'var(--r1)',
-        background: view === v ? 'var(--accent)' : 'transparent', color: view === v ? '#fff' : 'var(--tx2)',
-        cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 5 }}>
-      {v === 'cards' && <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/></svg>}
-      {v === 'list' && <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 3h10M4 8h10M4 13h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="1.5" cy="3" r="1" fill="currentColor"/><circle cx="1.5" cy="8" r="1" fill="currentColor"/><circle cx="1.5" cy="13" r="1" fill="currentColor"/></svg>}
-      {label}
-    </button>
-  )
-  return (
-    <div style={{ display: 'flex', gap: 2, background: 'var(--bg2)', borderRadius: 'var(--r1)', padding: 2, border: '1px solid var(--bd3)' }}>
-      {btn('cards', t.cardView)}{btn('list', t.listView)}
-    </div>
-  )
-}
-
-function ProjectFilter({ projects, selected, setSelected, t }) {
-  return (
-    <select value={selected} onChange={e => setSelected(e.target.value)}
-      style={{ fontSize: 12, padding: '5px 10px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'var(--bg2)', color: 'var(--tx1)', cursor: 'pointer' }}>
-      <option value="">{t.filterByProject}</option>
-      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-    </select>
-  )
-}
-
-/* ── Sortable column header ───────────────────────────────────── */
-
-const SORT_ARROW = { asc: '▲', desc: '▼' }
-
-function SortHeader({ label, field, sortField, sortDir, onSort, style }) {
-  const active = sortField === field
-  return (
-    <div onClick={() => onSort(field)} style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', ...style }}>
-      {label}
-      {active && <span style={{ fontSize: 8, marginTop: 1 }}>{SORT_ARROW[sortDir]}</span>}
-    </div>
-  )
-}
-
-/* ── Card view ────────────────────────────────────────────────── */
-
-function MemberCard({ u, userTasks, projects, t }) {
-  const open = userTasks.filter(task => !task.done)
-  const od = open.filter(task => isOverdue(task.due))
-  const done = userTasks.filter(task => task.done)
-  const userProjs = [...new Set(userTasks.map(task => task.pid))]
-    .map(id => projects.find(p => p.id === id)).filter(Boolean)
-
-  return (
-    <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-      <div style={{ background: u.color + '14', padding: '16px 18px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.color, color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px ' + u.color + '40' }}>
-          {getInitials(u.name)}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
-        </div>
-        <RoleBadge role={u.role} />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--bd3)' }}>
-        {[
-          [t.openTasks, open.length, 'var(--tx1)'],
-          [t.overdueLabel, od.length, od.length ? 'var(--c-danger)' : 'var(--tx3)'],
-          [t.completed, done.length, 'var(--c-success)'],
-        ].map(([label, value, color]) => (
-          <div key={label} style={{ background: 'var(--bg1)', padding: '10px 8px', textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 600, color, lineHeight: 1, marginBottom: 3 }}>{value}</div>
-            <div style={{ fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ padding: '12px 18px 16px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.projects}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-          {userProjs.map(p => (
-            <span key={p.id} style={{ fontSize: 11, color: p.color, background: p.color + '18', padding: '3px 8px', borderRadius: 'var(--r1)', fontWeight: 500 }}>{p.name}</span>
-          ))}
-          {userProjs.length === 0 && <span style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>{t.noResults ?? '—'}</span>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Admin section header ─────────────────────────────────────── */
-
-function AdminSectionHeader({ icon, title, count, color }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 4 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 'var(--r1)', background: (color ?? 'var(--accent)') + '14', color: color ?? 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {icon}
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx1)', flex: 1 }}>{title}</div>
-      {count > 0 && (
-        <span style={{ fontSize: 11, fontWeight: 600, background: (color ?? 'var(--accent)') + '18', color: color ?? 'var(--accent)', padding: '2px 8px', borderRadius: 10 }}>{count}</span>
-      )}
-    </div>
-  )
-}
-
-/* ── Main component ───────────────────────────────────────────── */
 
 export default function PeopleView({ tasks, projects, currentUser, activeOrgId }) {
   const t = useLang()
