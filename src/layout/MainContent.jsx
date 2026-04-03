@@ -77,7 +77,7 @@ function ProjectContent({
       )}
       {view === 'supervision' && (
         <ProjectSupervisionPage project={proj} tasks={pTasks} orgId={ui.activeOrgId}
-          onOpenTask={setSelId} lang={lang} />
+          onOpenTask={setSelId} addTask={addTask} lang={lang} />
       )}
     </>
   )

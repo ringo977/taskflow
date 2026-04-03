@@ -158,6 +158,21 @@ export const DeliverableUpsertSchema = z.object({
   notes:               optStr(5000),
 }).passthrough()
 
+const controlFrequency = z.enum(['weekly', 'monthly', 'custom']).catch('weekly')
+const controlActionType = z.enum(['create_task', 'reminder_only']).catch('reminder_only')
+
+export const RecurringControlUpsertSchema = z.object({
+  id:               uuid.optional(),
+  title:            str(255),
+  description:      optStr(5000),
+  frequency:        controlFrequency,
+  customInterval:   z.number().int().min(1).optional().nullable(),
+  nextDueDate:      isoDate,
+  actionType:       controlActionType,
+  templateTaskData: z.any().optional().nullable(),
+  active:           z.boolean().catch(true),
+}).passthrough()
+
 export const SectionNameSchema = str(255)
 
 export const OrgRoleSchema = orgRole
