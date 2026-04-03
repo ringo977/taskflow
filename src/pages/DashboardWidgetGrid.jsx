@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import {
-  buildUserTaskMap, buildProjectById, filterUpcomingDeadlines,
+  buildUserTaskMap, filterUpcomingDeadlines,
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson, computeStatusDistribution,
   computeSectionCompletion,

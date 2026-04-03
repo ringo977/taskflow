@@ -20,8 +20,9 @@ async function goHome(page) {
 /** Enter edit mode by clicking Customize button */
 async function enterEditMode(page) {
   await btn.customize(page).click()
-  // Wait for edit-mode controls to appear
-  await page.locator('button[title="Resize"]').first().waitFor({ state: 'visible', timeout: 5_000 })
+  // Wait for edit-mode controls to appear (DashboardWidgetGrid is lazy-loaded,
+  // so Resize buttons may take a moment to render after the chunk loads)
+  await page.locator('button[title="Resize"]').first().waitFor({ state: 'visible', timeout: 10_000 })
 }
 
 /**
