@@ -107,7 +107,14 @@ CREATE POLICY "deliverable_tasks delete"
   USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
 
--- ── 4. Indexes ───────────────────────────────────────────────
+-- ── 4. Grants ───────────────────────────────────────────────
+
+GRANT ALL ON public.project_supervision_settings TO authenticated;
+GRANT ALL ON public.project_deliverables TO authenticated;
+GRANT ALL ON public.project_deliverable_tasks TO authenticated;
+
+
+-- ── 5. Indexes ───────────────────────────────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_deliverables_project ON public.project_deliverables(project_id);
 CREATE INDEX IF NOT EXISTS idx_deliverables_due     ON public.project_deliverables(due_date) WHERE due_date IS NOT NULL;

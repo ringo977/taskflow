@@ -47,6 +47,9 @@ CREATE POLICY "recurring_controls delete"
   ON public.project_recurring_controls FOR DELETE
   USING (public.get_org_role(org_id) IN ('admin', 'manager'));
 
+-- Grants
+GRANT ALL ON public.project_recurring_controls TO authenticated;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_recurring_controls_project ON public.project_recurring_controls(project_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_controls_next_due ON public.project_recurring_controls(next_due_date) WHERE active = true;
