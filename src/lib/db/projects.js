@@ -51,7 +51,7 @@ export async function upsertProject(orgId, proj) {
     id: p.id, org_id: orgId, name: p.name, color: p.color,
     status: p.status,
     status_label: p.statusLabel,
-    portfolio_id: p.portfolio ?? null,
+    portfolio_id: p.portfolio || null,
     description: p.description ?? '',
     resources: p.resources,
     custom_fields: p.customFields,
