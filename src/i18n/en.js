@@ -502,5 +502,9 @@ const en = {
   selectOwner: 'Select owner',
   ownerMember: 'Member',
   ownerPartner: 'Partner',
+  // ── Workpackages: reporting ───────────────────────────────────
+  chartTasksPerWp: 'Tasks per workpackage',
+  reportWorkpackages: 'Workpackage progress',
+  wpProgressSummary: 'Workpackage progress',
 }
 export default en

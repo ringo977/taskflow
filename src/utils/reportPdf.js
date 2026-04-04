@@ -18,7 +18,7 @@ import { isOverdue } from '@/utils/filters'
  * @param {Object}  t         - i18n translations
  * @param {string}  lang      - 'en' | 'it'
  */
-export function generateProjectReport(project, tasks, sections, t, lang = 'it', partners = []) {
+export function generateProjectReport(project, tasks, sections, t, lang = 'it', partners = [], workpackages = []) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = doc.internal.pageSize.getWidth()
   const margin = 18
@@ -343,6 +343,54 @@ export function generateProjectReport(project, tasks, sections, t, lang = 'it', 
       doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
       if (barW > 0) {
         doc.setFillColor(...accent)
+        doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
+      }
+      y += 7
+    })
+  }
+
+  // ── 8. Workpackage progress ──
+  const wpMap = Object.fromEntries(workpackages.map(wp => [wp.id, wp]))
+  const wpIds = [...new Set(pTasks.map(tk => tk.workpackageId).filter(Boolean))]
+  if (wpIds.length > 0) {
+    sectionHeader(t.reportWorkpackages ?? 'Workpackage progress')
+
+    wpIds.sort((a, b) => {
+      const aCount = pTasks.filter(tk => tk.workpackageId === a && !tk.done).length
+      const bCount = pTasks.filter(tk => tk.workpackageId === b && !tk.done).length
+      return bCount - aCount
+    }).forEach(wpId => {
+      const wp = wpMap[wpId]
+      const code = wp?.code ?? ''
+      const name = wp?.name ?? wpId
+      checkSpace(10)
+      const wpTasks = pTasks.filter(tk => tk.workpackageId === wpId)
+      const wpDone = wpTasks.filter(tk => tk.done).length
+      const wpOpen = wpTasks.length - wpDone
+      const wpOd = wpTasks.filter(tk => !tk.done && isOverdue(tk.due)).length
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textDark)
+      doc.text(`${code} ${name}`.trim(), margin + 2, y)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...textMid)
+      const summary = `${wpOpen} ${t.reportOpenLower ?? 'open'}, ${wpDone} ${t.reportDoneLower ?? 'done'}`
+      doc.text(summary, margin + 55, y)
+
+      if (wpOd > 0) {
+        doc.setTextColor(...red)
+        doc.text(`${wpOd} ${t.reportOverdueLower ?? 'overdue'}`, margin + 120, y)
+      }
+
+      // Mini bar (purple accent)
+      const barMax = 25
+      const barW = wpTasks.length > 0 ? barMax * wpDone / wpTasks.length : 0
+      doc.setFillColor(240, 240, 240)
+      doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
+      if (barW > 0) {
+        doc.setFillColor(156, 39, 176) // purple #9C27B0
         doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
       }
       y += 7

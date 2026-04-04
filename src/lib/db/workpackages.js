@@ -45,6 +45,17 @@ export async function fetchWorkpackages(projectId) {
   return (data ?? []).map(toWorkpackage)
 }
 
+/** All workpackages for an org (used by dashboard / CSV export) */
+export async function fetchOrgWorkpackages(orgId) {
+  const { data, error } = await supabase
+    .from('project_workpackages')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('position')
+  if (error) throw error
+  return (data ?? []).map(toWorkpackage)
+}
+
 // ── Write ────────────────────────────────────────────────────────
 
 export async function upsertWorkpackage(orgId, projectId, workpackage) {

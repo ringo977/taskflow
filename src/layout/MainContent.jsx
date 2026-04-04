@@ -43,13 +43,16 @@ function ProjectContent({
         onAddTask={() => { setAddDue(''); setShowAdd(true) }}
         onSummary={() => getSum(proj?.name, pTasks)}
         onExport={async () => {
-          const [{ exportTasksCsv }, { fetchOrgPartners }] = await Promise.all([
+          const [{ exportTasksCsv }, { fetchOrgPartners }, { fetchWorkpackages }] = await Promise.all([
             import('@/utils/exportCsv'),
             import('@/lib/db/partners'),
+            import('@/lib/db/workpackages'),
           ])
           const partners = ui.activeOrgId ? await fetchOrgPartners(ui.activeOrgId).catch(() => []) : []
           const pMap = Object.fromEntries(partners.map(p => [p.id, p]))
-          exportTasksCsv(pTasks, proj?.name, proj?.customFields, proj, user?.name, pMap)
+          const wps = proj?.id ? await fetchWorkpackages(proj.id).catch(() => []) : []
+          const wpMap = Object.fromEntries(wps.map(w => [w.id, w]))
+          exportTasksCsv(pTasks, proj?.name, proj?.customFields, proj, user?.name, pMap, wpMap)
         }}
         portfolios={ports}
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}

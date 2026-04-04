@@ -6,19 +6,20 @@
  * chart-data computation, widget rendering, and drag-and-drop
  * layout editing.
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import {
   buildUserTaskMap, filterUpcomingDeadlines,
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson, computeStatusDistribution,
-  computeSectionCompletion, computeTasksPerPartner,
+  computeSectionCompletion, computeTasksPerPartner, computeTasksPerWorkpackage,
 } from '@/utils/selectors'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { usePartners } from '@/hooks/usePartners'
+import { fetchOrgWorkpackages } from '@/lib/db/workpackages'
 import {
   DeadlinesWidget, ActivityWidget, HealthWidget,
-  TasksPerPersonWidget, TasksPerPartnerWidget, PriorityWidget, ActivityChartWidget,
+  TasksPerPersonWidget, TasksPerPartnerWidget, TasksPerWorkpackageWidget, PriorityWidget, ActivityChartWidget,
   ProgressWidget, BurndownWidget, StatusDistWidget,
   VelocityWidget, OverdueWidget, WorkloadWidget, SectionCompletionWidget,
 } from '@/components/DashboardWidgets'
@@ -47,6 +48,11 @@ export default function DashboardWidgetGrid({
   const t = useLang()
   const USERS = useOrgUsers()
   const { orgPartners } = usePartners(orgId)
+  const [orgWorkpackages, setOrgWorkpackages] = useState([])
+  useEffect(() => {
+    if (!orgId) return
+    fetchOrgWorkpackages(orgId).then(setOrgWorkpackages).catch(() => setOrgWorkpackages([]))
+  }, [orgId])
   const [burndownPid, setBurndownPid] = useState('__all__')
   const [dragIdx, setDragIdx] = useState(null)
 
@@ -234,6 +240,9 @@ export default function DashboardWidgetGrid({
   // Tasks per partner
   const partnerData = useMemo(() => computeTasksPerPartner(tasks, orgPartners), [tasks, orgPartners])
 
+  // Tasks per workpackage
+  const wpData = useMemo(() => computeTasksPerWorkpackage(tasks, orgWorkpackages), [tasks, orgWorkpackages])
+
   // ── Widget content renderer ────────────────────────────────────
   const renderWidgetContent = (widgetId) => {
     switch (widgetId) {
@@ -251,6 +260,7 @@ export default function DashboardWidgetGrid({
       case 'workload':         return <WorkloadWidget data={workloadData} threshold={WORKLOAD_THRESHOLD} t={t} />
       case 'sectionCompletion': return <SectionCompletionWidget data={sectionCompletionData} t={t} />
       case 'tasksPartner':      return <TasksPerPartnerWidget data={partnerData} t={t} />
+      case 'tasksWorkpackage':  return <TasksPerWorkpackageWidget data={wpData} t={t} />
       default: return null
     }
   }

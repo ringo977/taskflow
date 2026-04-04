@@ -149,6 +149,19 @@ export function computeTasksPerPartner(tasks, partners) {
   }).filter(d => d.open + d.done > 0).sort((a, b) => (b.open + b.done) - (a.open + a.done))
 }
 
+// ── Workpackage-level metrics ───────────────────────────────────
+
+/** Tasks per workpackage (open + done): [{ id, code, name, status, open, done, overdue }] */
+export function computeTasksPerWorkpackage(tasks, workpackages) {
+  return workpackages.filter(wp => wp.isActive).map(wp => {
+    const wt = tasks.filter(t => t.workpackageId === wp.id)
+    const open = wt.filter(t => !t.done).length
+    const done = wt.filter(t => t.done).length
+    const overdue = wt.filter(t => !t.done && isOverdue(t.due)).length
+    return { id: wp.id, code: wp.code, name: wp.name.length > 16 ? wp.name.slice(0, 16) + '…' : wp.name, status: wp.status, open, done, overdue }
+  }).filter(d => d.open + d.done > 0).sort((a, b) => (b.open + b.done) - (a.open + a.done))
+}
+
 /** Section completion per project: [{ project, sections: { [sec]: { total, done } }, total }] */
 export function computeSectionCompletion(tasks, projects, limit = 6) {
   return projects.slice(0, limit).map(p => {

@@ -502,5 +502,9 @@ const it = {
   selectOwner: 'Seleziona responsabile',
   ownerMember: 'Membro',
   ownerPartner: 'Partner',
+  // ── Workpackages: reporting ───────────────────────────────────
+  chartTasksPerWp: 'Task per workpackage',
+  reportWorkpackages: 'Avanzamento workpackage',
+  wpProgressSummary: 'Avanzamento workpackage',
 }
 export default it
