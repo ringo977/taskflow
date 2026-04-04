@@ -18,7 +18,7 @@ import { isOverdue } from '@/utils/filters'
  * @param {Object}  t         - i18n translations
  * @param {string}  lang      - 'en' | 'it'
  */
-export function generateProjectReport(project, tasks, sections, t, lang = 'it', partners = [], workpackages = []) {
+export function generateProjectReport(project, tasks, sections, t, lang = 'it', partners = [], workpackages = [], milestones = []) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = doc.internal.pageSize.getWidth()
   const margin = 18
@@ -391,6 +391,54 @@ export function generateProjectReport(project, tasks, sections, t, lang = 'it', 
       doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
       if (barW > 0) {
         doc.setFillColor(156, 39, 176) // purple #9C27B0
+        doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
+      }
+      y += 7
+    })
+  }
+
+  // ── 9. Milestone progress ──
+  const msMap = Object.fromEntries(milestones.map(ms => [ms.id, ms]))
+  const msIds = [...new Set(pTasks.map(tk => tk.milestoneId).filter(Boolean))]
+  if (msIds.length > 0) {
+    sectionHeader(t.reportMilestones ?? 'Milestone progress')
+
+    msIds.sort((a, b) => {
+      const aCount = pTasks.filter(tk => tk.milestoneId === a && !tk.done).length
+      const bCount = pTasks.filter(tk => tk.milestoneId === b && !tk.done).length
+      return bCount - aCount
+    }).forEach(msId => {
+      const ms = msMap[msId]
+      const code = ms?.code ?? ''
+      const name = ms?.name ?? msId
+      checkSpace(10)
+      const msTasks = pTasks.filter(tk => tk.milestoneId === msId)
+      const msDone = msTasks.filter(tk => tk.done).length
+      const msOpen = msTasks.length - msDone
+      const msOd = msTasks.filter(tk => !tk.done && isOverdue(tk.due)).length
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textDark)
+      doc.text(`◆ ${code} ${name}`.trim(), margin + 2, y)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...textMid)
+      const summary = `${msOpen} ${t.reportOpenLower ?? 'open'}, ${msDone} ${t.reportDoneLower ?? 'done'}`
+      doc.text(summary, margin + 55, y)
+
+      if (msOd > 0) {
+        doc.setTextColor(...red)
+        doc.text(`${msOd} ${t.reportOverdueLower ?? 'overdue'}`, margin + 120, y)
+      }
+
+      // Mini bar (green accent)
+      const barMax = 25
+      const barW = msTasks.length > 0 ? barMax * msDone / msTasks.length : 0
+      doc.setFillColor(240, 240, 240)
+      doc.roundedRect(margin + 150, y - 3, barMax, 4, 1, 1, 'F')
+      if (barW > 0) {
+        doc.setFillColor(76, 175, 80) // green #4CAF50
         doc.roundedRect(margin + 150, y - 3, barW, 4, 1, 1, 'F')
       }
       y += 7

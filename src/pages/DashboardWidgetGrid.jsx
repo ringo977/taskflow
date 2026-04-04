@@ -13,13 +13,15 @@ import {
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson, computeStatusDistribution,
   computeSectionCompletion, computeTasksPerPartner, computeTasksPerWorkpackage,
+  computeTasksPerMilestone,
 } from '@/utils/selectors'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { usePartners } from '@/hooks/usePartners'
 import { fetchOrgWorkpackages } from '@/lib/db/workpackages'
+import { fetchOrgMilestones } from '@/lib/db/milestones'
 import {
   DeadlinesWidget, ActivityWidget, HealthWidget,
-  TasksPerPersonWidget, TasksPerPartnerWidget, TasksPerWorkpackageWidget, PriorityWidget, ActivityChartWidget,
+  TasksPerPersonWidget, TasksPerPartnerWidget, TasksPerWorkpackageWidget, TasksPerMilestoneWidget, PriorityWidget, ActivityChartWidget,
   ProgressWidget, BurndownWidget, StatusDistWidget,
   VelocityWidget, OverdueWidget, WorkloadWidget, SectionCompletionWidget,
 } from '@/components/DashboardWidgets'
@@ -49,9 +51,11 @@ export default function DashboardWidgetGrid({
   const USERS = useOrgUsers()
   const { orgPartners } = usePartners(orgId)
   const [orgWorkpackages, setOrgWorkpackages] = useState([])
+  const [orgMilestones, setOrgMilestones] = useState([])
   useEffect(() => {
     if (!orgId) return
     fetchOrgWorkpackages(orgId).then(setOrgWorkpackages).catch(() => setOrgWorkpackages([]))
+    fetchOrgMilestones(orgId).then(setOrgMilestones).catch(() => setOrgMilestones([]))
   }, [orgId])
   const [burndownPid, setBurndownPid] = useState('__all__')
   const [dragIdx, setDragIdx] = useState(null)
@@ -242,6 +246,7 @@ export default function DashboardWidgetGrid({
 
   // Tasks per workpackage
   const wpData = useMemo(() => computeTasksPerWorkpackage(tasks, orgWorkpackages), [tasks, orgWorkpackages])
+  const msData = useMemo(() => computeTasksPerMilestone(tasks, orgMilestones), [tasks, orgMilestones])
 
   // ── Widget content renderer ────────────────────────────────────
   const renderWidgetContent = (widgetId) => {
@@ -261,6 +266,7 @@ export default function DashboardWidgetGrid({
       case 'sectionCompletion': return <SectionCompletionWidget data={sectionCompletionData} t={t} />
       case 'tasksPartner':      return <TasksPerPartnerWidget data={partnerData} t={t} />
       case 'tasksWorkpackage':  return <TasksPerWorkpackageWidget data={wpData} t={t} />
+      case 'tasksMilestone':    return <TasksPerMilestoneWidget data={msData} t={t} />
       default: return null
     }
   }

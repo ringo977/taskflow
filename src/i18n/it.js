@@ -516,5 +516,9 @@ const it = {
   chartTasksPerWp: 'Task per workpackage',
   reportWorkpackages: 'Avanzamento workpackage',
   wpProgressSummary: 'Avanzamento workpackage',
+
+  // ── Milestones: reporting ─────────────────────────────────────
+  chartTasksPerMs: 'Task per milestone',
+  reportMilestones: 'Avanzamento milestone',
 }
 export default it

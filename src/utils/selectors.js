@@ -162,6 +162,17 @@ export function computeTasksPerWorkpackage(tasks, workpackages) {
   }).filter(d => d.open + d.done > 0).sort((a, b) => (b.open + b.done) - (a.open + a.done))
 }
 
+/** Task breakdown per milestone: [{ id, code, name, status, open, done, overdue }] sorted by volume */
+export function computeTasksPerMilestone(tasks, milestones) {
+  return milestones.filter(ms => ms.isActive).map(ms => {
+    const mt = tasks.filter(t => t.milestoneId === ms.id)
+    const open = mt.filter(t => !t.done).length
+    const done = mt.filter(t => t.done).length
+    const overdue = mt.filter(t => !t.done && isOverdue(t.due)).length
+    return { id: ms.id, code: ms.code, name: ms.name.length > 16 ? ms.name.slice(0, 16) + '…' : ms.name, status: ms.status, open, done, overdue }
+  }).filter(d => d.open + d.done > 0).sort((a, b) => (b.open + b.done) - (a.open + a.done))
+}
+
 /** Section completion per project: [{ project, sections: { [sec]: { total, done } }, total }] */
 export function computeSectionCompletion(tasks, projects, limit = 6) {
   return projects.slice(0, limit).map(p => {

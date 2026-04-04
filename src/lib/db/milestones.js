@@ -50,8 +50,16 @@ export async function fetchMilestones(projectId) {
   return (data ?? []).map(toMilestone)
 }
 
-// Note: fetchOrgMilestones(orgId) deferred to M3 — not needed until
-// dashboard widget requires cross-project milestone data.
+/** All milestones for an org (used by dashboard widget) */
+export async function fetchOrgMilestones(orgId) {
+  const { data, error } = await supabase
+    .from('project_milestones')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('position')
+  if (error) throw error
+  return (data ?? []).map(toMilestone)
+}
 
 // ── Write ────────────────────────────────────────────────────────
 
