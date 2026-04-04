@@ -6,7 +6,7 @@ import {
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson,
   computeStatusDistribution, computeSectionCompletion,
-  computeTasksPerPartner,
+  computeTasksPerPartner, computeTasksPerWorkpackage,
 } from './selectors'
 
 // ── Fixtures ──────────────────────────────────────────────────────
@@ -256,5 +256,54 @@ describe('computeTasksPerPartner', () => {
 
   it('handles empty partners list', () => {
     expect(computeTasksPerPartner(ptTasks, [])).toEqual([])
+  })
+})
+
+// ── Workpackage metrics ─────────────────────────────────────────
+
+describe('computeTasksPerWorkpackage', () => {
+  const wps = [
+    { id: 'wp1', code: 'WP1', name: 'Analysis', status: 'active', isActive: true },
+    { id: 'wp2', code: 'WP2', name: 'Development', status: 'draft', isActive: true },
+    { id: 'wp3', code: 'WP3', name: 'Archived', status: 'complete', isActive: false },
+  ]
+  const wpTasks = [
+    { id: 't1', workpackageId: 'wp1', done: false, due: yesterday, pri: 'high' },
+    { id: 't2', workpackageId: 'wp1', done: true,  due: today,     pri: 'low' },
+    { id: 't3', workpackageId: 'wp2', done: false, due: tomorrow,  pri: 'medium' },
+    { id: 't4', workpackageId: null,  done: false, due: null,      pri: 'low' },
+  ]
+
+  it('groups open/done/overdue by active WP', () => {
+    const result = computeTasksPerWorkpackage(wpTasks, wps)
+    expect(result).toHaveLength(2) // wp1 and wp2, not wp3 (inactive)
+    const wp1 = result.find(r => r.id === 'wp1')
+    expect(wp1.code).toBe('WP1')
+    expect(wp1.open).toBe(1)
+    expect(wp1.done).toBe(1)
+    expect(wp1.overdue).toBe(1) // t1 due yesterday
+    const wp2 = result.find(r => r.id === 'wp2')
+    expect(wp2.open).toBe(1)
+    expect(wp2.done).toBe(0)
+  })
+
+  it('excludes inactive WPs', () => {
+    const result = computeTasksPerWorkpackage(wpTasks, wps)
+    expect(result.find(r => r.id === 'wp3')).toBeUndefined()
+  })
+
+  it('excludes WPs with zero tasks', () => {
+    const result = computeTasksPerWorkpackage([], wps)
+    expect(result).toEqual([])
+  })
+
+  it('handles empty workpackages list', () => {
+    expect(computeTasksPerWorkpackage(wpTasks, [])).toEqual([])
+  })
+
+  it('sorts by total tasks descending', () => {
+    const result = computeTasksPerWorkpackage(wpTasks, wps)
+    expect(result[0].id).toBe('wp1') // 2 tasks > 1 task
+    expect(result[1].id).toBe('wp2')
   })
 })

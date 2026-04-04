@@ -28,6 +28,7 @@ export const T = {
       roles: 'Ruoli e permessi',
       supervision: 'Supervisione progetto',
       partners: 'Partner e team',
+      workpackages: 'Workpackage',
     },
   },
   en: {
@@ -59,6 +60,7 @@ export const T = {
       roles: 'Roles & Permissions',
       supervision: 'Project Supervision',
       partners: 'Partners & Teams',
+      workpackages: 'Workpackages',
     },
   },
 }

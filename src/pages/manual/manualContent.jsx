@@ -1068,5 +1068,53 @@ export function content(lang) {
         <p>The <strong>Tasks per partner</strong> dashboard widget shows a bar chart with open and completed tasks for each active partner. In the project overview, the <strong>Partner engagement</strong> card shows a progress bar for each linked partner. The PDF report includes a dedicated section with a per-partner summary (open, done, overdue).</p>
       </>
     ),
+
+    workpackages: L ? (
+      <>
+        <h3>Cosa sono i workpackage</h3>
+        <p>I workpackage (WP) sono raggruppamenti strutturali di task all'interno di un progetto. A differenza delle sezioni (che rappresentano lo stato di workflow: Backlog, In Progress, Done), i WP rappresentano la suddivisione logica del lavoro (es. WP1: Analisi, WP2: Sviluppo, WP3: Testing). Un task ha sempre una sezione e opzionalmente un WP. I WP sono specifici per progetto, non condivisi tra progetti.</p>
+
+        <h3>Gestione workpackage</h3>
+        <p>Nella panoramica del progetto, nella colonna principale, trovi il pannello <strong>Workpackage</strong>. Da qui puoi:</p>
+        <ul>
+          <li><strong>Creare</strong> un WP con codice, nome, descrizione, responsabile, scadenza e stato</li>
+          <li><strong>Modificare</strong> un WP esistente cliccando sull'icona di modifica</li>
+          <li><strong>Eliminare</strong> un WP (i task collegati mantengono i loro dati, il campo WP viene azzerato)</li>
+        </ul>
+        <p>Ogni WP ha un <strong>responsabile tipizzato</strong>: puoi assegnare un membro dell'organizzazione o un partner collegato al progetto. Gli stati disponibili sono: bozza, attivo, in revisione, completato, in ritardo, ciascuno con un colore identificativo.</p>
+
+        <h3>Workpackage nei task</h3>
+        <p>Nel pannello task e nel modal di creazione trovi un selettore <strong>Workpackage</strong> (visibile solo se il progetto ha almeno un WP). Seleziona il WP di appartenenza del task. Il badge WP viola appare nelle viste Lista e Board.</p>
+
+        <h3>Filtro workpackage</h3>
+        <p>Nella barra filtri è presente un selettore WP (visibile solo se il progetto ha WP). Filtra i task per vedere solo quelli assegnati a un determinato workpackage.</p>
+
+        <h3>Report e dashboard</h3>
+        <p>Il widget dashboard <strong>Task per workpackage</strong> mostra un grafico a barre viola con task aperti e completati per ciascun WP attivo. Nella panoramica progetto, la card <strong>Avanzamento workpackage</strong> mostra una barra di progresso per ogni WP con conteggio task. L'esportazione CSV include le colonne "WP Code" e "WP Name". Il report PDF include una sezione dedicata con il riepilogo per WP (aperti, completati, in ritardo).</p>
+      </>
+    ) : (
+      <>
+        <h3>What are workpackages</h3>
+        <p>Workpackages (WP) are structural groupings of tasks within a project. Unlike sections (which represent workflow state: Backlog, In Progress, Done), WPs represent the logical division of work (e.g. WP1: Analysis, WP2: Development, WP3: Testing). A task always has a section and optionally a WP. WPs are project-specific, not shared across projects.</p>
+
+        <h3>Managing workpackages</h3>
+        <p>In the project overview, in the main column, you'll find the <strong>Workpackages</strong> panel. From here you can:</p>
+        <ul>
+          <li><strong>Create</strong> a WP with code, name, description, owner, due date and status</li>
+          <li><strong>Edit</strong> an existing WP by clicking the edit icon</li>
+          <li><strong>Delete</strong> a WP (linked tasks keep their data, the WP field is cleared)</li>
+        </ul>
+        <p>Each WP has a <strong>typed owner</strong>: you can assign an organization member or a partner linked to the project. Available statuses are: draft, active, in review, complete, delayed, each with an identifying color.</p>
+
+        <h3>Workpackages in tasks</h3>
+        <p>In the task panel and new task modal you'll find a <strong>Workpackage</strong> selector (visible only if the project has at least one WP). Choose the WP the task belongs to. The purple WP badge appears in List and Board views.</p>
+
+        <h3>Workpackage filter</h3>
+        <p>The filter bar includes a WP selector (visible only if the project has WPs). Filter tasks to see only those assigned to a specific workpackage.</p>
+
+        <h3>Reports and dashboard</h3>
+        <p>The <strong>Tasks per workpackage</strong> dashboard widget shows a purple bar chart with open and completed tasks for each active WP. In the project overview, the <strong>Workpackage progress</strong> card shows a progress bar for each WP with task counts. CSV export includes "WP Code" and "WP Name" columns. The PDF report includes a dedicated section with a per-WP summary (open, done, overdue).</p>
+      </>
+    ),
   }
 }

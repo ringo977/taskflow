@@ -1,6 +1,6 @@
 # TaskFlow — Consolidation Playbook
 
-> Stato: v0.5.2 · ~155 file sorgente · ~26k LOC · 697 unit test · 7 suite E2E
+> Stato: v0.5.3 · ~160 file sorgente · ~27k LOC · 723 unit test · 7 suite E2E
 > Data: aprile 2026
 
 TaskFlow non ha più come collo di bottiglia le feature. I tre colli di bottiglia attuali sono disciplina operativa, stabilità dell'esperienza e complessità accumulata. Questo documento definisce le regole operative per i prossimi cicli di sviluppo.
@@ -76,15 +76,15 @@ La zona grigia — componenti con side effect pesanti — va coperta da integrat
 
 | Metrica | Valore |
 |---|---|
-| File sorgente (src/) | ~155 |
-| Linee di codice | ~26.000 |
-| Hook custom | 24 |
+| File sorgente (src/) | ~160 |
+| Linee di codice | ~27.000 |
+| Hook custom | 25 |
 | Viste / pagine | 8 viste + 22 pagine |
-| Moduli DB | 18 |
-| Test unitari | 697 |
+| Moduli DB | 19 |
+| Test unitari | 723 |
 | Suite E2E | 7 |
-| Chunk bundle | 42 |
-| Bundle totale | 2.097 kB |
+| Chunk bundle | 43 |
+| Bundle totale | 2.147 kB |
 
 ### I 10 file più grandi
 
@@ -126,6 +126,7 @@ TaskFlow copre queste aree. Per ognuna: livello di rischio, requisiti minimi su 
 | Goals e time tracking | GoalsPanel, TimeTracker | Medio | Unit test logica | Chiunque |
 | Supervisione progetto | ProjectSupervisionPage, DeadlinesCockpit, DeliverablesRegister, RecurringControlsPanel, SupervisionTimeline | Medio | E2E supervision + unit test hook | Chi conosce il governance model |
 | Partner e team | partners.js, usePartners, PartnersPanel, FilterBar (partner), DashboardWidgets (partner) | Medio | Unit test adapter + schema + selectors | Chi conosce il data model |
+| Workpackage | workpackages.js, useWorkpackages, WorkpackagesPanel, FilterBar (wp), DashboardWidgets (wp), reportPdf, exportCsv | Medio | Unit test adapter + schema + selectors + filters | Chi conosce il data model |
 | Manuale | ManualPage, manualContent | Basso | Nessuno specifico | Chiunque |
 
 Oggi il team è piccolo e la review è informale. La colonna "review suggerito" diventa operativa quando si aggiungono contributor — a quel punto ogni area ad alto rischio dovrebbe avere almeno un reviewer designato.

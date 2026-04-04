@@ -6,6 +6,7 @@ import {
   ProjectUpsertSchema,
   PortfolioUpsertSchema,
   PartnerUpsertSchema,
+  WorkpackageUpsertSchema,
   SectionNameSchema,
   OrgRoleSchema,
   ProjectRoleSchema,
@@ -268,5 +269,70 @@ describe('PartnerUpsertSchema', () => {
   it('accepts isActive false', () => {
     const p = validate(PartnerUpsertSchema, { ...validPartner, isActive: false })
     expect(p.isActive).toBe(false)
+  })
+})
+
+// ── WorkpackageUpsertSchema ───────────────────────────────────
+
+describe('WorkpackageUpsertSchema', () => {
+  const validWp = { projectId: 'proj1', code: 'WP1', name: 'Analysis', status: 'active' }
+
+  it('accepts valid workpackage', () => {
+    const wp = validate(WorkpackageUpsertSchema, validWp)
+    expect(wp.code).toBe('WP1')
+    expect(wp.name).toBe('Analysis')
+    expect(wp.status).toBe('active')
+  })
+
+  it('rejects empty code', () => {
+    expect(() => validate(WorkpackageUpsertSchema, { ...validWp, code: '' }))
+      .toThrow()
+  })
+
+  it('rejects empty name', () => {
+    expect(() => validate(WorkpackageUpsertSchema, { ...validWp, name: '' }))
+      .toThrow()
+  })
+
+  it('accepts all valid statuses', () => {
+    for (const status of ['draft', 'active', 'review', 'complete', 'delayed']) {
+      const wp = validate(WorkpackageUpsertSchema, { ...validWp, status })
+      expect(wp.status).toBe(status)
+    }
+  })
+
+  it('defaults invalid status to draft', () => {
+    const wp = validate(WorkpackageUpsertSchema, { ...validWp, status: 'bogus' })
+    expect(wp.status).toBe('draft')
+  })
+
+  it('accepts ownerUserId only', () => {
+    const wp = validate(WorkpackageUpsertSchema, { ...validWp, ownerUserId: '550e8400-e29b-41d4-a716-446655440000' })
+    expect(wp.ownerUserId).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(wp.ownerPartnerId).toBeFalsy()
+  })
+
+  it('accepts ownerPartnerId only', () => {
+    const wp = validate(WorkpackageUpsertSchema, { ...validWp, ownerPartnerId: 'pt1' })
+    expect(wp.ownerPartnerId).toBe('pt1')
+    expect(wp.ownerUserId).toBeFalsy()
+  })
+
+  it('rejects both ownerUserId and ownerPartnerId', () => {
+    expect(() => validate(WorkpackageUpsertSchema, {
+      ...validWp,
+      ownerUserId: '550e8400-e29b-41d4-a716-446655440000',
+      ownerPartnerId: 'pt1',
+    })).toThrow(/owner/)
+  })
+
+  it('defaults position to 0', () => {
+    const wp = validate(WorkpackageUpsertSchema, validWp)
+    expect(wp.position).toBe(0)
+  })
+
+  it('defaults isActive to true', () => {
+    const wp = validate(WorkpackageUpsertSchema, validWp)
+    expect(wp.isActive).toBe(true)
   })
 })

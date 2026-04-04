@@ -126,6 +126,38 @@ describe('applyFilters', () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('1')
   })
+
+  // ── Workpackage filter ──────────────────────────────────────
+
+  it('filters by workpackage', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp2' },
+      { id: '3', title: 'C', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: null },
+    ]
+    const result = applyFilters(tasks, { wp: 'wp1' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
+
+  it('wp=all passes all tasks', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: null },
+    ]
+    expect(applyFilters(tasks, { wp: 'all' })).toHaveLength(2)
+  })
+
+  it('combines wp filter with partner filter', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp1', partnerId: 'pt1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp1', partnerId: 'pt2' },
+      { id: '3', title: 'C', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], workpackageId: 'wp2', partnerId: 'pt1' },
+    ]
+    const result = applyFilters(tasks, { wp: 'wp1', partner: 'pt1' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
 })
 
 describe('isOverdue', () => {

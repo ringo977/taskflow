@@ -28,8 +28,8 @@
     "comment": "155.90 kB actual → 171.49 kB budget"
   },
   "ManualPage.js": {
-    "maxBytes": 94689,
-    "comment": "84.06 kB actual → 92.47 kB budget"
+    "maxBytes": 100121,
+    "comment": "88.89 kB actual → 97.77 kB budget"
   },
   "ProjectOverview.js": {
     "maxBytes": 84545,
@@ -172,7 +172,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2418209,
-    "comment": "2146.85 kB actual → 2361.53 kB budget"
+    "maxBytes": 2423641,
+    "comment": "2151.67 kB actual → 2366.84 kB budget"
   }
 }

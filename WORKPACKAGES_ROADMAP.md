@@ -31,7 +31,7 @@ Un task appartiene a zero o un WP. Come per `partner_id`, si aggiunge `workpacka
 ### Owner tipizzato
 
 Il campo `owner` non è free text. È un campo nullable con due possibili riferimenti:
-- `owner_user_id` (UUID, FK → profiles) — un membro dell'org
+- `owner_user_id` (UUID, FK → auth.users) — un membro dell'org
 - `owner_partner_id` (text, FK → partners) — un partner
 
 Un WP ha al massimo un owner. La UI mostra un singolo selettore "Responsabile" che permette di scegliere tra membri dell'org e partner collegati al progetto. Se nessuno dei due è impostato, il WP non ha owner.
@@ -48,7 +48,7 @@ I WP usano UUID standard (`gen_random_uuid()`) come PK, allineati al resto del s
 projects
   └─ project_workpackages (project-level, ordered)
        ├── id (UUID), code, name, description
-       ├── owner_user_id (FK profiles), owner_partner_id (FK partners)
+       ├── owner_user_id (FK auth.users), owner_partner_id (FK partners)
        ├── due_date, status, position
        └── is_active
 
@@ -68,7 +68,7 @@ Stesse policy org-based di partners/deliverables:
 
 ---
 
-## Milestone 1 — Foundation (data layer + UI base)
+## Milestone 1 — Foundation (data layer + UI base) ✅ DONE
 
 ### M1.1 — Migration: `035_workpackages.sql`
 
@@ -145,7 +145,7 @@ export const WorkpackageUpsertSchema = z.object({
   code:           str(50),                    // "WP1", "WP2.1"
   name:           str(255),
   description:    optStr(5000),
-  ownerUserId:    uuid.optional().nullable(),    // FK profiles
+  ownerUserId:    uuid.optional().nullable(),    // FK auth.users
   ownerPartnerId: z.string().optional().nullable(), // FK partners
   dueDate:        isoDate,
   status:         z.enum(['draft','active','review','complete','delayed']).catch('draft'),
@@ -212,7 +212,7 @@ Stima: 15 min.
 
 ---
 
-## Milestone 2 — Filters + Views integration
+## Milestone 2 — Filters + Views integration ✅ DONE
 
 ### M2.1 — FilterBar: filtro WP
 
@@ -238,7 +238,7 @@ Stima totale M2: 3h.
 
 ---
 
-## Milestone 3 — Reporting
+## Milestone 3 — Reporting ✅ DONE
 
 ### M3.1 — Selectors: `computeTasksPerWorkpackage`
 
@@ -264,7 +264,7 @@ Stima totale M3: 3h.
 
 ---
 
-## Milestone 4 — Hardening
+## Milestone 4 — Hardening ✅ DONE
 
 ### M4.1 — Unit test: workpackages adapter (mock Supabase)
 
@@ -290,13 +290,13 @@ Stima totale M4: 2h.
 
 ## Riepilogo stima
 
-| Milestone | Descrizione | Stima |
-|---|---|---|
-| M1 | Foundation: migration, adapter, hook, UI, TaskPanel, i18n | ~7.5h |
-| M2 | Filters + views integration (badge, no group-by) | ~3h |
-| M3 | Reporting: dashboard, CSV, PDF, overview | ~3h |
-| M4 | Hardening: test, manual, docs | ~2h |
-| **Totale** | | **~15.5h** |
+| Milestone | Descrizione | Stima | Stato |
+|---|---|---|---|
+| M1 | Foundation: migration, adapter, hook, UI, TaskPanel, i18n | ~7.5h | ✅ Done |
+| M2 | Filters + views integration (badge, no group-by) | ~3h | ✅ Done |
+| M3 | Reporting: dashboard, CSV, PDF, overview | ~3h | ✅ Done |
+| M4 | Hardening: test, manual, docs | ~2h | ✅ Done |
+| **Totale** | | **~15.5h** | **Complete** |
 
 ---
 
