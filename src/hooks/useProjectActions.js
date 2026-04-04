@@ -10,8 +10,9 @@ import {
   addProjectMember,
   upsertTask
 } from '@/lib/db'
-import { upsertWorkpackage } from '@/lib/db/workpackages'
-import { upsertMilestone } from '@/lib/db/milestones'
+// Dynamic imports — avoid pulling supabase.js at module level (breaks CI without env vars)
+// const { upsertWorkpackage } = await import('@/lib/db/workpackages')
+// const { upsertMilestone } = await import('@/lib/db/milestones')
 import { PROJECT_TEMPLATES } from '@/constants'
 
 const log = logger('ProjectActions')
@@ -91,23 +92,29 @@ export const useProjectActions = ({
         secRowsRef.current = await fetchSectionRows(activeOrgId)
         for (const tk of tplTasks) await upsertTask(activeOrgId, tk, secRowsRef.current)
 
-        // ── Seed WP and MS from template ──────────────────────────
+        // ── Seed WP and MS from template (dynamic imports to avoid supabase.js at module level) ──
         const wpCodeToId = {}
-        for (const [i, wpDef] of (tpl?.workpackages ?? []).entries()) {
-          const wp = await upsertWorkpackage(activeOrgId, id, {
-            code: wpDef.code, name: wpDef.name, status: wpDef.status ?? 'draft',
-            description: wpDef.description ?? '', position: i,
-          })
-          if (wp?.id) wpCodeToId[wpDef.code] = wp.id
+        if ((tpl?.workpackages ?? []).length) {
+          const { upsertWorkpackage } = await import('@/lib/db/workpackages')
+          for (const [i, wpDef] of tpl.workpackages.entries()) {
+            const wp = await upsertWorkpackage(activeOrgId, id, {
+              code: wpDef.code, name: wpDef.name, status: wpDef.status ?? 'draft',
+              description: wpDef.description ?? '', position: i,
+            })
+            if (wp?.id) wpCodeToId[wpDef.code] = wp.id
+          }
         }
         const msCodeToId = {}
-        for (const [i, msDef] of (tpl?.milestones ?? []).entries()) {
-          const ms = await upsertMilestone(activeOrgId, id, {
-            code: msDef.code, name: msDef.name, status: msDef.status ?? 'draft',
-            description: msDef.description ?? '', position: i,
-            workpackageId: msDef.wpCode ? (wpCodeToId[msDef.wpCode] ?? null) : null,
-          })
-          if (ms?.id) msCodeToId[msDef.code] = ms.id
+        if ((tpl?.milestones ?? []).length) {
+          const { upsertMilestone } = await import('@/lib/db/milestones')
+          for (const [i, msDef] of tpl.milestones.entries()) {
+            const ms = await upsertMilestone(activeOrgId, id, {
+              code: msDef.code, name: msDef.name, status: msDef.status ?? 'draft',
+              description: msDef.description ?? '', position: i,
+              workpackageId: msDef.wpCode ? (wpCodeToId[msDef.wpCode] ?? null) : null,
+            })
+            if (ms?.id) msCodeToId[msDef.code] = ms.id
+          }
         }
 
         // ── Link template tasks to WP/MS via code lookup ──────────
