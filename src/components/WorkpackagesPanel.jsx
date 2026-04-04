@@ -29,7 +29,7 @@ export default function WorkpackagesPanel({
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
-  const [form, setForm] = useState({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, dueDate: '', status: 'draft' })
+  const [form, setForm] = useState({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft' })
 
   // Build owner lookup maps
   const ownerOptions = useMemo(() => {
@@ -62,7 +62,7 @@ export default function WorkpackagesPanel({
   }, [workpackages, tasks])
 
   const resetForm = () => {
-    setForm({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, dueDate: '', status: 'draft' })
+    setForm({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft' })
     setEditId(null)
     setShowForm(false)
   }
@@ -82,6 +82,7 @@ export default function WorkpackagesPanel({
       description: wp.description ?? '',
       ownerUserId: wp.ownerUserId ?? null,
       ownerPartnerId: wp.ownerPartnerId ?? null,
+      startDate: wp.startDate ?? '',
       dueDate: wp.dueDate ?? '',
       status: wp.status,
     })
@@ -173,7 +174,8 @@ export default function WorkpackagesPanel({
                 {wp.description && (
                   <div style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 8, lineHeight: 1.5 }}>{wp.description}</div>
                 )}
-                <div style={{ display: 'flex', gap: 16, fontSize: 11, color: 'var(--tx3)', marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 16, fontSize: 11, color: 'var(--tx3)', marginBottom: 8, flexWrap: 'wrap' }}>
+                  {wp.startDate && <span>{t.wpStartDate ?? 'Start'}: {wp.startDate}</span>}
                   {wp.dueDate && <span>{t.wpDueDate ?? 'Due'}: {wp.dueDate}</span>}
                   {ownerLabel && <span>{t.wpOwner ?? 'Owner'}: {ownerLabel}</span>}
                 </div>
@@ -221,7 +223,11 @@ export default function WorkpackagesPanel({
                 <option key={s} value={s}>{statusLabel(s)}</option>
               ))}
             </select>
+            <input type="date" value={form.startDate ?? ''} onChange={e => setForm(f => ({ ...f, startDate: e.target.value || null }))}
+              placeholder={t.wpStartDate ?? 'Start'} title={t.wpStartDate ?? 'Start date'}
+              style={{ ...inputStyle, flex: 1 }} />
             <input type="date" value={form.dueDate ?? ''} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value || null }))}
+              placeholder={t.wpDueDate ?? 'Due'} title={t.wpDueDate ?? 'Due date'}
               style={{ ...inputStyle, flex: 1 }} />
           </div>
           {/* Owner selector (unified: members + partners) */}

@@ -201,6 +201,7 @@ export const WorkpackageUpsertSchema = z.object({
   description:    optStr(5000),
   ownerUserId:    uuid.optional().nullable(),
   ownerPartnerId: z.string().optional().nullable(),
+  startDate:      isoDate,
   dueDate:        isoDate,
   status:         wpStatus,
   position:       z.number().int().min(0).catch(0),

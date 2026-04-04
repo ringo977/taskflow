@@ -49,7 +49,7 @@ projects
   └─ project_workpackages (project-level, ordered)
        ├── id (UUID), code, name, description
        ├── owner_user_id (FK auth.users), owner_partner_id (FK partners)
-       ├── due_date, status, position
+       ├── start_date, due_date, status, position
        └── is_active
 
 tasks
@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS public.project_workpackages (
   description      text,
   owner_user_id    uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   owner_partner_id text REFERENCES partners(id) ON DELETE SET NULL,
+  start_date       date,
   due_date         date,
   status           text NOT NULL DEFAULT 'draft'
                      CHECK (status IN ('draft','active','review','complete','delayed')),
@@ -147,6 +148,7 @@ export const WorkpackageUpsertSchema = z.object({
   description:    optStr(5000),
   ownerUserId:    uuid.optional().nullable(),    // FK auth.users
   ownerPartnerId: z.string().optional().nullable(), // FK partners
+  startDate:      isoDate,
   dueDate:        isoDate,
   status:         z.enum(['draft','active','review','complete','delayed']).catch('draft'),
   position:       z.number().int().min(0).catch(0),

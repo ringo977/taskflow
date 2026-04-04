@@ -485,6 +485,7 @@ const it = {
   wpName: 'Nome',
   wpOwner: 'Responsabile',
   wpStatus: 'Stato',
+  wpStartDate: 'Inizio',
   wpDueDate: 'Scadenza',
   wpDescription: 'Descrizione',
   wpProgress: 'Avanzamento',

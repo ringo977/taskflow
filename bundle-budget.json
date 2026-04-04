@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 261252,
-    "comment": "231.93 kB actual → 255.13 kB budget"
+    "maxBytes": 261380,
+    "comment": "232.05 kB actual → 255.25 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -32,8 +32,8 @@
     "comment": "88.89 kB actual → 97.77 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 84545,
-    "comment": "75.06 kB actual → 82.56 kB budget"
+    "maxBytes": 84994,
+    "comment": "75.46 kB actual → 83.00 kB budget"
   },
   "TaskPanel.js": {
     "maxBytes": 38245,
@@ -172,7 +172,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2423641,
-    "comment": "2151.67 kB actual → 2366.84 kB budget"
+    "maxBytes": 2424219,
+    "comment": "2152.18 kB actual → 2367.40 kB budget"
   }
 }

@@ -485,6 +485,7 @@ const en = {
   wpName: 'Name',
   wpOwner: 'Owner',
   wpStatus: 'Status',
+  wpStartDate: 'Start date',
   wpDueDate: 'Due date',
   wpDescription: 'Description',
   wpProgress: 'Progress',
