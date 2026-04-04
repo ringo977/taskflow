@@ -6,7 +6,7 @@ beforeEach(() => localStorage.clear())
 describe('EMPTY_FILTERS', () => {
   it('has all filter keys set to neutral values', () => {
     expect(EMPTY_FILTERS).toEqual({
-      q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all',
+      q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', ms: 'all',
     })
   })
 })

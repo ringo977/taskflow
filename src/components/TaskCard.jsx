@@ -6,7 +6,7 @@ import AvatarGroup from './AvatarGroup'
 import Badge from './Badge'
 import Checkbox from './Checkbox'
 
-export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, wpCode, partnerName }) {
+export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, wpCode, msCode, partnerName }) {
   const ov       = isOverdue(task.due) && !task.done
   const doneSubs = task.subs.filter(s => s.done).length
   return (
@@ -36,7 +36,7 @@ export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, wpC
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
             <Badge pri={task.pri} />
-            {task.milestoneId && <span style={{ fontSize: 11, color: 'var(--c-success, #4CAF50)' }} title={task.milestoneId}>◆</span>}
+            {msCode && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-success, #4CAF50) 12%, transparent)', color: 'var(--c-success, #4CAF50)', fontWeight: 600 }}>◆ {msCode}</span>}
             {wpCode && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-purple, #9C27B0) 12%, transparent)', color: 'var(--c-purple, #9C27B0)', fontWeight: 600 }}>{wpCode}</span>}
             {partnerName && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500 }}>{partnerName}</span>}
             {blocked && <span style={{ fontSize: 12, color: 'var(--c-warning)' }}>⊘</span>}

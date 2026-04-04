@@ -29,6 +29,11 @@ export function applyFilters(tasks, filters = {}) {
       if ((task.workpackageId ?? null) !== filters.wp) return false
     }
 
+    // Milestone filter
+    if (filters.ms && filters.ms !== 'all') {
+      if ((task.milestoneId ?? null) !== filters.ms) return false
+    }
+
     // Tag filter
     if (filters.tag && filters.tag !== 'all') {
       if (!(task.tags ?? []).some(tg => tg.name === filters.tag)) return false

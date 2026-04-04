@@ -13,6 +13,7 @@ import Pagination from '@/components/Pagination'
 import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
+import { useMilestones } from '@/hooks/useMilestones'
 
 const SORT_OPTIONS = [
   { id: 'none', label: { it: 'Predefinito', en: 'Default' } },
@@ -48,6 +49,8 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
   const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
   const { workpackages } = useWorkpackages(orgId, project?.id)
   const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
+  const { milestones } = useMilestones(orgId, project?.id)
+  const msById = Object.fromEntries(milestones.map(m => [m.id, m]))
   const q = filters.q
 
   const commitAdd = (sec) => {
@@ -159,6 +162,11 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
                       {task.workpackageId && wpById[task.workpackageId] && (
                         <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-purple, #9C27B0) 12%, transparent)', color: 'var(--c-purple, #9C27B0)', fontWeight: 600, flexShrink: 0 }} title={wpById[task.workpackageId].name}>
                           {wpById[task.workpackageId].code}
+                        </span>
+                      )}
+                      {task.milestoneId && msById[task.milestoneId] && (
+                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-success, #4CAF50) 12%, transparent)', color: 'var(--c-success, #4CAF50)', fontWeight: 600, flexShrink: 0 }} title={msById[task.milestoneId].name}>
+                          ◆ {msById[task.milestoneId].code}
                         </span>
                       )}
                       {task.partnerId && partnerById[task.partnerId] && (

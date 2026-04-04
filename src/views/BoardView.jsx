@@ -6,6 +6,7 @@ import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
+import { useMilestones } from '@/hooks/useMilestones'
 
 const BOARD_PAGE_SIZE = 20
 
@@ -18,6 +19,8 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
   const { workpackages } = useWorkpackages(orgId, project?.id)
   const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
+  const { milestones } = useMilestones(orgId, project?.id)
+  const msById = Object.fromEntries(milestones.map(m => [m.id, m]))
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)
   const [dropIdx, setDropIdx] = useState(null)
@@ -179,6 +182,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                     lang={lang}
                     blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
                     wpCode={task.workpackageId && wpById[task.workpackageId]?.code}
+                    msCode={task.milestoneId && msById[task.milestoneId]?.code}
                     partnerName={task.partnerId && partnerById[task.partnerId]?.name}
                   />
                 </div>

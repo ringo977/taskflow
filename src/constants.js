@@ -3,7 +3,7 @@ import { storage } from '@/utils/storage'
 import { PROJECT_COLORS, INITIAL_PROJECTS, INITIAL_PORTFOLIOS, INITIAL_SECTIONS, INITIAL_TASKS } from '@/data/initialData'
 import { BIOMIMX_PROJECTS, BIOMIMX_PORTFOLIOS, BIOMIMX_SECTIONS, BIOMIMX_TASKS } from '@/data/biomimxData'
 
-export const EMPTY_FILTERS = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all' }
+export const EMPTY_FILTERS = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', ms: 'all' }
 
 export const PROJECT_TEMPLATES = [
   {
