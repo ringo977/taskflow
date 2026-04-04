@@ -24,6 +24,7 @@ export const toProject = (r, memberNames) => ({
   project_type: r.project_type ?? 'standard',
   startDate: r.start_date ?? null,
   endDate: r.end_date ?? null,
+  partnerSuggestions: r.partner_suggestions ?? [],
 })
 
 export const toTask = (r, secName, subs, cmts, deps, profileById = {}) => {

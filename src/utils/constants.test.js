@@ -33,6 +33,68 @@ describe('PROJECT_TEMPLATES', () => {
       }
     }
   })
+
+  it('template WPs have unique codes within template', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      const codes = (tpl.workpackages ?? []).map(wp => wp.code)
+      expect(new Set(codes).size).toBe(codes.length)
+    }
+  })
+
+  it('template MSs have unique codes within template', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      const codes = (tpl.milestones ?? []).map(ms => ms.code)
+      expect(new Set(codes).size).toBe(codes.length)
+    }
+  })
+
+  it('template MS wpCode references an existing WP code', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      const wpCodes = new Set((tpl.workpackages ?? []).map(wp => wp.code))
+      for (const ms of tpl.milestones ?? []) {
+        if (ms.wpCode) expect(wpCodes.has(ms.wpCode)).toBe(true)
+      }
+    }
+  })
+
+  it('template task wpCode/msCode reference existing WP/MS codes', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      const wpCodes = new Set((tpl.workpackages ?? []).map(wp => wp.code))
+      const msCodes = new Set((tpl.milestones ?? []).map(ms => ms.code))
+      for (const task of tpl.tasks ?? []) {
+        if (task.wpCode) expect(wpCodes.has(task.wpCode)).toBe(true)
+        if (task.msCode) expect(msCodes.has(task.msCode)).toBe(true)
+      }
+    }
+  })
+
+  it('partnerSuggestions have name and type when present', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      for (const s of tpl.partnerSuggestions ?? []) {
+        expect(s.name).toBeTruthy()
+        expect(s.type).toBeTruthy()
+      }
+    }
+  })
+
+  it('research and launch templates include WPs and MSs', () => {
+    const research = PROJECT_TEMPLATES.find(t => t.id === 'research')
+    const launch = PROJECT_TEMPLATES.find(t => t.id === 'launch')
+    expect(research.workpackages.length).toBeGreaterThanOrEqual(2)
+    expect(research.milestones.length).toBeGreaterThanOrEqual(2)
+    expect(launch.workpackages.length).toBeGreaterThanOrEqual(2)
+    expect(launch.milestones.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('deadline_approaching rules are disabled (V1.5)', () => {
+    for (const tpl of PROJECT_TEMPLATES) {
+      for (const rule of tpl.rules ?? []) {
+        if (rule.trigger === 'deadline_approaching') {
+          expect(rule.enabled).toBe(false)
+        }
+      }
+    }
+  })
 })
 
 describe('seedFor', () => {

@@ -206,6 +206,7 @@ export const WorkpackageUpsertSchema = z.object({
   status:         wpStatus,
   position:       z.number().int().min(0).catch(0),
   isActive:       z.boolean().catch(true),
+  access:         z.enum(['all', 'editors', 'owner_only']).catch('all'),
 }).passthrough().refine(
   d => !(d.ownerUserId && d.ownerPartnerId),
   { message: 'WP can have at most one owner (user or partner, not both)' },

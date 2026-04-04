@@ -1,9 +1,12 @@
+import { useCallback } from 'react'
 import { logger } from '@/utils/logger'
 import { useTaskActions } from '@/hooks/useTaskActions'
 import { useProjectActions } from '@/hooks/useProjectActions'
 import { useSectionActions } from '@/hooks/useSectionActions'
 import { useAIActions } from '@/hooks/useAIActions'
 import { useRuleEngine } from '@/hooks/useRuleEngine'
+import { upsertWorkpackage } from '@/lib/db/workpackages'
+import { upsertMilestone } from '@/lib/db/milestones'
 
 const log = logger('AppActions')
 
@@ -35,9 +38,25 @@ export function useAppActions({
     myProjectRoles, setMyProjectRoles, toast, tr, inbox,
   })
 
+  // ── Rule-triggered WP/MS status changes ────────────────────
+  const onWpStatusChange = useCallback(async (wpId, status) => {
+    try {
+      const proj = projs.find(p => p.id === pid)
+      if (proj) await upsertWorkpackage(activeOrgId, proj.id, { id: wpId, status })
+    } catch (e) { log.error('Rule WP status change failed:', e) }
+  }, [projs, pid, activeOrgId])
+
+  const onMsStatusChange = useCallback(async (msId, status) => {
+    try {
+      const proj = projs.find(p => p.id === pid)
+      if (proj) await upsertMilestone(activeOrgId, proj.id, { id: msId, status })
+    } catch (e) { log.error('Rule MS status change failed:', e) }
+  }, [projs, pid, activeOrgId])
+
   // ── Rule engine (wraps updTask / moveTask) ────────────────
   const { evaluateTaskChange } = useRuleEngine({
     projects: projs, tasks, updTask: rawUpdTask, toast, inbox, _tr: tr, moveTask: rawMoveTask,
+    onWpStatusChange, onMsStatusChange,
   })
 
   const updTask = (id, patch) => {

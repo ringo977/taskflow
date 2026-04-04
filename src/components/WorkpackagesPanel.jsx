@@ -29,7 +29,7 @@ export default function WorkpackagesPanel({
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
-  const [form, setForm] = useState({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft' })
+  const [form, setForm] = useState({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft', access: 'all' })
 
   // Build owner lookup maps
   const ownerOptions = useMemo(() => {
@@ -61,8 +61,11 @@ export default function WorkpackagesPanel({
     return map
   }, [workpackages, tasks])
 
+  const ACCESS_KEYS = ['all', 'editors', 'owner_only']
+  const accessLabel = (a) => t[`wpAccess${a === 'all' ? 'All' : a === 'editors' ? 'Editors' : 'OwnerOnly'}`] ?? a
+
   const resetForm = () => {
-    setForm({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft' })
+    setForm({ code: '', name: '', description: '', ownerUserId: null, ownerPartnerId: null, startDate: '', dueDate: '', status: 'draft', access: 'all' })
     setEditId(null)
     setShowForm(false)
   }
@@ -85,6 +88,7 @@ export default function WorkpackagesPanel({
       startDate: wp.startDate ?? '',
       dueDate: wp.dueDate ?? '',
       status: wp.status,
+      access: wp.access ?? 'all',
     })
     setEditId(wp.id)
     setShowForm(true)
@@ -178,6 +182,14 @@ export default function WorkpackagesPanel({
                   {wp.startDate && <span>{t.wpStartDate ?? 'Start'}: {wp.startDate}</span>}
                   {wp.dueDate && <span>{t.wpDueDate ?? 'Due'}: {wp.dueDate}</span>}
                   {ownerLabel && <span>{t.wpOwner ?? 'Owner'}: {ownerLabel}</span>}
+                  {wp.access && wp.access !== 'all' && (
+                    <span style={{ fontWeight: 500, color: 'var(--c-warning)' }}>
+                      🔒 {accessLabel(wp.access)}
+                      {wp.access === 'owner_only' && !wp.ownerUserId && (
+                        <span style={{ fontWeight: 400, marginLeft: 4 }}>⚠ {t.wpAccessOwnerOnlyWarning}</span>
+                      )}
+                    </span>
+                  )}
                 </div>
                 {stats.tasks.length > 0 && (
                   <div>
@@ -249,6 +261,20 @@ export default function WorkpackagesPanel({
               </optgroup>
             )}
           </select>
+          {/* Access level selector */}
+          <div style={{ marginBottom: 8 }}>
+            <select value={form.access} onChange={e => setForm(f => ({ ...f, access: e.target.value }))}
+              style={{ ...inputStyle }}>
+              {ACCESS_KEYS.map(a => (
+                <option key={a} value={a}>{t.wpAccess ?? 'Access'}: {accessLabel(a)}</option>
+              ))}
+            </select>
+            {form.access === 'owner_only' && !form.ownerUserId && (
+              <div style={{ fontSize: 11, color: 'var(--c-warning)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                ⚠ {t.wpAccessOwnerOnlyWarning ?? 'No user assigned — falling back to "Editors only"'}
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
             <button onClick={resetForm}
               style={{ fontSize: 12, padding: '4px 10px', background: 'transparent', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', color: 'var(--tx3)', cursor: 'pointer' }}>

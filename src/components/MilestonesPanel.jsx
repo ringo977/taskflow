@@ -25,7 +25,7 @@ const STATUS_KEYS = ['draft', 'pending', 'achieved', 'missed']
 export default function MilestonesPanel({
   milestones = [], tasks = [], workpackages = [], projectPartners = [],
   onSave, onRemove, loading,
-  canManage = false, sectionTitleStyle = {},
+  canManage = false, canApprove = false, sectionTitleStyle = {},
 }) {
   const t = useLang()
   const users = useOrgUsers()
@@ -179,6 +179,20 @@ export default function MilestonesPanel({
                 <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0 }}>{stats.done}/{stats.total}</span>
               )}
               <span style={{ fontSize: 11, color, fontWeight: 500, flexShrink: 0 }}>{statusLabel(ms.status)}</span>
+              {ms.status === 'pending' && canApprove && (
+                <>
+                  <button onClick={e => { e.stopPropagation(); onSave({ id: ms.id, status: 'achieved' }) }}
+                    title={t.approveMilestone ?? 'Approve'}
+                    style={{ fontSize: 10, padding: '1px 6px', background: 'var(--c-success)', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontWeight: 600 }}>
+                    ✓
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); onSave({ id: ms.id, status: 'missed' }) }}
+                    title={t.rejectMilestone ?? 'Reject'}
+                    style={{ fontSize: 10, padding: '1px 6px', background: 'var(--c-danger)', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontWeight: 600 }}>
+                    ✕
+                  </button>
+                </>
+              )}
               {canManage && (
                 <button onClick={e => { e.stopPropagation(); startEdit(ms) }} title={t.editMs ?? 'Edit'}
                   style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 12, padding: '2px 4px' }}>✎</button>
@@ -246,7 +260,9 @@ export default function MilestonesPanel({
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
             <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
               style={{ ...inputStyle, flex: 1 }}>
-              {STATUS_KEYS.map(s => (
+              {STATUS_KEYS
+                .filter(s => canApprove || (s !== 'achieved' && s !== 'missed'))
+                .map(s => (
                 <option key={s} value={s}>{statusLabel(s)}</option>
               ))}
             </select>

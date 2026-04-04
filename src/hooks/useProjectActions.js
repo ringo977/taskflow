@@ -10,6 +10,8 @@ import {
   addProjectMember,
   upsertTask
 } from '@/lib/db'
+import { upsertWorkpackage } from '@/lib/db/workpackages'
+import { upsertMilestone } from '@/lib/db/milestones'
 import { PROJECT_TEMPLATES } from '@/constants'
 
 const log = logger('ProjectActions')
@@ -55,6 +57,7 @@ export const useProjectActions = ({
         rules: tpl?.rules ?? [],
         forms: tpl?.forms ?? [],
         goals: tpl?.goals ?? [],
+        partnerSuggestions: tpl?.partnerSuggestions ?? [],
       }
       setProjs(p => [...p, newProj])
       setSecs(s => ({ ...s, [id]: secNames }))
@@ -87,6 +90,43 @@ export const useProjectActions = ({
         await upsertSections(activeOrgId, id, secNames)
         secRowsRef.current = await fetchSectionRows(activeOrgId)
         for (const tk of tplTasks) await upsertTask(activeOrgId, tk, secRowsRef.current)
+
+        // ── Seed WP and MS from template ──────────────────────────
+        const wpCodeToId = {}
+        for (const [i, wpDef] of (tpl?.workpackages ?? []).entries()) {
+          const wp = await upsertWorkpackage(activeOrgId, id, {
+            code: wpDef.code, name: wpDef.name, status: wpDef.status ?? 'draft',
+            description: wpDef.description ?? '', position: i,
+          })
+          if (wp?.id) wpCodeToId[wpDef.code] = wp.id
+        }
+        const msCodeToId = {}
+        for (const [i, msDef] of (tpl?.milestones ?? []).entries()) {
+          const ms = await upsertMilestone(activeOrgId, id, {
+            code: msDef.code, name: msDef.name, status: msDef.status ?? 'draft',
+            description: msDef.description ?? '', position: i,
+            workpackageId: msDef.wpCode ? (wpCodeToId[msDef.wpCode] ?? null) : null,
+          })
+          if (ms?.id) msCodeToId[msDef.code] = ms.id
+        }
+
+        // ── Link template tasks to WP/MS via code lookup ──────────
+        if (Object.keys(wpCodeToId).length || Object.keys(msCodeToId).length) {
+          const { updateTaskField } = await import('@/lib/db/tasks')
+          for (const tk of tplTasks) {
+            const tDef = tpl.tasks.find(t => t.title === tk.title)
+            const wpId = tDef?.wpCode ? (wpCodeToId[tDef.wpCode] ?? null) : null
+            const msId = tDef?.msCode ? (msCodeToId[tDef.msCode] ?? null) : null
+            if (wpId || msId) {
+              const patch = {}
+              if (wpId) patch.workpackageId = wpId
+              if (msId) patch.milestoneId = msId
+              await updateTaskField(activeOrgId, tk.id, patch).catch(e =>
+                log.warn('Template task link failed:', tk.title, e.message))
+            }
+          }
+        }
+
         toast(tr.msgProjectCreated(name), 'success')
         inbox.push({
           type: 'project_created',

@@ -65,6 +65,7 @@ export async function upsertProject(orgId, proj) {
     forms: p.forms,
     rules: p.rules,
     goals: p.goals,
+    partner_suggestions: p.partnerSuggestions ?? [],
     project_type: p.project_type,
     start_date: p.startDate ?? null,
     end_date: p.endDate ?? null,

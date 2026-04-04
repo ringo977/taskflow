@@ -6,6 +6,8 @@ import {
   canViewProject,
   canViewSection,
   canViewTask,
+  canApproveMilestone,
+  canEditTaskInWp,
   ROLES,
 } from './permissions'
 
@@ -214,6 +216,97 @@ describe('Role × Action matrix', () => {
       expect(canEditTasks(role)).toBe(expectEdit)
       expect(canManageProject(role)).toBe(expectManage)
     })
+  })
+})
+
+// ── canApproveMilestone ────────────────────────────────────
+
+describe('canApproveMilestone', () => {
+  it('owner can approve', () => expect(canApproveMilestone('owner')).toBe(true))
+  it('editor can approve', () => expect(canApproveMilestone('editor')).toBe(true))
+  it('viewer cannot approve', () => expect(canApproveMilestone('viewer')).toBe(false))
+  it('undefined role cannot approve', () => expect(canApproveMilestone(undefined)).toBe(false))
+  it('null role cannot approve', () => expect(canApproveMilestone(null)).toBe(false))
+  it('bogus role cannot approve', () => expect(canApproveMilestone('superadmin')).toBe(false))
+})
+
+// ── canEditTaskInWp ────────────────────────────────────────
+
+describe('canEditTaskInWp', () => {
+  const USER_ID = '11111111-1111-1111-1111-111111111111'
+  const OTHER_ID = '22222222-2222-2222-2222-222222222222'
+
+  // No WP — falls through to canEditTasks
+  it('no WP: owner can edit', () => expect(canEditTaskInWp('owner', null, USER_ID)).toBe(true))
+  it('no WP: editor can edit', () => expect(canEditTaskInWp('editor', null, USER_ID)).toBe(true))
+  it('no WP: viewer cannot edit', () => expect(canEditTaskInWp('viewer', null, USER_ID)).toBe(false))
+
+  // access = 'all' — same as canEditTasks
+  describe('access = all', () => {
+    const wp = { access: 'all', ownerUserId: OTHER_ID }
+    it('owner can edit', () => expect(canEditTaskInWp('owner', wp, USER_ID)).toBe(true))
+    it('editor can edit', () => expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true))
+    it('viewer cannot edit', () => expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false))
+  })
+
+  // access = 'editors' — editor+
+  describe('access = editors', () => {
+    const wp = { access: 'editors', ownerUserId: OTHER_ID }
+    it('owner can edit', () => expect(canEditTaskInWp('owner', wp, USER_ID)).toBe(true))
+    it('editor can edit', () => expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true))
+    it('viewer cannot edit', () => expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false))
+  })
+
+  // access = 'owner_only' with user owner
+  describe('access = owner_only (user owner)', () => {
+    const wp = { access: 'owner_only', ownerUserId: USER_ID }
+    it('WP owner can edit regardless of project role', () => {
+      expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(true)
+    })
+    it('non-owner cannot edit even as project owner', () => {
+      expect(canEditTaskInWp('owner', wp, OTHER_ID)).toBe(false)
+    })
+    it('non-owner editor cannot edit', () => {
+      expect(canEditTaskInWp('editor', wp, OTHER_ID)).toBe(false)
+    })
+  })
+
+  // access = 'owner_only' with partner owner (no ownerUserId) → fallback to editors
+  describe('access = owner_only (partner owner, no user mapping)', () => {
+    const wp = { access: 'owner_only', ownerUserId: null, ownerPartnerId: 'partner-1' }
+    it('owner can edit (fallback to editors)', () => {
+      expect(canEditTaskInWp('owner', wp, USER_ID)).toBe(true)
+    })
+    it('editor can edit (fallback to editors)', () => {
+      expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true)
+    })
+    it('viewer cannot edit', () => {
+      expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false)
+    })
+  })
+
+  // access = 'owner_only' with no owner at all → fallback to editors
+  describe('access = owner_only (no owner set)', () => {
+    const wp = { access: 'owner_only', ownerUserId: null }
+    it('editor can edit (fallback)', () => {
+      expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true)
+    })
+    it('viewer cannot edit', () => {
+      expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false)
+    })
+  })
+
+  // Defaults / edge cases
+  it('WP with missing access field defaults to "all"', () => {
+    const wp = { ownerUserId: null }
+    expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true)
+    expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false)
+  })
+
+  it('unknown access value defaults to canEditTasks', () => {
+    const wp = { access: 'unknown_value', ownerUserId: null }
+    expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true)
+    expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false)
   })
 })
 

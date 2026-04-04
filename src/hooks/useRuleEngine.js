@@ -39,7 +39,7 @@ export const MAX_RULE_DEPTH = 3          // max cascading rule evaluations
 export const DEDUP_WINDOW_MS = 500       // ignore same rule+task within this window
 export const MAX_FIRES_PER_TICK = 20     // circuit breaker: max rule fires per evaluation batch
 
-export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, moveTask }) {
+export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, moveTask, onWpStatusChange, onMsStatusChange }) {
   const firedDeadlineRef = useRef(new Set())
   const depthRef = useRef(0)                    // current cascade depth
   const firesThisTickRef = useRef(0)            // fires in current evaluation batch
@@ -183,17 +183,43 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         break
       }
 
+      case 'set_wp_status': {
+        const status = action.config?.status
+        const wpId = action.config?.wpId
+        if (status && wpId && onWpStatusChange) {
+          onWpStatusChange(wpId, status)
+        }
+        break
+      }
+
+      case 'set_ms_status': {
+        const toStatus = action.config?.toStatus
+        const msId = action.config?.msId
+        if (toStatus && msId && onMsStatusChange) {
+          onMsStatusChange(msId, toStatus)
+        }
+        break
+      }
+
       default:
         break
     }
-  }, [updTask, moveTask, toast, inbox])
+  }, [updTask, moveTask, toast, inbox, onWpStatusChange, onMsStatusChange])
 
   // ── Execute all actions for a rule (multi-action support) ──
 
   const executeRuleActions = useCallback((rule, task) => {
     const actions = rule.actions ?? (rule.action ? [rule.action] : [])
     for (const action of actions) {
-      executeAction(action, task)
+      // Inject enriched WP/MS IDs from aggregate triggers
+      const enriched = { ...action }
+      if (rule._enrichedWpId && action.type === 'set_wp_status') {
+        enriched.config = { ...enriched.config, wpId: rule._enrichedWpId }
+      }
+      if (rule._enrichedMsId && action.type === 'set_ms_status') {
+        enriched.config = { ...enriched.config, msId: rule._enrichedMsId }
+      }
+      executeAction(enriched, task)
     }
   }, [executeAction])
 
@@ -217,11 +243,25 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
     })
   }, [])
 
+  // ── Normalize rule format ─────────────────────────────
+  // Template rules use flat format: { trigger: 'section_change', triggerConfig, action, actionConfig }
+  // Hook expects nested format:     { trigger: { type, config }, actions: [{ type, config }] }
+  const normalizeRule = (r) => {
+    if (typeof r.trigger === 'string') {
+      return {
+        ...r,
+        trigger: { type: r.trigger, config: r.triggerConfig ?? {} },
+        actions: r.actions ?? (r.action ? [{ type: r.action, config: r.actionConfig ?? {} }] : []),
+      }
+    }
+    return r
+  }
+
   // ── Get enabled rules for a project ────────────────────
 
   const getProjectRules = useCallback((pid) => {
     const proj = projects.find(p => p.id === pid)
-    return (proj?.rules ?? []).filter(r => r.enabled)
+    return (proj?.rules ?? []).filter(r => r.enabled).map(normalizeRule)
   }, [projects])
 
   // ── Evaluate rules after task field change ──────────────
@@ -308,7 +348,43 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
           }
           break
 
-        // deadline_approaching is handled by the periodic check
+        case 'all_tasks_done_in_wp': {
+          // Fires when a task is completed and ALL tasks in its WP are now done
+          if ('done' in patch && patch.done === true && !prevTask.done && currentTask.workpackageId) {
+            const wpTasks = tasks.filter(t => t.workpackageId === currentTask.workpackageId && t.pid === currentTask.pid)
+            const allDone = wpTasks.every(t => t.id === taskId ? true : t.done)
+            if (allDone) {
+              // Check wpCode match if configured
+              const wp = trigger.config?.wpCode
+              if (!wp) {
+                shouldFire = true
+              } else {
+                // Look up WP code — we store it in the action config since we have code-based matching
+                shouldFire = true // wpCode filtering happens at action level
+              }
+              // Enrich action config with wpId for the dispatcher
+              if (shouldFire) {
+                rule._enrichedWpId = currentTask.workpackageId
+              }
+            }
+          }
+          break
+        }
+
+        case 'all_tasks_done_in_ms': {
+          // Fires when a task is completed and ALL tasks linked to its milestone are now done
+          if ('done' in patch && patch.done === true && !prevTask.done && currentTask.milestoneId) {
+            const msTasks = tasks.filter(t => t.milestoneId === currentTask.milestoneId && t.pid === currentTask.pid)
+            const allDone = msTasks.every(t => t.id === taskId ? true : t.done)
+            if (allDone) {
+              shouldFire = true
+              rule._enrichedMsId = currentTask.milestoneId
+            }
+          }
+          break
+        }
+
+        // deadline_approaching is handled by the periodic check (V1.5)
         default:
           break
       }

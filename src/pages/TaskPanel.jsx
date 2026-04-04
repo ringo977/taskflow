@@ -3,7 +3,7 @@ import { useLang } from '@/i18n'
 import { isOverdue } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
-import { getProjectRole, canEditTasks } from '@/utils/permissions'
+import { getProjectRole, canEditTasks, canEditTaskInWp } from '@/utils/permissions'
 import Avatar from '@/components/Avatar'
 // eslint-disable-next-line no-unused-vars
 import AvatarGroup from '@/components/AvatarGroup'
@@ -42,7 +42,9 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const projectRole = getProjectRole(currentUser, proj, orgUsers, myProjectRoles)
   const canDelete = isAdmin || (isManager && projectRole === 'owner')
   const ov   = isOverdue(task.due) && !task.done
-  const readOnly = !canEditTasks(projectRole)
+  const taskWp = task.workpackageId ? workpackages.find(w => w.id === task.workpackageId) : null
+  const readOnly = !canEditTaskInWp(projectRole, taskWp, me?.id)
+  const wpLocked = !readOnly ? false : canEditTasks(projectRole) // true → user CAN edit at project level but WP blocks it
 
   const deps = (task.deps ?? []).map(id => allTasks.find(t => t.id === id)).filter(Boolean)
   const blockers = allTasks.filter(t => (t.deps ?? []).includes(task.id))
@@ -122,6 +124,13 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '18px 20px' }}>
+        {/* WP lock banner */}
+        {wpLocked && taskWp && (
+          <div style={{ fontSize: 12, color: 'var(--c-warning)', background: 'var(--c-warning)11', border: '1px solid var(--c-warning)33', borderRadius: 'var(--r1)', padding: '6px 10px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            🔒 {t.wpAccessEditors ?? 'Restricted'} — {taskWp.code} {taskWp.name}
+          </div>
+        )}
+
         {/* Title */}
         <div contentEditable={!readOnly} suppressContentEditableWarning
           style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx1)', marginBottom: 16, outline: 'none', lineHeight: 1.5, letterSpacing: '-0.01em', opacity: readOnly ? 0.7 : 1 }}

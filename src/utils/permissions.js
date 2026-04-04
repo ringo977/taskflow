@@ -71,6 +71,44 @@ export function canViewTask(user, task, projectRole) {
   return false
 }
 
+/**
+ * Check if user can approve/reject a milestone (set status to achieved/missed).
+ * Only project editors and owners can change milestone to terminal statuses.
+ *
+ * @param {string} projectRole - user's project role
+ * @returns {boolean}
+ */
+export function canApproveMilestone(projectRole) {
+  return (ROLE_LEVEL[projectRole] ?? 0) >= ROLE_LEVEL.editor
+}
+
+/**
+ * Check if user can edit tasks within a workpackage based on WP access level.
+ *
+ * @param {string} projectRole - user's project role ('owner'|'editor'|'viewer')
+ * @param {Object} wp - workpackage object with { access, ownerUserId }
+ * @param {string} userId - current user's ID (UUID)
+ * @returns {boolean}
+ */
+export function canEditTaskInWp(projectRole, wp, userId) {
+  if (!wp) return canEditTasks(projectRole)
+  const access = wp.access ?? 'all'
+
+  switch (access) {
+    case 'all':
+      return canEditTasks(projectRole)
+    case 'editors':
+      return (ROLE_LEVEL[projectRole] ?? 0) >= ROLE_LEVEL.editor
+    case 'owner_only':
+      // If WP has a user owner, only that user can edit
+      if (wp.ownerUserId) return wp.ownerUserId === userId
+      // If WP owner is a partner (no user mapping), fallback to 'editors'
+      return (ROLE_LEVEL[projectRole] ?? 0) >= ROLE_LEVEL.editor
+    default:
+      return canEditTasks(projectRole)
+  }
+}
+
 export const ROLES = [
   { id: 'owner', label: { it: 'Owner', en: 'Owner' }, color: 'var(--c-brand)' },
   { id: 'editor', label: { it: 'Editor', en: 'Editor' }, color: 'var(--c-success)' },

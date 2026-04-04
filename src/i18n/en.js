@@ -476,6 +476,8 @@ const en = {
   partnerNotes: 'Notes',
   partnerTeam: 'Partner/Team',
   noPartner: '—',
+  suggestedPartners: 'Suggested from template',
+  createAndLink: 'Create & Link',
   partnerRole: 'Role',
   type_team: 'Team',
   type_partner: 'Partner',
@@ -512,10 +514,19 @@ const en = {
   selectOwner: 'Select owner',
   ownerMember: 'Member',
   ownerPartner: 'Partner',
+  wpAccess: 'Access',
+  wpAccessAll: 'Everyone',
+  wpAccessEditors: 'Editors only',
+  wpAccessOwnerOnly: 'Owner only',
+  wpAccessOwnerOnlyWarning: 'No user assigned — falling back to "Editors only"',
   // ── Workpackages: reporting ───────────────────────────────────
   chartTasksPerWp: 'Tasks per workpackage',
   reportWorkpackages: 'Workpackage progress',
   wpProgressSummary: 'Workpackage progress',
+
+  // ── Milestones ────────────────────────────────────────────────
+  approveMilestone: 'Approve milestone',
+  rejectMilestone: 'Reject milestone',
 
   // ── Milestones: reporting ─────────────────────────────────────
   chartTasksPerMs: 'Tasks per milestone',

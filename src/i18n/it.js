@@ -476,6 +476,8 @@ const it = {
   partnerNotes: 'Note',
   partnerTeam: 'Partner/Team',
   noPartner: '—',
+  suggestedPartners: 'Suggeriti dal template',
+  createAndLink: 'Crea e collega',
   partnerRole: 'Ruolo',
   type_team: 'Team',
   type_partner: 'Partner',
@@ -512,10 +514,19 @@ const it = {
   selectOwner: 'Seleziona responsabile',
   ownerMember: 'Membro',
   ownerPartner: 'Partner',
+  wpAccess: 'Accesso',
+  wpAccessAll: 'Tutti',
+  wpAccessEditors: 'Solo editor',
+  wpAccessOwnerOnly: 'Solo responsabile',
+  wpAccessOwnerOnlyWarning: 'Nessun utente assegnato — fallback a "Solo editor"',
   // ── Workpackages: reporting ───────────────────────────────────
   chartTasksPerWp: 'Task per workpackage',
   reportWorkpackages: 'Avanzamento workpackage',
   wpProgressSummary: 'Avanzamento workpackage',
+
+  // ── Milestones ────────────────────────────────────────────────
+  approveMilestone: 'Approva milestone',
+  rejectMilestone: 'Rifiuta milestone',
 
   // ── Milestones: reporting ─────────────────────────────────────
   chartTasksPerMs: 'Task per milestone',

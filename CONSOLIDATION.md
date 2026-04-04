@@ -1,6 +1,6 @@
 # TaskFlow — Consolidation Playbook
 
-> Stato: v0.5.3 · ~160 file sorgente · ~27k LOC · 751 unit test · 7 suite E2E
+> Stato: v0.5.4 · ~160 file sorgente · ~27k LOC · 787 unit test · 7 suite E2E
 > Data: aprile 2026
 
 TaskFlow non ha più come collo di bottiglia le feature. I tre colli di bottiglia attuali sono disciplina operativa, stabilità dell'esperienza e complessità accumulata. Questo documento definisce le regole operative per i prossimi cicli di sviluppo.
@@ -81,7 +81,7 @@ La zona grigia — componenti con side effect pesanti — va coperta da integrat
 | Hook custom | 25 |
 | Viste / pagine | 8 viste + 22 pagine |
 | Moduli DB | 19 |
-| Test unitari | 723 |
+| Test unitari | 787 |
 | Suite E2E | 7 |
 | Chunk bundle | 43 |
 | Bundle totale | 2.147 kB |
@@ -168,3 +168,18 @@ Questi non sono task — sono direzioni. La priorità dipende da quello che emer
 **Operativa**: Aggiungere un environment di staging se il deploy diventa più frequente. Valutare TypeScript incrementale (strict su `src/utils/` e `src/lib/db/` prima, il resto dopo). Automatizzare il changelog da commit convenzionali.
 
 **Complessità**: Splittare RulesPanel (579 LOC) seguendo il pattern usato per TaskPanel e ManualPage. HomeDashboard è stato splittato in v0.5.1 (DashboardWidgetGrid lazy). Valutare se FormsPanel e DashboardWidgets possono diventare lazy-loaded. Rivedere i 23 hook per consolidare quelli con sovrapposizioni.
+
+---
+
+## Changelog recente
+
+### v0.5.4 — Templates + Rules + Governance (punti 5-6 roadmap WP+Partners)
+
+Completati tutti e 5 i phase della roadmap `TEMPLATES_RULES_GOVERNANCE_ROADMAP.md`:
+
+- **Template seeding**: Research e Product Launch seedano WP, MS e partner suggestions. Task collegati via `wpCode`/`msCode` → UUID. Partner non auto-creati, ma suggeriti via banner con "Create & Link".
+- **Rules engine esteso** (non ricostruito): `useRuleEngine.js` già aveva 8 trigger e 10 azioni. Aggiunti: `normalizeRule()` per bridge template flat → hook nested format, trigger aggregati `all_tasks_done_in_wp`/`all_tasks_done_in_ms`, azioni `set_wp_status`/`set_ms_status`. `deadline_approaching` escluso da V1 (needs scheduler + dedup).
+- **WP access control**: campo `access` ('all'|'editors'|'owner_only') su `project_workpackages`. Utility `canEditTaskInWp()` con fallback owner_only→editors quando ownerUserId è null. Dropdown access nel WorkpackagesPanel con warning. Lock banner in TaskPanel.
+- **Milestone approval gate**: `canApproveMilestone()` (editor+). Bottoni approve/reject nel MilestonesPanel per milestone `pending`. Status `achieved`/`missed` protetti.
+- **Test**: 787 test (era 751), 35 file. Copertura nuova: permission combinazioni (21 test), template seeding (8 test), rule normalization + aggregate triggers (4 test).
+- **Migrations**: 038_partner_suggestions.sql, 039_wp_access.sql.

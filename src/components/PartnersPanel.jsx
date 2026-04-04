@@ -24,6 +24,7 @@ export default function PartnersPanel({
   orgPartners = [], projectPartners = [], loading,
   onSave, onRemove: _onRemove, onLink, onUnlink,
   projectId, canManage = false, sectionTitleStyle = {},
+  partnerSuggestions = [], onDismissSuggestion,
 }) {
   const t = useLang()
   const [showForm, setShowForm] = useState(false)
@@ -72,6 +73,39 @@ export default function PartnersPanel({
       <div style={{ ...sectionTitleStyle, marginBottom: 10 }}>
         {t.partners ?? 'Partners / Teams'}
       </div>
+
+      {/* Template partner suggestions banner */}
+      {canManage && partnerSuggestions.length > 0 && (
+        <div style={{ marginBottom: 10, padding: '8px 10px', background: 'var(--c-brand-bg, #e8f0fe)', borderRadius: 'var(--r1)', border: '1px solid var(--c-brand-border, #c5d9f7)' }}>
+          <div style={{ fontSize: 11, color: 'var(--tx2)', fontWeight: 600, marginBottom: 6 }}>
+            {t.suggestedPartners ?? 'Suggested from template'}
+          </div>
+          {partnerSuggestions.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Badge text={t[`type_${s.type}`] ?? s.type} color={TYPE_COLORS[s.type] ?? 'var(--tx3)'} />
+              <span style={{ flex: 1, fontSize: 12, color: 'var(--tx1)' }}>{s.name}</span>
+              {s.roleLabel && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{s.roleLabel}</span>}
+              <button
+                onClick={async () => {
+                  try {
+                    const saved = await onSave({ name: s.name, type: s.type })
+                    if (saved?.id) await onLink(projectId, saved.id, s.roleLabel ?? null)
+                    if (onDismissSuggestion) onDismissSuggestion(i)
+                  } catch { /* handled by hook */ }
+                }}
+                style={{ fontSize: 11, padding: '2px 8px', background: 'var(--c-brand)', color: '#fff', border: 'none', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 600 }}
+              >
+                {t.createAndLink ?? 'Create & Link'}
+              </button>
+              <button
+                onClick={() => onDismissSuggestion?.(i)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 12, padding: '2px 4px' }}
+                title={t.dismiss ?? 'Dismiss'}
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Project partners list */}
       {projectPartners.length === 0 && !loading && (

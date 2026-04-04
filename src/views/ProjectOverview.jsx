@@ -210,6 +210,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
           projectPartners={projectPartners}
           onSave={saveMs} onRemove={removeMs} loading={msLoading}
           canManage={canManage} sectionTitleStyle={sectionTitleStyle}
+          canApprove={isAdmin || isManager || ['owner', 'editor'].includes(myProjectRoles[proj.id])}
         />
 
         {/* Task Templates */}
@@ -425,6 +426,11 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
           orgPartners={orgPartners} projectPartners={projectPartners} loading={partnersLoading}
           onSave={savePartner} onRemove={removePartner} onLink={linkPartner} onUnlink={unlinkPartner}
           projectId={proj.id} canManage={canManage} sectionTitleStyle={sectionTitleStyle}
+          partnerSuggestions={proj.partnerSuggestions ?? []}
+          onDismissSuggestion={(idx) => {
+            const next = (proj.partnerSuggestions ?? []).filter((_, i) => i !== idx)
+            onUpdProj(proj.id, { partnerSuggestions: next })
+          }}
         />
 
         {/* Permissions */}

@@ -762,4 +762,113 @@ describe('useRuleEngine', () => {
       expect(payload.body).toBe('Due: —')
     })
   })
+
+  // ── Flat template rule format normalization ──
+
+  describe('flat template rule format', () => {
+    it('normalizes flat trigger/action to nested format', () => {
+      // This is the format used in PROJECT_TEMPLATES
+      const flatRule = {
+        id: 'r_flat', name: 'Flat rule', enabled: true,
+        trigger: 'section_change',
+        triggerConfig: { section: 'Done' },
+        action: 'complete_task',
+        actionConfig: {},
+      }
+      const { result, updTask } = setup([flatRule])
+
+      act(() => {
+        result.current.evaluateTaskChange('t1', { sec: 'Done' }, TASK)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(updTask).toHaveBeenCalledWith('t1', { done: true })
+    })
+  })
+
+  // ── Aggregate trigger: all_tasks_done_in_wp ──
+
+  describe('all_tasks_done_in_wp trigger', () => {
+    const WP_TASK_A = { ...TASK, id: 'tA', workpackageId: 'wp1' }
+    const WP_TASK_B = { ...TASK, id: 'tB', workpackageId: 'wp1', done: true }
+    const WP_TASK_C = { ...TASK, id: 'tC', workpackageId: 'wp2', done: false }
+
+    it('fires when last task in WP is completed', () => {
+      const rule = makeRule('all_tasks_done_in_wp',
+        act1('set_wp_status', { status: 'complete' }),
+      )
+      const onWpStatusChange = vi.fn()
+      const updTask = vi.fn()
+      const toast = vi.fn()
+      const inb = { push: vi.fn() }
+      const projects = [{ id: 'p1', name: 'P', rules: [rule] }]
+      const allTasks = [WP_TASK_A, WP_TASK_B, WP_TASK_C]
+
+      const { result } = renderHook(() =>
+        useRuleEngine({ projects, tasks: allTasks, updTask, toast, inbox: inb, _tr: {}, moveTask: vi.fn(), onWpStatusChange })
+      )
+
+      act(() => {
+        // Complete tA — now tA(done) + tB(done) = all wp1 done
+        result.current.evaluateTaskChange('tA', { done: true }, WP_TASK_A)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(onWpStatusChange).toHaveBeenCalledWith('wp1', 'complete')
+    })
+
+    it('does not fire when other tasks in WP are still open', () => {
+      const rule = makeRule('all_tasks_done_in_wp', act1('set_wp_status', { status: 'complete' }))
+      const onWpStatusChange = vi.fn()
+      const updTask = vi.fn()
+      const toast = vi.fn()
+      const projects = [{ id: 'p1', name: 'P', rules: [rule] }]
+      // Both open
+      const allTasks = [
+        { ...TASK, id: 'tX', workpackageId: 'wp1', done: false },
+        { ...TASK, id: 'tY', workpackageId: 'wp1', done: false },
+      ]
+
+      const { result } = renderHook(() =>
+        useRuleEngine({ projects, tasks: allTasks, updTask, toast, inbox: { push: vi.fn() }, _tr: {}, moveTask: vi.fn(), onWpStatusChange })
+      )
+
+      act(() => {
+        result.current.evaluateTaskChange('tX', { done: true }, allTasks[0])
+        vi.advanceTimersByTime(100)
+      })
+
+      // tY is still open
+      expect(onWpStatusChange).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── Aggregate trigger: all_tasks_done_in_ms ──
+
+  describe('all_tasks_done_in_ms trigger', () => {
+    it('fires when last task linked to milestone is completed', () => {
+      const rule = makeRule('all_tasks_done_in_ms',
+        act1('set_ms_status', { toStatus: 'achieved' }),
+      )
+      const onMsStatusChange = vi.fn()
+      const updTask = vi.fn()
+      const toast = vi.fn()
+      const projects = [{ id: 'p1', name: 'P', rules: [rule] }]
+      const allTasks = [
+        { ...TASK, id: 'tA', milestoneId: 'ms1', done: false },
+        { ...TASK, id: 'tB', milestoneId: 'ms1', done: true },
+      ]
+
+      const { result } = renderHook(() =>
+        useRuleEngine({ projects, tasks: allTasks, updTask, toast, inbox: { push: vi.fn() }, _tr: {}, moveTask: vi.fn(), onMsStatusChange })
+      )
+
+      act(() => {
+        result.current.evaluateTaskChange('tA', { done: true }, allTasks[0])
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(onMsStatusChange).toHaveBeenCalledWith('ms1', 'achieved')
+    })
+  })
 })

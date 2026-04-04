@@ -29,6 +29,7 @@ const toWorkpackage = (r) => ({
   status: r.status ?? 'draft',
   position: r.position ?? 0,
   isActive: r.is_active ?? true,
+  access: r.access ?? 'all',
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 })
@@ -75,6 +76,7 @@ export async function upsertWorkpackage(orgId, projectId, workpackage) {
     status: wp.status,
     position: wp.position ?? 0,
     is_active: wp.isActive ?? true,
+    access: wp.access ?? 'all',
     updated_at: new Date().toISOString(),
   }
   const { data, error } = await supabase
