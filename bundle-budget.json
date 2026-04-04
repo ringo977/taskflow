@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 254353,
-    "comment": "231.23 kB actual → 254.35 kB budget (partners hook in shared chunks)"
+    "maxBytes": 255100,
+    "comment": "226.47 kB actual → 249.12 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -28,28 +28,24 @@
     "comment": "155.90 kB actual → 171.49 kB budget"
   },
   "ManualPage.js": {
-    "maxBytes": 83394,
-    "comment": "74.04 kB actual → 81.44 kB budget"
+    "maxBytes": 94689,
+    "comment": "84.06 kB actual → 92.47 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 74349,
-    "comment": "67.59 kB actual → 74.35 kB budget (partner engagement card added)"
+    "maxBytes": 74344,
+    "comment": "66.00 kB actual → 72.60 kB budget"
   },
   "TaskPanel.js": {
-    "maxBytes": 37620,
-    "comment": "34.20 kB actual → 37.62 kB budget (partner selector added)"
-  },
-  "HomeDashboard.js": {
-    "maxBytes": 29359,
-    "comment": "26.69 kB actual → 29.36 kB budget (orgId prop for partner widget)"
+    "maxBytes": 37580,
+    "comment": "33.36 kB actual → 36.70 kB budget"
   },
   "ProjectSupervisionPage.js": {
-    "maxBytes": 33275,
-    "comment": "30.25 kB actual → 33.28 kB budget"
+    "maxBytes": 33274,
+    "comment": "29.54 kB actual → 32.49 kB budget"
   },
-  "DashboardWidgetGrid.js": {
-    "maxBytes": 7755,
-    "comment": "7.05 kB actual → 7.76 kB budget (partner widget case)"
+  "HomeDashboard.js": {
+    "maxBytes": 29358,
+    "comment": "26.06 kB actual → 28.67 kB budget"
   },
   "PeopleView.js": {
     "maxBytes": 25841,
@@ -68,16 +64,16 @@
     "comment": "13.65 kB actual → 15.02 kB budget"
   },
   "index.css": {
-    "maxBytes": 15198,
-    "comment": "13.49 kB actual → 14.84 kB budget"
+    "maxBytes": 15226,
+    "comment": "13.52 kB actual → 14.87 kB budget"
   },
   "BoardView.js": {
-    "maxBytes": 10901,
-    "comment": "9.91 kB actual → 10.90 kB budget (partner badge in cards)"
+    "maxBytes": 10899,
+    "comment": "9.68 kB actual → 10.64 kB budget"
   },
   "ListView.js": {
-    "maxBytes": 9559,
-    "comment": "8.69 kB actual → 9.56 kB budget (partner column added)"
+    "maxBytes": 9555,
+    "comment": "8.48 kB actual → 9.33 kB budget"
   },
   "PortfoliosView.js": {
     "maxBytes": 8036,
@@ -87,13 +83,17 @@
     "maxBytes": 7814,
     "comment": "6.94 kB actual → 7.63 kB budget"
   },
+  "DashboardWidgetGrid.js": {
+    "maxBytes": 7756,
+    "comment": "6.88 kB actual → 7.57 kB budget"
+  },
   "reportPdf.js": {
-    "maxBytes": 7744,
-    "comment": "7.04 kB actual → 7.74 kB budget (partner section in PDF)"
+    "maxBytes": 7745,
+    "comment": "6.88 kB actual → 7.56 kB budget"
   },
   "AddModal.js": {
-    "maxBytes": 5816,
-    "comment": "5.16 kB actual → 5.68 kB budget"
+    "maxBytes": 6266,
+    "comment": "5.56 kB actual → 6.12 kB budget"
   },
   "NewProjectModal.js": {
     "maxBytes": 5574,
@@ -124,24 +124,24 @@
     "comment": "3.16 kB actual → 3.48 kB budget"
   },
   "selectors.js": {
-    "maxBytes": 2792,
-    "comment": "2.48 kB actual → 2.73 kB budget"
+    "maxBytes": 3209,
+    "comment": "2.85 kB actual → 3.13 kB budget"
   },
   "filters.js": {
-    "maxBytes": 1262,
-    "comment": "1.12 kB actual → 1.23 kB budget"
+    "maxBytes": 1331,
+    "comment": "1.18 kB actual → 1.30 kB budget"
   },
   "SummaryPanel.js": {
     "maxBytes": 1127,
     "comment": "1.00 kB actual → 1.10 kB budget"
   },
+  "exportCsv.js": {
+    "maxBytes": 1014,
+    "comment": "0.90 kB actual → 0.99 kB budget"
+  },
   "AvatarGroup.js": {
     "maxBytes": 958,
     "comment": "0.85 kB actual → 0.94 kB budget"
-  },
-  "exportCsv.js": {
-    "maxBytes": 941,
-    "comment": "0.83 kB actual → 0.92 kB budget"
   },
   "Checkbox.js": {
     "maxBytes": 887,
@@ -172,7 +172,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2362616,
-    "comment": "2097.49 kB actual → 2307.24 kB budget"
+    "maxBytes": 2396117,
+    "comment": "2127.23 kB actual → 2339.96 kB budget"
   }
 }

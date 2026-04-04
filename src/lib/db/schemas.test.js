@@ -5,6 +5,7 @@ import {
   TaskPatchSchema,
   ProjectUpsertSchema,
   PortfolioUpsertSchema,
+  PartnerUpsertSchema,
   SectionNameSchema,
   OrgRoleSchema,
   ProjectRoleSchema,
@@ -96,6 +97,16 @@ describe('TaskUpsertSchema', () => {
       ...validTask,
       subs: [{ id: 'sub-1', t: '', done: false }],
     })).toThrow(/Validation failed/)
+  })
+
+  it('accepts optional partnerId', () => {
+    const t = validate(TaskUpsertSchema, { ...validTask, partnerId: 'pt-1' })
+    expect(t.partnerId).toBe('pt-1')
+  })
+
+  it('accepts null partnerId', () => {
+    const t = validate(TaskUpsertSchema, { ...validTask, partnerId: null })
+    expect(t.partnerId).toBeNull()
   })
 })
 
@@ -195,5 +206,67 @@ describe('ProjectRoleSchema', () => {
 
   it('rejects invalid role', () => {
     expect(() => validate(ProjectRoleSchema, 'owner')).toThrow(/Validation failed/)
+  })
+})
+
+// ── PartnerUpsertSchema ───────────────────────────────────────
+
+describe('PartnerUpsertSchema', () => {
+  const validPartner = { name: 'Acme Corp', type: 'vendor' }
+
+  it('accepts minimal valid partner and fills defaults', () => {
+    const p = validate(PartnerUpsertSchema, validPartner)
+    expect(p.name).toBe('Acme Corp')
+    expect(p.type).toBe('vendor')
+    expect(p.isActive).toBe(true)
+  })
+
+  it('rejects empty name', () => {
+    expect(() => validate(PartnerUpsertSchema, { ...validPartner, name: '' }))
+      .toThrow(/Validation failed/)
+  })
+
+  it('rejects name over 255 chars', () => {
+    expect(() => validate(PartnerUpsertSchema, { ...validPartner, name: 'x'.repeat(256) }))
+      .toThrow(/Validation failed/)
+  })
+
+  it.each(['team', 'partner', 'vendor', 'lab', 'department', 'client'])('accepts type %s', (type) => {
+    const p = validate(PartnerUpsertSchema, { ...validPartner, type })
+    expect(p.type).toBe(type)
+  })
+
+  it('coerces invalid type to partner', () => {
+    const p = validate(PartnerUpsertSchema, { ...validPartner, type: 'unknown' })
+    expect(p.type).toBe('partner')
+  })
+
+  it('accepts optional contact fields', () => {
+    const p = validate(PartnerUpsertSchema, {
+      ...validPartner,
+      contactName: 'John Doe',
+      contactEmail: 'john@example.com',
+      notes: 'Important partner',
+    })
+    expect(p.contactName).toBe('John Doe')
+    expect(p.contactEmail).toBe('john@example.com')
+    expect(p.notes).toBe('Important partner')
+  })
+
+  it('coerces empty contact strings to null', () => {
+    const p = validate(PartnerUpsertSchema, {
+      ...validPartner,
+      contactName: '',
+      contactEmail: '',
+      notes: '',
+    })
+    expect(p.contactName).toBeNull()
+    expect(p.contactEmail).toBeNull()
+    expect(p.notes).toBeNull()
+  })
+
+  it('accepts isActive false', () => {
+    const p = validate(PartnerUpsertSchema, { ...validPartner, isActive: false })
+    expect(p.isActive).toBe(false)
   })
 })

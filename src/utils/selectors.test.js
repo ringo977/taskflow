@@ -6,6 +6,7 @@ import {
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson,
   computeStatusDistribution, computeSectionCompletion,
+  computeTasksPerPartner,
 } from './selectors'
 
 // ── Fixtures ──────────────────────────────────────────────────────
@@ -213,5 +214,47 @@ describe('computeSectionCompletion', () => {
   it('excludes projects with 0 tasks', () => {
     const result = computeSectionCompletion([], projects)
     expect(result).toEqual([])
+  })
+})
+
+// ── Partner metrics ─────────────────────────────────────────────
+
+describe('computeTasksPerPartner', () => {
+  const partners = [
+    { id: 'pt1', name: 'Acme Corp', type: 'vendor', isActive: true },
+    { id: 'pt2', name: 'Lab X', type: 'lab', isActive: true },
+    { id: 'pt3', name: 'Inactive Co', type: 'partner', isActive: false },
+  ]
+  const ptTasks = [
+    { id: 't1', partnerId: 'pt1', done: false, due: yesterday, pri: 'high' },
+    { id: 't2', partnerId: 'pt1', done: true,  due: today,     pri: 'low' },
+    { id: 't3', partnerId: 'pt2', done: false, due: tomorrow,  pri: 'medium' },
+    { id: 't4', partnerId: null,  done: false, due: null,      pri: 'low' },
+  ]
+
+  it('groups open/done/overdue by active partner', () => {
+    const result = computeTasksPerPartner(ptTasks, partners)
+    expect(result).toHaveLength(2) // pt1 and pt2, not pt3 (inactive)
+    const acme = result.find(r => r.id === 'pt1')
+    expect(acme.open).toBe(1)
+    expect(acme.done).toBe(1)
+    expect(acme.overdue).toBe(1) // t1 due yesterday
+    const lab = result.find(r => r.id === 'pt2')
+    expect(lab.open).toBe(1)
+    expect(lab.done).toBe(0)
+  })
+
+  it('excludes inactive partners', () => {
+    const result = computeTasksPerPartner(ptTasks, partners)
+    expect(result.find(r => r.id === 'pt3')).toBeUndefined()
+  })
+
+  it('excludes partners with zero tasks', () => {
+    const result = computeTasksPerPartner([], partners)
+    expect(result).toEqual([])
+  })
+
+  it('handles empty partners list', () => {
+    expect(computeTasksPerPartner(ptTasks, [])).toEqual([])
   })
 })

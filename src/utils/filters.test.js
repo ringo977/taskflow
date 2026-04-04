@@ -95,6 +95,37 @@ describe('applyFilters', () => {
     expect(result).toHaveLength(2)
     expect(result.every((t) => t.who === 'alice' && !t.done)).toBe(true)
   })
+
+  // ── Partner filter ──────────────────────────────────────────
+  it('filters by partner', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'alice', done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'bob',   done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt2' },
+      { id: '3', title: 'C', desc: '', pri: 'low', who: 'alice', done: false, due: null, sec: 'To Do', tags: [], partnerId: null },
+    ]
+    const result = applyFilters(tasks, { partner: 'pt1' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
+
+  it('partner=all passes all tasks', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], partnerId: null },
+    ]
+    expect(applyFilters(tasks, { partner: 'all' })).toHaveLength(2)
+  })
+
+  it('combines partner filter with other filters', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'high', who: 'alice', done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt1' },
+      { id: '2', title: 'B', desc: '', pri: 'low',  who: 'alice', done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt1' },
+      { id: '3', title: 'C', desc: '', pri: 'high', who: 'alice', done: false, due: null, sec: 'To Do', tags: [], partnerId: 'pt2' },
+    ]
+    const result = applyFilters(tasks, { partner: 'pt1', pri: 'high' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
 })
 
 describe('isOverdue', () => {

@@ -1,8 +1,7 @@
 # Roadmap implementativa — Partners / Teams
 
-> Milestone 1 della roadmap WP + Partners
-> Vincolo: segue Consolidation Playbook
-> Data: aprile 2026
+> Feature completa: v0.5.2 · aprile 2026
+> Tutti i milestone completati (M1–M4)
 
 ---
 
@@ -33,173 +32,94 @@ I partner usano le stesse RLS org-based delle tabelle supervision:
 
 ---
 
-## Fase 1A.1 — Migration: `034_partners.sql`
+## Milestone 1 — Foundation ✅
 
-```sql
--- Org-level partners/teams
-CREATE TABLE IF NOT EXISTS public.partners (
-  id             text PRIMARY KEY DEFAULT ('pt' || extract(epoch from now())::bigint::text),
-  org_id         text NOT NULL,
-  name           text NOT NULL,
-  type           text NOT NULL DEFAULT 'partner'
-                   CHECK (type IN ('team','partner','vendor','lab','department','client')),
-  contact_name   text,
-  contact_email  text,
-  notes          text,
-  is_active      boolean NOT NULL DEFAULT true,
-  created_at     timestamptz DEFAULT now(),
-  updated_at     timestamptz DEFAULT now()
-);
-
--- Junction: project ↔ partner
-CREATE TABLE IF NOT EXISTS public.project_partners (
-  project_id     text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  partner_id     text NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
-  role_label     text,
-  created_at     timestamptz DEFAULT now(),
-  PRIMARY KEY (project_id, partner_id)
-);
-
--- Task-level partner (optional, one-to-one)
-ALTER TABLE public.tasks
-  ADD COLUMN IF NOT EXISTS partner_id text REFERENCES partners(id) ON DELETE SET NULL;
-
--- RLS
-ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.project_partners ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "partners_select" ON public.partners FOR SELECT
-  USING (public.get_org_role(org_id) IS NOT NULL);
-CREATE POLICY "partners_insert" ON public.partners FOR INSERT
-  WITH CHECK (public.get_org_role(org_id) IN ('admin', 'manager'));
-CREATE POLICY "partners_update" ON public.partners FOR UPDATE
-  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
-CREATE POLICY "partners_delete" ON public.partners FOR DELETE
-  USING (public.get_org_role(org_id) IN ('admin', 'manager'));
-
-CREATE POLICY "project_partners_select" ON public.project_partners FOR SELECT
-  USING (EXISTS (SELECT 1 FROM partners p WHERE p.id = partner_id AND public.get_org_role(p.org_id) IS NOT NULL));
-CREATE POLICY "project_partners_insert" ON public.project_partners FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM partners p WHERE p.id = partner_id AND public.get_org_role(p.org_id) IN ('admin', 'manager')));
-CREATE POLICY "project_partners_update" ON public.project_partners FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM partners p WHERE p.id = partner_id AND public.get_org_role(p.org_id) IN ('admin', 'manager')));
-CREATE POLICY "project_partners_delete" ON public.project_partners FOR DELETE
-  USING (EXISTS (SELECT 1 FROM partners p WHERE p.id = partner_id AND public.get_org_role(p.org_id) IN ('admin', 'manager')));
-
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_partners_org ON public.partners(org_id);
-CREATE INDEX IF NOT EXISTS idx_project_partners_project ON public.project_partners(project_id);
-CREATE INDEX IF NOT EXISTS idx_project_partners_partner ON public.project_partners(partner_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_partner ON public.tasks(partner_id);
-
--- GRANTs
-GRANT ALL ON public.partners TO authenticated;
-GRANT ALL ON public.project_partners TO authenticated;
-```
-
-Stima: 30 min.
+| Fase | Descrizione | Stato |
+|---|---|---|
+| 1A.1 | Migration `034_partners.sql` — tabelle, RLS, indici | ✅ Done |
+| 1A.2 | DB adapter `src/lib/db/partners.js` — CRUD + audit | ✅ Done |
+| 1A.3 | Schema Zod `PartnerUpsertSchema` in schemas.js | ✅ Done |
+| 1A.4 | Hook `usePartners(orgId, projectId)` — state + CRUD | ✅ Done |
+| 1A.5 | UI `PartnersPanel` in ProjectOverview sidebar | ✅ Done |
+| 1A.6 | TaskPanel + AddModal — campo partner selector | ✅ Done |
+| 1A.7 | i18n IT + EN (~20 chiavi) | ✅ Done |
 
 ---
 
-## Fase 1A.2 — DB adapter: `src/lib/db/partners.js`
+## Milestone 2 — Filters + Display ✅
 
-Funzioni:
-- `fetchOrgPartners(orgId)` — tutti i partner dell'org
-- `fetchProjectPartners(projectId)` — partner collegati al progetto (via junction)
-- `upsertPartner(orgId, partner)` — crea/aggiorna partner org-level
-- `deletePartner(orgId, partnerId, label)` — elimina partner + audit
-- `linkPartnerToProject(orgId, projectId, partnerId, roleLabel)` — junction insert
-- `unlinkPartnerFromProject(projectId, partnerId)` — junction delete
-
-Pattern: identico a deliverables.js. Audit su ogni write.
-
-Stima: 1.5h.
+| Fase | Descrizione | Stato |
+|---|---|---|
+| 2.1 | FilterBar — partner filter dropdown | ✅ Done |
+| 2.2 | filters.js — partner filter logic | ✅ Done |
+| 2.3 | ListView — partner badge column | ✅ Done |
+| 2.4 | BoardView — partner badge in TaskCard | ✅ Done |
 
 ---
 
-## Fase 1A.3 — Schema Zod: in `src/lib/db/schemas.js`
+## Milestone 3 — Reporting ✅
 
-```javascript
-export const PartnerUpsertSchema = z.object({
-  id: z.string().optional(),
-  name: str(255),
-  type: z.enum(['team', 'partner', 'vendor', 'lab', 'department', 'client']).catch('partner'),
-  contactName: optStr(255),
-  contactEmail: optStr(255),
-  notes: optStr(5000),
-  isActive: z.boolean().catch(true),
-}).passthrough()
-```
-
-Stima: 15 min.
+| Fase | Descrizione | Stato |
+|---|---|---|
+| 3.1 | Dashboard widget `tasksPartner` — bar chart | ✅ Done |
+| 3.2 | CSV export — partner column (lazy-loaded) | ✅ Done |
+| 3.3 | PDF report — partner engagement section | ✅ Done |
+| 3.4 | ProjectOverview — partner engagement card | ✅ Done |
+| 3.5 | Selectors — `computeTasksPerPartner` | ✅ Done |
+| 3.6 | i18n — 3 chiavi report (partnerEngagement, chartTasksPerPartner, reportPartners) | ✅ Done |
 
 ---
 
-## Fase 1A.4 — Hook: `src/hooks/usePartners.js`
+## Milestone 4 — Hardening ✅
 
-Espone:
-- `orgPartners` — tutti i partner dell'organizzazione
-- `projectPartners` — partner collegati al progetto corrente
-- `loading`
-- `save(partner)` — crea/aggiorna
-- `remove(partnerId)`
-- `link(projectId, partnerId, roleLabel)` — collega al progetto
-- `unlink(projectId, partnerId)` — scollega
-- `reload()`
-
-Fetch on mount, recarica quando cambia orgId.
-
-Stima: 1h.
+| Fase | Descrizione | Stato |
+|---|---|---|
+| 4.1 | Unit test partners adapter (mock Supabase) | ✅ Done |
+| 4.2 | Unit test PartnerUpsertSchema + TaskUpsertSchema partnerId | ✅ Done |
+| 4.3 | Unit test `computeTasksPerPartner` selectors | ✅ Done |
+| 4.4 | Unit test partner filter in filters.js | ✅ Done |
+| 4.5 | Manual section — manualContent + manualI18n (IT + EN) | ✅ Done |
+| 4.6 | CONSOLIDATION.md — partner area + metrics update | ✅ Done |
+| 4.7 | Bundle budget aggiornato per tutti i chunk impattati | ✅ Done |
+| 4.8 | Build + test + lint verification | ✅ Done |
 
 ---
 
-## Fase 1A.5 — UI: PartnersPanel in ProjectOverview
+## Riepilogo file toccati
 
-Posizione: right sidebar, sotto ProjectMembersPanel.
+### File nuovi
+- `supabase/migrations/034_partners.sql`
+- `src/lib/db/partners.js`
+- `src/lib/db/partners.test.js`
+- `src/hooks/usePartners.js`
+- `src/components/PartnersPanel.jsx`
 
-Due sezioni:
-1. **Project Partners** — lista partner collegati al progetto (con link/unlink)
-2. **Add partner** — dropdown per collegare un partner org-level esistente
-3. **Create new** — form inline per creare un nuovo partner
-
-Ogni riga mostra: nome, tipo badge, contatto, azioni (unlink, edit).
-
-Stima: 2h.
-
----
-
-## Fase 1A.6 — TaskPanel + AddModal: campo partner
-
-- **TaskPanel**: aggiungere select "Partner/Team" nella sidebar task, sotto Assigned
-- **AddModal**: aggiungere select partner opzionale nel form
-
-Il campo mappa a `task.partnerId` → colonna `tasks.partner_id`.
-
-Aggiornare:
-- `FIELD_MAP` in tasks.js per includere `partnerId: 'partner_id'`
-- `toTask` adapter per mappare `partner_id` → `partnerId`
-- `TaskUpsertSchema` per includere `partnerId: z.string().optional().nullable()`
-
-Stima: 1.5h.
-
----
-
-## Fase 1A.7 — i18n (IT + EN)
-
-~20 chiavi: partner, partners, partnerType, addPartner, removePartner,
-linkPartner, unlinkPartner, partnerName, contactName, contactEmail,
-partnerNotes, partnerActive, partnerInactive, partnerRole, noPartners,
-typeTeam, typePartner, typeVendor, typeLab, typeDepartment, typeClient.
-
-Stima: 15 min.
-
----
-
-## Fase 1A.8 — Test + bundle + CI
-
-- Unit test adapter (mock Supabase pattern)
-- Unit test schema validation
-- Build check, bundle budget update
-- Verifica CI verde
-
-Stima: 1h.
+### File modificati
+- `src/lib/db/adapters.js` — partnerId in toTask
+- `src/lib/db/tasks.js` — FIELD_MAP + upsertTask
+- `src/lib/db/schemas.js` — PartnerUpsertSchema + partnerId nei task schemas
+- `src/lib/db/schemas.test.js` — test PartnerUpsertSchema + partnerId
+- `src/pages/TaskPanel.jsx` — partner select
+- `src/pages/AddModal.jsx` — partner select
+- `src/views/ProjectOverview.jsx` — PartnersPanel + engagement card + orgId prop
+- `src/layout/MainContent.jsx` — orgId threading + lazy partner export
+- `src/layout/ModalLayer.jsx` — orgId + project props to AddModal
+- `src/components/FilterBar.jsx` — partner filter dropdown
+- `src/utils/filters.js` — partner filter logic
+- `src/utils/filters.test.js` — partner filter tests
+- `src/utils/selectors.js` — computeTasksPerPartner
+- `src/utils/selectors.test.js` — partner selector tests
+- `src/utils/exportCsv.js` — partner column
+- `src/utils/reportPdf.js` — partner section
+- `src/views/ListView.jsx` — partner badge
+- `src/views/BoardView.jsx` — partner badge
+- `src/components/TaskCard.jsx` — partnerName prop
+- `src/pages/dashboardConfig.js` — tasksPartner widget
+- `src/pages/DashboardWidgetGrid.jsx` — partner widget case + orgId
+- `src/pages/HomeDashboard.jsx` — orgId prop
+- `src/components/DashboardWidgets.jsx` — TasksPerPartnerWidget
+- `src/i18n/it.js` — ~21 chiavi partner
+- `src/i18n/en.js` — ~21 chiavi partner
+- `src/pages/manual/manualContent.jsx` — sezione partner
+- `src/pages/manual/manualI18n.js` — voce partner
+- `bundle-budget.json` — budget aggiornati

@@ -27,6 +27,7 @@ export const T = {
       settings: 'Impostazioni',
       roles: 'Ruoli e permessi',
       supervision: 'Supervisione progetto',
+      partners: 'Partner e team',
     },
   },
   en: {
@@ -57,6 +58,7 @@ export const T = {
       settings: 'Settings',
       roles: 'Roles & Permissions',
       supervision: 'Project Supervision',
+      partners: 'Partners & Teams',
     },
   },
 }

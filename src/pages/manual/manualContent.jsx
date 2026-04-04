@@ -1018,5 +1018,55 @@ export function content(lang) {
         <p>Periodic checklists for project governance. Each control has: title, frequency (weekly, monthly, custom), next due date, and action type (reminder only or create task). When a control is due, an orange badge appears on the tab. Click ▶ to execute: if the action type is "create task", a task is automatically created from the template; in both cases the next due date advances to the next period.</p>
       </>
     ),
+
+    partners: L ? (
+      <>
+        <h3>Cosa sono i partner</h3>
+        <p>I partner sono entità esterne (fornitori, laboratori, team, dipartimenti, clienti) che collaborano ai progetti dell'organizzazione. Ogni partner appartiene all'organizzazione e può essere collegato a uno o più progetti. I task possono essere associati a un partner per tracciare chi è responsabile del lavoro.</p>
+
+        <h3>Gestione partner</h3>
+        <p>Apri la panoramica di un progetto: nella barra laterale destra, sotto i membri, trovi il pannello <strong>Partner</strong>. Da qui puoi:</p>
+        <ul>
+          <li><strong>Collegare</strong> un partner esistente al progetto tramite il menu a tendina</li>
+          <li><strong>Creare</strong> un nuovo partner con il form inline (nome, tipo, contatto, email, note)</li>
+          <li><strong>Scollegare</strong> un partner dal progetto (il partner resta nell'organizzazione)</li>
+          <li><strong>Modificare</strong> nome, tipo, contatto e stato attivo/inattivo</li>
+        </ul>
+        <p>I tipi disponibili sono: team, partner, vendor, lab, department, client. Ogni tipo è indicato da un badge colorato.</p>
+
+        <h3>Partner nei task</h3>
+        <p>Nel pannello task e nel modal di creazione task trovi un selettore <strong>Partner/Team</strong>. Seleziona il partner responsabile del task. Questo valore appare come badge nelle viste Lista e Board, ed è disponibile come colonna nell'esportazione CSV.</p>
+
+        <h3>Filtro partner</h3>
+        <p>Nella barra filtri è presente un selettore partner. Filtra i task per vedere solo quelli assegnati a un determinato partner.</p>
+
+        <h3>Report e dashboard</h3>
+        <p>Il widget dashboard <strong>Task per partner</strong> mostra un grafico a barre con task aperti e completati per ciascun partner attivo. Nella panoramica progetto, la card <strong>Partner engagement</strong> mostra una barra di progresso per ogni partner collegato. Il report PDF include una sezione dedicata con il riepilogo per partner (aperti, completati, in ritardo).</p>
+      </>
+    ) : (
+      <>
+        <h3>What are partners</h3>
+        <p>Partners are external entities (vendors, labs, teams, departments, clients) that collaborate on the organization's projects. Each partner belongs to the organization and can be linked to one or more projects. Tasks can be associated with a partner to track who is responsible for the work.</p>
+
+        <h3>Managing partners</h3>
+        <p>Open a project's overview: in the right sidebar, below members, you'll find the <strong>Partners</strong> panel. From here you can:</p>
+        <ul>
+          <li><strong>Link</strong> an existing partner to the project via the dropdown</li>
+          <li><strong>Create</strong> a new partner with the inline form (name, type, contact, email, notes)</li>
+          <li><strong>Unlink</strong> a partner from the project (the partner remains in the organization)</li>
+          <li><strong>Edit</strong> name, type, contact, and active/inactive status</li>
+        </ul>
+        <p>Available types are: team, partner, vendor, lab, department, client. Each type is shown with a colored badge.</p>
+
+        <h3>Partners in tasks</h3>
+        <p>In the task panel and the new task modal you'll find a <strong>Partner/Team</strong> selector. Choose the partner responsible for the task. This value appears as a badge in List and Board views, and is available as a column in CSV exports.</p>
+
+        <h3>Partner filter</h3>
+        <p>The filter bar includes a partner selector. Filter tasks to see only those assigned to a specific partner.</p>
+
+        <h3>Reports and dashboard</h3>
+        <p>The <strong>Tasks per partner</strong> dashboard widget shows a bar chart with open and completed tasks for each active partner. In the project overview, the <strong>Partner engagement</strong> card shows a progress bar for each linked partner. The PDF report includes a dedicated section with a per-partner summary (open, done, overdue).</p>
+      </>
+    ),
   }
 }
