@@ -38,6 +38,13 @@ Il flag booleano non conteneva dati strutturati (nome, data, owner), quindi non 
 
 Per mitigare l'attrito, M1 include un **migration helper** nella UI: un pannello one-time che elenca i task che erano flaggati come milestone (tracciati in un campo temporaneo dalla migration) e permette di creare milestone strutturate e ri-associare i task rapidamente. La migration conserva l'informazione in `tasks._legacy_milestone` (boolean, da droppare dopo la conversione) per rendere possibile questo flusso.
 
+**Scadenza del campo temporaneo**: `_legacy_milestone` è debito tecnico con scadenza. Viene rimosso in una migration successiva solo dopo che:
+- il migration helper UI è deployato e accessibile,
+- la conversione è completata o confermata dall'utente,
+- almeno un ciclo di release è trascorso.
+
+Questo evita che il campo temporaneo diventi permanente per inerzia.
+
 Le tre opzioni considerate erano:
 1. **Drop secco + messaggio UI** — minimo sforzo, massimo attrito
 2. **Migration helper** (scelta) — compromesso pulito: lista task ex-milestone, creazione rapida, nessun dato inventato
@@ -137,8 +144,8 @@ UPDATE public.tasks SET _legacy_milestone = milestone WHERE milestone = true;
 ALTER TABLE public.tasks
   DROP COLUMN IF EXISTS milestone;
 
--- Note: _legacy_milestone will be dropped in a future migration
--- after users have had time to re-associate tasks via the migration helper.
+-- DEBITO CON SCADENZA: _legacy_milestone va rimosso in una migration successiva
+-- solo dopo: helper UI deployato + conversione completata + almeno un ciclo di release.
 
 -- RLS
 ALTER TABLE public.project_milestones ENABLE ROW LEVEL SECURITY;
@@ -229,6 +236,8 @@ In `adapters.js`: sostituire `milestone: r.milestone ?? false` con `milestoneId:
 In `tasks.js`: aggiornare FIELD_MAP e upsertTask row.
 
 **Breaking change**: i componenti che leggevano `task.milestone` (booleano) devono passare a `task.milestoneId` (UUID o null). Da aggiornare: TaskCard (diamante), BoardView, ListView, exportCsv, reportPdf.
+
+**Rollout atomico obbligatorio**: migration SQL + adapter + schema + UI devono andare nello stesso merge/release. Un deploy parziale (es. migration applicata ma adapter vecchio) rompe l'app. M1.1–M1.5 vanno trattati come blocco indivisibile.
 
 Stima: 30 min.
 
@@ -405,7 +414,8 @@ La rimozione del campo `tasks.milestone` (boolean) richiede aggiornamenti in:
 
 | Rischio | Mitigazione |
 |---|---|
-| Breaking change flag → FK | Migration atomica; UI aggiornata nello stesso commit; campo `_legacy_milestone` preserva l'informazione |
+| Breaking change flag → FK | Rollout atomico: migration + adapter + schema + UI nello stesso merge/release (M1.1–M1.5 indivisibili); campo `_legacy_milestone` preserva l'informazione |
+| `_legacy_milestone` diventa permanente per inerzia | Trattato come debito con scadenza: rimosso solo dopo helper deployato + conversione completata + un ciclo di release |
 | Task perdono diamante dopo migration | Migration helper UI (M1.9): lista task ex-milestone, creazione rapida MS, ri-associazione con un click |
 | Confusione milestone vs deliverable | Tooltip/help: "Milestone = punto di verifica, Deliverable = output consegnabile" |
 | Overhead per progetti semplici | Pannello nascosto se nessuna milestone esiste; opt-in |
