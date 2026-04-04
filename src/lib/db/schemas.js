@@ -62,7 +62,7 @@ export const TaskUpsertSchema = z.object({
   startDate:    isoDate,
   due:          isoDate,
   done:         z.boolean().catch(false),
-  milestone:    z.boolean().catch(false),
+  milestoneId:  uuid.optional().nullable(),
   attachments:  z.array(z.any()).catch([]),
   tags:         z.array(z.string().max(100)).catch([]),
   activity:     z.array(z.any()).catch([]),
@@ -94,7 +94,7 @@ export const TaskPatchSchema = z.object({
   startDate:    isoDate,
   due:          isoDate,
   done:         z.boolean().optional(),
-  milestone:    z.boolean().optional(),
+  milestoneId:  uuid.optional().nullable(),
   recurrence:   z.any().optional(),
   tags:         z.array(z.string().max(100)).optional(),
   activity:     z.array(z.any()).optional(),
@@ -209,6 +209,26 @@ export const WorkpackageUpsertSchema = z.object({
 }).passthrough().refine(
   d => !(d.ownerUserId && d.ownerPartnerId),
   { message: 'WP can have at most one owner (user or partner, not both)' },
+)
+
+const msStatus = z.enum(['draft', 'pending', 'achieved', 'missed']).catch('draft')
+
+export const MilestoneUpsertSchema = z.object({
+  id:             uuid.optional(),
+  projectId:      z.string().optional(),
+  workpackageId:  uuid.optional().nullable(),
+  code:           str(50),
+  name:           str(255),
+  description:    optStr(5000),               // means of verification
+  ownerUserId:    uuid.optional().nullable(),  // FK auth.users
+  ownerPartnerId: z.string().optional().nullable(), // FK partners
+  targetDate:     isoDate,
+  status:         msStatus,
+  position:       z.number().int().min(0).catch(0),
+  isActive:       z.boolean().catch(true),
+}).passthrough().refine(
+  d => !(d.ownerUserId && d.ownerPartnerId),
+  { message: 'Milestone can have at most one owner (user or partner, not both)' },
 )
 
 export const SectionNameSchema = str(255)

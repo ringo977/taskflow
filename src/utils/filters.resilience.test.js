@@ -13,7 +13,7 @@ import { applyFilters, isOverdue, applyVisibilityFilter } from './filters'
 const makeTask = (overrides = {}) => ({
   id: 't1', pid: 'p1', title: 'Task', desc: '', who: ['Alice'],
   pri: 'medium', done: false, due: '2026-04-01', sec: 'To Do',
-  tags: [], milestone: false, visibility: 'all',
+  tags: [], milestoneId: null, visibility: 'all',
   ...overrides,
 })
 
@@ -21,31 +21,31 @@ const makeTask = (overrides = {}) => ({
 
 describe('milestones in filters', () => {
   it('milestone without due date excluded by "overdue" filter', () => {
-    const tasks = [makeTask({ milestone: true, due: null })]
+    const tasks = [makeTask({ milestoneId: 'ms-1', due: null })]
     const result = applyFilters(tasks, { due: 'overdue' })
     expect(result).toHaveLength(0)
   })
 
   it('milestone without due date excluded by "today" filter', () => {
-    const tasks = [makeTask({ milestone: true, due: null })]
+    const tasks = [makeTask({ milestoneId: 'ms-1', due: null })]
     const result = applyFilters(tasks, { due: 'today' })
     expect(result).toHaveLength(0)
   })
 
   it('milestone without due date excluded by "week" filter', () => {
-    const tasks = [makeTask({ milestone: true, due: null })]
+    const tasks = [makeTask({ milestoneId: 'ms-1', due: null })]
     const result = applyFilters(tasks, { due: 'week' })
     expect(result).toHaveLength(0)
   })
 
   it('milestone without due date passes through with due=all', () => {
-    const tasks = [makeTask({ milestone: true, due: null })]
+    const tasks = [makeTask({ milestoneId: 'ms-1', due: null })]
     const result = applyFilters(tasks, { due: 'all' })
     expect(result).toHaveLength(1)
   })
 
   it('milestone without due date passes through with no due filter', () => {
-    const tasks = [makeTask({ milestone: true, due: null })]
+    const tasks = [makeTask({ milestoneId: 'ms-1', due: null })]
     const result = applyFilters(tasks, {})
     expect(result).toHaveLength(1)
   })

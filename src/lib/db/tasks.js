@@ -102,7 +102,7 @@ export async function upsertTask(orgId, task, sectionRows) {
     start_date: t.startDate,
     due_date: t.due,
     done: t.done,
-    milestone: t.milestone,
+    milestone_id: t.milestoneId ?? null,
     attachments: t.attachments,
     tags: t.tags,
     activity: t.activity,
@@ -140,7 +140,7 @@ export async function upsertTask(orgId, task, sectionRows) {
 const FIELD_MAP = {
   done: 'done', title: 'title', desc: 'description',
   pri: 'priority', startDate: 'start_date', due: 'due_date',
-  recurrence: 'recurrence', milestone: 'milestone',
+  recurrence: 'recurrence', milestoneId: 'milestone_id',
   tags: 'tags', activity: 'activity', position: 'position',
   customValues: 'custom_values', visibility: 'visibility',
   partnerId: 'partner_id',

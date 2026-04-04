@@ -14,7 +14,7 @@ import { toPortfolio, toProject, toTask } from './adapters'
 describe('assignee_ids resolution (via toTask)', () => {
   const base = {
     id: 't1', project_id: 'p1', title: 'T', description: '',
-    priority: 'medium', done: false, milestone: false,
+    priority: 'medium', done: false, milestone_id: null,
     position: 0,
   }
 
@@ -102,32 +102,32 @@ describe('assignee_ids resolution (via toTask)', () => {
 
 // ── Milestone without due date ───────────────────────────────
 
-describe('milestone without due date', () => {
+describe('milestoneId mapping', () => {
   const base = {
     id: 't_m', project_id: 'p1', title: 'Milestone',
     priority: 'high', done: false, position: 0,
   }
 
-  it('milestone=true with no due_date → due is null', () => {
-    const t = toTask({ ...base, milestone: true, due_date: null })
-    expect(t.milestone).toBe(true)
+  it('milestone_id set with no due_date → due is null', () => {
+    const t = toTask({ ...base, milestone_id: 'ms-1', due_date: null })
+    expect(t.milestoneId).toBe('ms-1')
     expect(t.due).toBeNull()
   })
 
-  it('milestone=true with due_date → due is set', () => {
-    const t = toTask({ ...base, milestone: true, due_date: '2026-06-01' })
-    expect(t.milestone).toBe(true)
+  it('milestone_id set with due_date → due is set', () => {
+    const t = toTask({ ...base, milestone_id: 'ms-1', due_date: '2026-06-01' })
+    expect(t.milestoneId).toBe('ms-1')
     expect(t.due).toBe('2026-06-01')
   })
 
-  it('milestone=undefined defaults to false', () => {
-    const t = toTask({ ...base, milestone: undefined })
-    expect(t.milestone).toBe(false)
+  it('milestone_id=undefined defaults to null', () => {
+    const t = toTask({ ...base, milestone_id: undefined })
+    expect(t.milestoneId).toBeNull()
   })
 
-  it('milestone=null defaults to false', () => {
-    const t = toTask({ ...base, milestone: null })
-    expect(t.milestone).toBe(false)
+  it('milestone_id=null defaults to null', () => {
+    const t = toTask({ ...base, milestone_id: null })
+    expect(t.milestoneId).toBeNull()
   })
 })
 
@@ -141,7 +141,7 @@ describe('incomplete/legacy row shapes', () => {
     expect(t.who).toEqual([])
     expect(t.startDate).toBeNull()
     expect(t.due).toBeNull()
-    expect(t.milestone).toBe(false)
+    expect(t.milestoneId).toBeNull()
     expect(t.recurrence).toBeNull()
     expect(t.attachments).toEqual([])
     expect(t.tags).toEqual([])

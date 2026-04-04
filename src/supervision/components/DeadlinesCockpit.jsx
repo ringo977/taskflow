@@ -88,10 +88,10 @@ export default function DeadlinesCockpit({ tasks, deliverables, onOpenTask, lang
     [deliverables],
   )
 
-  // Milestones = tasks flagged as milestone (t.milestone === true)
+  // Milestones = tasks linked to a structured milestone
   const upcomingMilestones = useMemo(
     () => tasks
-      .filter(t => t.milestone && !t.done && t.due && t.due >= today && t.due <= horizon)
+      .filter(t => t.milestoneId && !t.done && t.due && t.due >= today && t.due <= horizon)
       .sort((a, b) => a.due.localeCompare(b.due))
       .slice(0, 15),
     [tasks, today, horizon],

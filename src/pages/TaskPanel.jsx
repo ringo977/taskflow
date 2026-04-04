@@ -15,6 +15,7 @@ import ApprovalSection from '@/components/ApprovalSection'
 
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
+import { useMilestones } from '@/hooks/useMilestones'
 import AttachmentsSection from './taskpanel/AttachmentsSection'
 import CustomFieldsSection from './taskpanel/CustomFieldsSection'
 import ActivityLog from './taskpanel/ActivityLog'
@@ -32,6 +33,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const [confirmDel, setConfirmDel] = useState(false)
   const { orgPartners } = usePartners(orgId, task?.pid)
   const { workpackages } = useWorkpackages(orgId, task?.pid)
+  const { milestones } = useMilestones(orgId, task?.pid)
   const commentRef = useRef(null)
   const proj = projects.find(p => p.id === task.pid)
   const me = orgUsers.find(u => u.email === currentUser?.email)
@@ -179,13 +181,16 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
             <option value="monthly">{t.recMonthly}</option>
           </select>
 
-          <span style={{ color: 'var(--tx3)' }}>{t.milestone ?? 'Milestone'}</span>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: readOnly ? 'default' : 'pointer', fontSize: 13, opacity: readOnly ? 0.5 : 1 }}>
-            <input type="checkbox" checked={task.milestone ?? false}
-              onChange={e => onUpd(task.id, { milestone: e.target.checked })} disabled={readOnly}
-              style={{ accentColor: 'var(--c-brand)' }} />
-            <span style={{ color: 'var(--tx2)' }}>{task.milestone ? (t.milestoneYes ?? 'Yes') : (t.milestoneNo ?? 'No')}</span>
-          </label>
+          {milestones.length > 0 && <>
+            <span style={{ color: 'var(--tx3)' }}>{t.milestone ?? 'Milestone'}</span>
+            <select value={task.milestoneId ?? ''} onChange={e => onUpd(task.id, { milestoneId: e.target.value || null })} disabled={readOnly}
+              style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)', opacity: readOnly ? 0.5 : 1 }}>
+              <option value="">{t.noMs ?? '—'}</option>
+              {milestones.filter(m => m.isActive).map(m => (
+                <option key={m.id} value={m.id}>{m.code} — {m.name}</option>
+              ))}
+            </select>
+          </>}
 
           <span style={{ color: 'var(--tx3)' }}>{t.partnerTeam ?? 'Partner/Team'}</span>
           <select value={task.partnerId ?? ''} onChange={e => onUpd(task.id, { partnerId: e.target.value || null })} disabled={readOnly}

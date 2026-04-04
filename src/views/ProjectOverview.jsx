@@ -10,8 +10,11 @@ import AvatarGroup from '@/components/AvatarGroup'
 import ProjectMembersPanel from '@/components/ProjectMembersPanel'
 import PartnersPanel from '@/components/PartnersPanel'
 import WorkpackagesPanel from '@/components/WorkpackagesPanel'
+import MilestonesPanel from '@/components/MilestonesPanel'
+import MilestoneMigrationHelper from '@/components/MilestoneMigrationHelper'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
+import { useMilestones } from '@/hooks/useMilestones'
 import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
 import FormsPanel from '@/components/FormsPanel'
@@ -41,7 +44,7 @@ function SaveTemplateButton({ tasks, proj, onUpdProject, t }) {
       title: task.title,
       desc: task.desc ?? '',
       pri: task.pri,
-      milestone: task.milestone ?? false,
+      milestoneId: task.milestoneId ?? null,
       subs: (task.subs ?? []).map(s => ({ t: s.t })),
       tags: task.tags ?? [],
     }
@@ -89,6 +92,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
   const canManage = isAdmin || (isManager && myProjectRoles[project?.id] === 'owner')
   const { orgPartners, projectPartners, loading: partnersLoading, save: savePartner, remove: removePartner, link: linkPartner, unlink: unlinkPartner } = usePartners(orgId, project?.id)
   const { workpackages, loading: wpLoading, save: saveWp, remove: removeWp } = useWorkpackages(orgId, project?.id)
+  const { milestones, loading: msLoading, save: saveMs, remove: removeMs } = useMilestones(orgId, project?.id)
 
   const proj = project
   if (!proj) return null
@@ -189,6 +193,21 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
         <WorkpackagesPanel
           workpackages={workpackages} tasks={pTasks} projectPartners={projectPartners}
           onSave={saveWp} onRemove={removeWp} loading={wpLoading}
+          canManage={canManage} sectionTitleStyle={sectionTitleStyle}
+        />
+
+        {/* Legacy milestone migration helper (one-time) */}
+        <MilestoneMigrationHelper
+          tasks={pTasks} milestones={milestones}
+          onAssign={(taskId, msId) => onUpd(taskId, { milestoneId: msId })}
+          onCreateMs={saveMs}
+        />
+
+        {/* Milestones */}
+        <MilestonesPanel
+          milestones={milestones} tasks={pTasks} workpackages={workpackages}
+          projectPartners={projectPartners}
+          onSave={saveMs} onRemove={removeMs} loading={msLoading}
           canManage={canManage} sectionTitleStyle={sectionTitleStyle}
         />
 

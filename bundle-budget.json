@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 261380,
-    "comment": "232.05 kB actual → 255.25 kB budget"
+    "maxBytes": 263591,
+    "comment": "234.01 kB actual → 257.41 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -32,16 +32,16 @@
     "comment": "88.89 kB actual → 97.77 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 84994,
-    "comment": "75.46 kB actual → 83.00 kB budget"
+    "maxBytes": 98047,
+    "comment": "87.04 kB actual → 95.75 kB budget"
   },
   "TaskPanel.js": {
-    "maxBytes": 38245,
-    "comment": "33.95 kB actual → 37.35 kB budget"
+    "maxBytes": 38427,
+    "comment": "34.11 kB actual → 37.53 kB budget"
   },
   "ProjectSupervisionPage.js": {
-    "maxBytes": 33274,
-    "comment": "29.54 kB actual → 32.49 kB budget"
+    "maxBytes": 33279,
+    "comment": "29.54 kB actual → 32.50 kB budget"
   },
   "HomeDashboard.js": {
     "maxBytes": 31038,
@@ -56,20 +56,20 @@
     "comment": "22.24 kB actual → 24.46 kB budget"
   },
   "CalendarView.js": {
-    "maxBytes": 15858,
+    "maxBytes": 15860,
     "comment": "14.08 kB actual → 15.49 kB budget"
   },
   "TimelineView.js": {
-    "maxBytes": 15377,
-    "comment": "13.65 kB actual → 15.02 kB budget"
+    "maxBytes": 15382,
+    "comment": "13.66 kB actual → 15.02 kB budget"
   },
   "index.css": {
     "maxBytes": 15226,
     "comment": "13.52 kB actual → 14.87 kB budget"
   },
   "BoardView.js": {
-    "maxBytes": 11334,
-    "comment": "10.06 kB actual → 11.07 kB budget"
+    "maxBytes": 11370,
+    "comment": "10.09 kB actual → 11.10 kB budget"
   },
   "ListView.js": {
     "maxBytes": 10007,
@@ -127,6 +127,10 @@
     "maxBytes": 3593,
     "comment": "3.19 kB actual → 3.51 kB budget"
   },
+  "useMilestones.js": {
+    "maxBytes": 3100,
+    "comment": "2.75 kB actual → 3.03 kB budget"
+  },
   "filters.js": {
     "maxBytes": 1389,
     "comment": "1.23 kB actual → 1.36 kB budget"
@@ -172,7 +176,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2424219,
-    "comment": "2152.18 kB actual → 2367.40 kB budget"
+    "maxBytes": 2442811,
+    "comment": "2168.69 kB actual → 2385.56 kB budget"
   }
 }

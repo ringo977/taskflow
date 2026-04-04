@@ -281,7 +281,7 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
                       style={{ height: ROW_H, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderBottom: '1px solid var(--bd3)', cursor: 'pointer' }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.done ? 'var(--tx3)' : (p?.color ?? '#888'), flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: task.done ? 'var(--tx3)' : ov ? 'var(--c-danger)' : 'var(--tx1)', textDecoration: task.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{task.title}</span>
-                      {task.milestone && <span style={{ fontSize: 10, color: p?.color ?? '#888' }}>◆</span>}
+                      {task.milestoneId && <span style={{ fontSize: 10, color: p?.color ?? '#888' }}>◆</span>}
                       {task.who?.length > 0 && (
                         Array.isArray(task.who) && task.who.length > 1
                           ? <AvatarGroup names={task.who} size={16} />
@@ -389,7 +389,7 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
 
                   return (
                     <div key={task.id} style={{ height: ROW_H, borderBottom: '1px solid var(--bd3)', position: 'relative' }}>
-                      {task.milestone ? (
+                      {task.milestoneId ? (
                         <div
                           onClick={() => { if (!isDragging) onOpen(task.id) }}
                           onMouseDown={(e) => handleBarMouseDown(e, task, 'move')}

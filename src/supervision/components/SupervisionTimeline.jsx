@@ -23,9 +23,9 @@ function buildTimelineItems(tasks, deliverables, controls, horizon) {
   const today = new Date().toISOString().slice(0, 10)
   const items = []
 
-  // Milestones: tasks with milestone flag, not done
+  // Milestones: tasks linked to a milestone, not done
   for (const t of tasks) {
-    if (!t.milestone || t.done || !t.due) continue
+    if (!t.milestoneId || t.done || !t.due) continue
     if (t.due > horizon) continue
     items.push({
       id: t.id,
