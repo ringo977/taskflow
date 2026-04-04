@@ -12,6 +12,7 @@ import Checkbox from '@/components/Checkbox'
 import Pagination from '@/components/Pagination'
 import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
 import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
 
 const SORT_OPTIONS = [
   { id: 'none', label: { it: 'Predefinito', en: 'Default' } },
@@ -45,6 +46,8 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
   const [selected, setSelected] = useState(new Set())
   const { orgPartners } = usePartners(orgId, project?.id)
   const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
+  const { workpackages } = useWorkpackages(orgId, project?.id)
+  const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
   const q = filters.q
 
   const commitAdd = (sec) => {
@@ -153,6 +156,11 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
                       {Array.isArray(task.who) && task.who.length > 1
                         ? <AvatarGroup names={task.who} size={20} />
                         : <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={20} />}
+                      {task.workpackageId && wpById[task.workpackageId] && (
+                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-purple, #9C27B0) 12%, transparent)', color: 'var(--c-purple, #9C27B0)', fontWeight: 600, flexShrink: 0 }} title={wpById[task.workpackageId].name}>
+                          {wpById[task.workpackageId].code}
+                        </span>
+                      )}
                       {task.partnerId && partnerById[task.partnerId] && (
                         <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500, flexShrink: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={partnerById[task.partnerId].name}>
                           {partnerById[task.partnerId].name}

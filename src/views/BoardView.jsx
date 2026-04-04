@@ -5,6 +5,7 @@ import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
 import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
 
 const BOARD_PAGE_SIZE = 20
 
@@ -15,6 +16,8 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   const readOnly = !canEditTasks(projectRole)
   const { orgPartners } = usePartners(orgId, project?.id)
   const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
+  const { workpackages } = useWorkpackages(orgId, project?.id)
+  const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)
   const [dropIdx, setDropIdx] = useState(null)
@@ -175,6 +178,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                     q={q}
                     lang={lang}
                     blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
+                    wpCode={task.workpackageId && wpById[task.workpackageId]?.code}
                     partnerName={task.partnerId && partnerById[task.partnerId]?.name}
                   />
                 </div>

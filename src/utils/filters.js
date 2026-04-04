@@ -24,6 +24,11 @@ export function applyFilters(tasks, filters = {}) {
       if ((task.partnerId ?? null) !== filters.partner) return false
     }
 
+    // Workpackage filter
+    if (filters.wp && filters.wp !== 'all') {
+      if ((task.workpackageId ?? null) !== filters.wp) return false
+    }
+
     // Tag filter
     if (filters.tag && filters.tag !== 'all') {
       if (!(task.tags ?? []).some(tg => tg.name === filters.tag)) return false

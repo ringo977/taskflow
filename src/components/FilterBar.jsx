@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
 
-const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', partner: 'all' }
+const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', partner: 'all', wp: 'all' }
 
 export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId }) {
   const t = useLang()
@@ -12,6 +13,7 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
   const active = Object.values(filters).some(v => v && v !== 'all' && v !== '')
 
   const { orgPartners } = usePartners(orgId, projectId)
+  const { workpackages } = useWorkpackages(orgId, projectId)
   const allTags = [...new Map(tasks.flatMap(tk => tk.tags ?? []).map(tg => [tg.name, tg])).values()]
 
   const [localQ, setLocalQ] = useState(filters.q || '')
@@ -55,6 +57,12 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
         <select value={filters.partner || 'all'} onChange={e => setFilters(f => ({ ...f, partner: e.target.value }))} aria-label={t.partnerTeam ?? 'Partner'} style={{ fontSize: 13, padding: '7px 10px' }}>
           <option value="all">{t.partnerTeam ?? 'Partner'}</option>
           {orgPartners.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      )}
+      {workpackages.length > 0 && (
+        <select value={filters.wp || 'all'} onChange={e => setFilters(f => ({ ...f, wp: e.target.value }))} aria-label={t.workpackage ?? 'Workpackage'} style={{ fontSize: 13, padding: '7px 10px' }}>
+          <option value="all">{t.workpackage ?? 'WP'}</option>
+          {workpackages.filter(w => w.isActive).map(w => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}
         </select>
       )}
       {active && <button onClick={() => setFilters(EMPTY)} style={{ fontSize: 12, padding: '5px 10px', color: 'var(--c-danger)', borderColor: 'var(--bd2)' }}>{t.resetFilters}</button>}
