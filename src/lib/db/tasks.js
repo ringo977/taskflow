@@ -110,6 +110,7 @@ export async function upsertTask(orgId, task, sectionRows) {
     custom_values: t.customValues,
     visibility: t.visibility,
     partner_id: t.partnerId ?? null,
+    workpackage_id: t.workpackageId ?? null,
     updated_at: new Date().toISOString(),
   })
   if (error) throw error
@@ -143,6 +144,7 @@ const FIELD_MAP = {
   tags: 'tags', activity: 'activity', position: 'position',
   customValues: 'custom_values', visibility: 'visibility',
   partnerId: 'partner_id',
+  workpackageId: 'workpackage_id',
 }
 
 export async function updateTaskField(orgId, taskId, patch) {

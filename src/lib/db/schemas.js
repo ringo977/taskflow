@@ -69,7 +69,8 @@ export const TaskUpsertSchema = z.object({
   position:     z.number().int().min(0).catch(0),
   customValues: z.record(z.any()).catch({}),
   visibility:   visibility,
-  partnerId:    z.string().optional().nullable(),
+  partnerId:      z.string().optional().nullable(),
+  workpackageId:  uuid.optional().nullable(),
   pid:          z.string().min(1),
   sec:          z.string().optional().nullable(),
   subs:         z.array(z.object({
@@ -99,7 +100,8 @@ export const TaskPatchSchema = z.object({
   activity:     z.array(z.any()).optional(),
   position:     z.number().int().min(0).optional(),
   customValues: z.record(z.any()).optional(),
-  partnerId:    z.string().optional().nullable(),
+  partnerId:      z.string().optional().nullable(),
+  workpackageId:  uuid.optional().nullable(),
   visibility:   visibility.optional(),
   attachments:  z.array(z.any()).optional(),
   subs:         z.array(z.object({
@@ -188,6 +190,25 @@ export const PartnerUpsertSchema = z.object({
   notes:         optStr(5000),
   isActive:      z.boolean().catch(true),
 }).passthrough()
+
+const wpStatus = z.enum(['draft', 'active', 'review', 'complete', 'delayed']).catch('draft')
+
+export const WorkpackageUpsertSchema = z.object({
+  id:             uuid.optional(),
+  projectId:      z.string().optional(),
+  code:           str(50),
+  name:           str(255),
+  description:    optStr(5000),
+  ownerUserId:    uuid.optional().nullable(),
+  ownerPartnerId: z.string().optional().nullable(),
+  dueDate:        isoDate,
+  status:         wpStatus,
+  position:       z.number().int().min(0).catch(0),
+  isActive:       z.boolean().catch(true),
+}).passthrough().refine(
+  d => !(d.ownerUserId && d.ownerPartnerId),
+  { message: 'WP can have at most one owner (user or partner, not both)' },
+)
 
 export const SectionNameSchema = str(255)
 

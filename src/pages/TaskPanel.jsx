@@ -14,6 +14,7 @@ import TimeTracker from '@/components/TimeTracker'
 import ApprovalSection from '@/components/ApprovalSection'
 
 import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
 import AttachmentsSection from './taskpanel/AttachmentsSection'
 import CustomFieldsSection from './taskpanel/CustomFieldsSection'
 import ActivityLog from './taskpanel/ActivityLog'
@@ -30,6 +31,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
   const [mentionQuery, setMentionQuery] = useState(null)
   const [confirmDel, setConfirmDel] = useState(false)
   const { orgPartners } = usePartners(orgId, task?.pid)
+  const { workpackages } = useWorkpackages(orgId, task?.pid)
   const commentRef = useRef(null)
   const proj = projects.find(p => p.id === task.pid)
   const me = orgUsers.find(u => u.email === currentUser?.email)
@@ -193,6 +195,17 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+
+          {workpackages.length > 0 && <>
+            <span style={{ color: 'var(--tx3)' }}>{t.workpackage ?? 'Workpackage'}</span>
+            <select value={task.workpackageId ?? ''} onChange={e => onUpd(task.id, { workpackageId: e.target.value || null })} disabled={readOnly}
+              style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx2)', opacity: readOnly ? 0.5 : 1 }}>
+              <option value="">{t.noWp ?? '—'}</option>
+              {workpackages.filter(w => w.isActive).map(w => (
+                <option key={w.id} value={w.id}>{w.code} — {w.name}</option>
+              ))}
+            </select>
+          </>}
 
           <span style={{ color: 'var(--tx3)' }}>{t.section}</span>
           <span style={{ color: 'var(--tx2)' }}>{task.sec}</span>

@@ -9,7 +9,9 @@ import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import ProjectMembersPanel from '@/components/ProjectMembersPanel'
 import PartnersPanel from '@/components/PartnersPanel'
+import WorkpackagesPanel from '@/components/WorkpackagesPanel'
 import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
 import ConfirmModal from '@/components/ConfirmModal'
 import RulesPanel from '@/components/RulesPanel'
 import FormsPanel from '@/components/FormsPanel'
@@ -86,6 +88,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
   const [confirmDel, setConfirmDel] = useState(false)
   const canManage = isAdmin || (isManager && myProjectRoles[project?.id] === 'owner')
   const { orgPartners, projectPartners, loading: partnersLoading, save: savePartner, remove: removePartner, link: linkPartner, unlink: unlinkPartner } = usePartners(orgId, project?.id)
+  const { workpackages, loading: wpLoading, save: saveWp, remove: removeWp } = useWorkpackages(orgId, project?.id)
 
   const proj = project
   if (!proj) return null
@@ -181,6 +184,13 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
 
         {/* Goals */}
         <GoalsPanel project={proj} tasks={tasks} onUpdProj={onUpdProj} sectionTitleStyle={sectionTitleStyle} />
+
+        {/* Workpackages */}
+        <WorkpackagesPanel
+          workpackages={workpackages} tasks={pTasks} projectPartners={projectPartners}
+          onSave={saveWp} onRemove={removeWp} loading={wpLoading}
+          canManage={canManage} sectionTitleStyle={sectionTitleStyle}
+        />
 
         {/* Task Templates */}
         <div style={{ background: 'var(--bg1)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>

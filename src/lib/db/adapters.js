@@ -53,6 +53,7 @@ export const toTask = (r, secName, subs, cmts, deps, profileById = {}) => {
   subs: subs ?? [],
   cmts: cmts ?? [],
   partnerId: r.partner_id ?? null,
+  workpackageId: r.workpackage_id ?? null,
   deps: deps ?? [],
   }
 }
