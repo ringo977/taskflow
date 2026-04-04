@@ -158,6 +158,38 @@ describe('applyFilters', () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('1')
   })
+
+  // ── Milestone filter ────────────────────────────────────────
+
+  it('filters by milestone', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms2' },
+      { id: '3', title: 'C', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: null },
+    ]
+    const result = applyFilters(tasks, { ms: 'ms1' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
+
+  it('ms=all passes all tasks', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: null },
+    ]
+    expect(applyFilters(tasks, { ms: 'all' })).toHaveLength(2)
+  })
+
+  it('combines ms filter with wp and partner filters', () => {
+    const tasks = [
+      { id: '1', title: 'A', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms1', workpackageId: 'wp1', partnerId: 'pt1' },
+      { id: '2', title: 'B', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms1', workpackageId: 'wp2', partnerId: 'pt1' },
+      { id: '3', title: 'C', desc: '', pri: 'low', who: 'a', done: false, due: null, sec: 'To Do', tags: [], milestoneId: 'ms2', workpackageId: 'wp1', partnerId: 'pt1' },
+    ]
+    const result = applyFilters(tasks, { ms: 'ms1', wp: 'wp1', partner: 'pt1' })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
 })
 
 describe('isOverdue', () => {

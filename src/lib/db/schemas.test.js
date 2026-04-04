@@ -7,6 +7,7 @@ import {
   PortfolioUpsertSchema,
   PartnerUpsertSchema,
   WorkpackageUpsertSchema,
+  MilestoneUpsertSchema,
   SectionNameSchema,
   OrgRoleSchema,
   ProjectRoleSchema,
@@ -334,5 +335,80 @@ describe('WorkpackageUpsertSchema', () => {
   it('defaults isActive to true', () => {
     const wp = validate(WorkpackageUpsertSchema, validWp)
     expect(wp.isActive).toBe(true)
+  })
+})
+
+// ── MilestoneUpsertSchema ─────────────────────────────────────
+
+describe('MilestoneUpsertSchema', () => {
+  const validMs = { projectId: 'proj1', code: 'MS1', name: 'Prototype review', status: 'pending' }
+
+  it('validates a valid milestone', () => {
+    const ms = validate(MilestoneUpsertSchema, validMs)
+    expect(ms.code).toBe('MS1')
+    expect(ms.name).toBe('Prototype review')
+    expect(ms.status).toBe('pending')
+  })
+
+  it('rejects empty code', () => {
+    expect(() => validate(MilestoneUpsertSchema, { ...validMs, code: '' }))
+      .toThrow()
+  })
+
+  it('rejects empty name', () => {
+    expect(() => validate(MilestoneUpsertSchema, { ...validMs, name: '' }))
+      .toThrow()
+  })
+
+  it('accepts all valid statuses', () => {
+    for (const status of ['draft', 'pending', 'achieved', 'missed']) {
+      const ms = validate(MilestoneUpsertSchema, { ...validMs, status })
+      expect(ms.status).toBe(status)
+    }
+  })
+
+  it('defaults invalid status to draft', () => {
+    const ms = validate(MilestoneUpsertSchema, { ...validMs, status: 'bogus' })
+    expect(ms.status).toBe('draft')
+  })
+
+  it('accepts ownerUserId only', () => {
+    const ms = validate(MilestoneUpsertSchema, { ...validMs, ownerUserId: '550e8400-e29b-41d4-a716-446655440000' })
+    expect(ms.ownerUserId).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(ms.ownerPartnerId).toBeFalsy()
+  })
+
+  it('accepts ownerPartnerId only', () => {
+    const ms = validate(MilestoneUpsertSchema, { ...validMs, ownerPartnerId: 'pt1' })
+    expect(ms.ownerPartnerId).toBe('pt1')
+    expect(ms.ownerUserId).toBeFalsy()
+  })
+
+  it('rejects both owners set', () => {
+    expect(() => validate(MilestoneUpsertSchema, {
+      ...validMs,
+      ownerUserId: '550e8400-e29b-41d4-a716-446655440000',
+      ownerPartnerId: 'pt1',
+    })).toThrow()
+  })
+
+  it('defaults position to 0', () => {
+    const ms = validate(MilestoneUpsertSchema, validMs)
+    expect(ms.position).toBe(0)
+  })
+
+  it('defaults isActive to true', () => {
+    const ms = validate(MilestoneUpsertSchema, validMs)
+    expect(ms.isActive).toBe(true)
+  })
+
+  it('accepts workpackageId (nullable UUID)', () => {
+    const ms = validate(MilestoneUpsertSchema, { ...validMs, workpackageId: '550e8400-e29b-41d4-a716-446655440000' })
+    expect(ms.workpackageId).toBe('550e8400-e29b-41d4-a716-446655440000')
+  })
+
+  it('accepts null workpackageId', () => {
+    const ms = validate(MilestoneUpsertSchema, { ...validMs, workpackageId: null })
+    expect(ms.workpackageId).toBeNull()
   })
 })

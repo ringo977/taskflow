@@ -105,7 +105,7 @@ Stesse policy org-based di WP/partners/deliverables:
 
 ---
 
-## Milestone 1 — Foundation (data layer + UI base)
+## Milestone 1 — Foundation (data layer + UI base) ✅
 
 ### M1.1 — Migration: `037_milestones.sql`
 
@@ -287,7 +287,7 @@ Stima: 15 min.
 
 ---
 
-## Milestone 2 — Filters + Views integration
+## Milestone 2 — Filters + Views integration ✅
 
 ### M2.1 — FilterBar: filtro Milestone
 
@@ -313,7 +313,7 @@ Stima totale M2: 3h.
 
 ---
 
-## Milestone 3 — Reporting
+## Milestone 3 — Reporting ✅
 
 ### M3.1 — Selectors: `computeTasksPerMilestone`
 
@@ -339,7 +339,7 @@ Stima totale M3: 3h.
 
 ---
 
-## Milestone 4 — Hardening
+## Milestone 4 — Hardening ✅
 
 ### M4.1 — Unit test: milestones adapter (mock Supabase)
 

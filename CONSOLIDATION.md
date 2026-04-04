@@ -1,6 +1,6 @@
 # TaskFlow — Consolidation Playbook
 
-> Stato: v0.5.3 · ~160 file sorgente · ~27k LOC · 723 unit test · 7 suite E2E
+> Stato: v0.5.3 · ~160 file sorgente · ~27k LOC · 751 unit test · 7 suite E2E
 > Data: aprile 2026
 
 TaskFlow non ha più come collo di bottiglia le feature. I tre colli di bottiglia attuali sono disciplina operativa, stabilità dell'esperienza e complessità accumulata. Questo documento definisce le regole operative per i prossimi cicli di sviluppo.
@@ -127,6 +127,7 @@ TaskFlow copre queste aree. Per ognuna: livello di rischio, requisiti minimi su 
 | Supervisione progetto | ProjectSupervisionPage, DeadlinesCockpit, DeliverablesRegister, RecurringControlsPanel, SupervisionTimeline | Medio | E2E supervision + unit test hook | Chi conosce il governance model |
 | Partner e team | partners.js, usePartners, PartnersPanel, FilterBar (partner), DashboardWidgets (partner) | Medio | Unit test adapter + schema + selectors | Chi conosce il data model |
 | Workpackage | workpackages.js, useWorkpackages, WorkpackagesPanel, FilterBar (wp), DashboardWidgets (wp), reportPdf, exportCsv | Medio | Unit test adapter + schema + selectors + filters | Chi conosce il data model |
+| Milestone | milestones.js, useMilestones, MilestonesPanel, MilestoneMigrationHelper, FilterBar (ms), DashboardWidgets (ms), reportPdf, exportCsv | Medio | Unit test adapter + schema + selectors + filters | Chi conosce il data model |
 | Manuale | ManualPage, manualContent | Basso | Nessuno specifico | Chiunque |
 
 Oggi il team è piccolo e la review è informale. La colonna "review suggerito" diventa operativa quando si aggiungono contributor — a quel punto ogni area ad alto rischio dovrebbe avere almeno un reviewer designato.

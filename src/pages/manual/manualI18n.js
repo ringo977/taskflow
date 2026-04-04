@@ -29,6 +29,7 @@ export const T = {
       supervision: 'Supervisione progetto',
       partners: 'Partner e team',
       workpackages: 'Workpackage',
+      milestones: 'Milestone',
     },
   },
   en: {
@@ -61,6 +62,7 @@ export const T = {
       supervision: 'Project Supervision',
       partners: 'Partners & Teams',
       workpackages: 'Workpackages',
+      milestones: 'Milestones',
     },
   },
 }

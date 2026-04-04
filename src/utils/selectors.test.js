@@ -6,7 +6,7 @@ import {
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson,
   computeStatusDistribution, computeSectionCompletion,
-  computeTasksPerPartner, computeTasksPerWorkpackage,
+  computeTasksPerPartner, computeTasksPerWorkpackage, computeTasksPerMilestone,
 } from './selectors'
 
 // ── Fixtures ──────────────────────────────────────────────────────
@@ -305,5 +305,54 @@ describe('computeTasksPerWorkpackage', () => {
     const result = computeTasksPerWorkpackage(wpTasks, wps)
     expect(result[0].id).toBe('wp1') // 2 tasks > 1 task
     expect(result[1].id).toBe('wp2')
+  })
+})
+
+// ── Milestone metrics ──────────────────────────────────────────
+
+describe('computeTasksPerMilestone', () => {
+  const milestones = [
+    { id: 'ms1', code: 'MS1', name: 'Prototype review', status: 'pending', isActive: true },
+    { id: 'ms2', code: 'MS2', name: 'Final delivery', status: 'achieved', isActive: true },
+    { id: 'ms3', code: 'MS3', name: 'Archived gate', status: 'missed', isActive: false },
+  ]
+  const msTasks = [
+    { id: 't1', milestoneId: 'ms1', done: false, due: yesterday, pri: 'high' },
+    { id: 't2', milestoneId: 'ms1', done: true,  due: today,     pri: 'low' },
+    { id: 't3', milestoneId: 'ms2', done: false, due: tomorrow,  pri: 'medium' },
+    { id: 't4', milestoneId: null,  done: false, due: null,      pri: 'low' },
+  ]
+
+  it('groups open/done/overdue by active milestone', () => {
+    const result = computeTasksPerMilestone(msTasks, milestones)
+    expect(result).toHaveLength(2) // ms1 and ms2, not ms3 (inactive)
+    const ms1 = result.find(r => r.id === 'ms1')
+    expect(ms1.code).toBe('MS1')
+    expect(ms1.open).toBe(1)
+    expect(ms1.done).toBe(1)
+    expect(ms1.overdue).toBe(1) // t1 due yesterday
+    const ms2 = result.find(r => r.id === 'ms2')
+    expect(ms2.open).toBe(1)
+    expect(ms2.done).toBe(0)
+  })
+
+  it('excludes inactive milestones', () => {
+    const result = computeTasksPerMilestone(msTasks, milestones)
+    expect(result.find(r => r.id === 'ms3')).toBeUndefined()
+  })
+
+  it('excludes milestones with zero tasks', () => {
+    const result = computeTasksPerMilestone([], milestones)
+    expect(result).toEqual([])
+  })
+
+  it('handles empty milestones list', () => {
+    expect(computeTasksPerMilestone(msTasks, [])).toEqual([])
+  })
+
+  it('sorts by total tasks descending', () => {
+    const result = computeTasksPerMilestone(msTasks, milestones)
+    expect(result[0].id).toBe('ms1') // 2 tasks > 1 task
+    expect(result[1].id).toBe('ms2')
   })
 })

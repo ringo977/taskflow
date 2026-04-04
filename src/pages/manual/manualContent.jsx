@@ -1116,5 +1116,59 @@ export function content(lang) {
         <p>The <strong>Tasks per workpackage</strong> dashboard widget shows a purple bar chart with open and completed tasks for each active WP. In the project overview, the <strong>Workpackage progress</strong> card shows a progress bar for each WP with task counts. CSV export includes "WP Code" and "WP Name" columns. The PDF report includes a dedicated section with a per-WP summary (open, done, overdue).</p>
       </>
     ),
+
+    milestones: L ? (
+      <>
+        <h3>Cosa sono i milestone</h3>
+        <p>I milestone sono traguardi chiave all'interno di un progetto. A differenza dei workpackage (che raggruppano task), i milestone rappresentano punti di verifica nel tempo: una consegna, una revisione, un gate di approvazione. Ogni milestone ha un codice, un nome, una data obiettivo e un campo "mezzi di verifica" che descrive come il raggiungimento viene certificato. Un task può essere collegato a un milestone per indicare che contribuisce al suo raggiungimento.</p>
+
+        <h3>Gestione milestone</h3>
+        <p>Nella panoramica del progetto, nella colonna principale, trovi il pannello <strong>Milestone</strong> (verde). Da qui puoi:</p>
+        <ul>
+          <li><strong>Creare</strong> un milestone con codice, nome, descrizione (mezzi di verifica), responsabile, data obiettivo e stato</li>
+          <li><strong>Modificare</strong> un milestone esistente cliccando sull'icona di modifica</li>
+          <li><strong>Eliminare</strong> un milestone (i task collegati mantengono i loro dati, il campo milestone viene azzerato)</li>
+        </ul>
+        <p>Ogni milestone ha un <strong>responsabile tipizzato</strong>: puoi assegnare un membro dell'organizzazione o un partner collegato al progetto. Gli stati disponibili sono: bozza (grigio), in attesa (blu), raggiunto (verde), mancato (rosso). Opzionalmente un milestone può essere associato a un workpackage.</p>
+
+        <h3>Milestone nei task</h3>
+        <p>Nel pannello task e nel modal di creazione trovi un selettore <strong>Milestone</strong> (visibile solo se il progetto ha almeno un milestone). Seleziona il milestone a cui il task contribuisce. Il badge verde con diamante ◆ appare nelle viste Lista e Board.</p>
+
+        <h3>Filtro milestone</h3>
+        <p>Nella barra filtri è presente un selettore Milestone (visibile solo se il progetto ha milestone). Filtra i task per vedere solo quelli collegati a un determinato milestone.</p>
+
+        <h3>Report e dashboard</h3>
+        <p>Il widget dashboard <strong>Task per milestone</strong> mostra un grafico a barre verde con task aperti e completati per ciascun milestone attivo. Nella panoramica progetto, la card <strong>Avanzamento milestone</strong> mostra una barra di progresso per ogni milestone con conteggio task. L'esportazione CSV include le colonne "MS Code" e "MS Name". Il report PDF include una sezione dedicata con il riepilogo per milestone.</p>
+
+        <h3>Migrazione dal vecchio flag</h3>
+        <p>Se il progetto conteneva task con il vecchio flag booleano "milestone", al primo accesso comparirà un pannello di migrazione. Da qui puoi creare nuovi milestone e riassegnare i task legacy uno per uno. Il pannello scompare automaticamente quando tutti i task legacy sono stati migrati o quando viene esplicitamente chiuso.</p>
+      </>
+    ) : (
+      <>
+        <h3>What are milestones</h3>
+        <p>Milestones are key checkpoints within a project. Unlike workpackages (which group tasks), milestones represent verification points in time: a delivery, a review, an approval gate. Each milestone has a code, a name, a target date and a "means of verification" field describing how achievement is certified. A task can be linked to a milestone to indicate it contributes to its achievement.</p>
+
+        <h3>Managing milestones</h3>
+        <p>In the project overview, in the main column, you'll find the <strong>Milestones</strong> panel (green). From here you can:</p>
+        <ul>
+          <li><strong>Create</strong> a milestone with code, name, description (means of verification), owner, target date and status</li>
+          <li><strong>Edit</strong> an existing milestone by clicking the edit icon</li>
+          <li><strong>Delete</strong> a milestone (linked tasks keep their data, the milestone field is cleared)</li>
+        </ul>
+        <p>Each milestone has a <strong>typed owner</strong>: you can assign an organization member or a partner linked to the project. Available statuses are: draft (grey), pending (blue), achieved (green), missed (red). Optionally a milestone can be associated with a workpackage.</p>
+
+        <h3>Milestones in tasks</h3>
+        <p>In the task panel and new task modal you'll find a <strong>Milestone</strong> selector (visible only if the project has at least one milestone). Choose the milestone the task contributes to. The green diamond badge ◆ appears in List and Board views.</p>
+
+        <h3>Milestone filter</h3>
+        <p>The filter bar includes a Milestone selector (visible only if the project has milestones). Filter tasks to see only those linked to a specific milestone.</p>
+
+        <h3>Reports and dashboard</h3>
+        <p>The <strong>Tasks per milestone</strong> dashboard widget shows a green bar chart with open and completed tasks for each active milestone. In the project overview, the <strong>Milestone progress</strong> card shows a progress bar for each milestone with task counts. CSV export includes "MS Code" and "MS Name" columns. The PDF report includes a dedicated section with a per-milestone summary.</p>
+
+        <h3>Migrating from the old flag</h3>
+        <p>If the project contained tasks with the old boolean "milestone" flag, a migration helper panel will appear on first access. From here you can create new milestones and reassign legacy tasks one by one. The panel disappears automatically when all legacy tasks have been migrated or when explicitly dismissed.</p>
+      </>
+    ),
   }
 }
