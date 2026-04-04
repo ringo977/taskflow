@@ -40,8 +40,10 @@ Per mitigare l'attrito, M1 include un **migration helper** nella UI: un pannello
 
 **Scadenza del campo temporaneo**: `_legacy_milestone` è debito tecnico con scadenza. Viene rimosso in una migration successiva solo dopo che:
 - il migration helper UI è deployato e accessibile,
-- la conversione è completata o confermata dall'utente,
-- almeno un ciclo di release è trascorso.
+- la conversione è completata o confermata — cioè almeno una di queste condizioni è vera:
+  - zero task con `_legacy_milestone = true` residui (tutti convertiti o ri-associati),
+  - dismiss esplicito del pannello helper da parte dell'utente (= "non mi serve, vai pure"),
+- almeno un ciclo di release è trascorso dal deploy dell'helper.
 
 Questo evita che il campo temporaneo diventi permanente per inerzia.
 
