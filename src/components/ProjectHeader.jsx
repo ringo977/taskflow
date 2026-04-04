@@ -6,7 +6,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
   const t  = useLang()
   const po = portfolios.find(x => x.id === proj?.portfolio)
   const done = tasks.filter(t => t.done).length
-  const memberNames = useMemo(() => [...new Set(tasks.map(t => t.who).filter(Boolean))], [tasks])
+  const memberNames = useMemo(() => [...new Set(tasks.flatMap(t => Array.isArray(t.who) ? t.who : t.who ? [t.who] : []))], [tasks])
   const VIEWS = [
     [t.overview, 'overview'], [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
