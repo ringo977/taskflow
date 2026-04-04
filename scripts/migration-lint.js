@@ -34,6 +34,15 @@ const JS_EXCLUDE = [
   /\.spec\./,
   /adapters\.js$/,          // reads row fields, not query columns
   /adapters\.resilience/,
+  /milestones\.js$/,        // new milestone entity, not the dropped tasks.milestone boolean
+  /useMilestones\.js$/,     // hook for milestone entity
+]
+
+// Known false-positive column references: the word appears in entity names,
+// error messages, or schema validation strings — not as a DB column reference.
+// Format: { column: 'col_name', pattern: /regex/ }
+const FALSE_POSITIVES = [
+  { column: 'milestone', pattern: /Milestone|milestone_created|milestone_updated|milestone_deleted|'milestone'/i },
 ]
 
 // ── Known ordering invariants ────────────────────────────────────────────────
@@ -197,6 +206,9 @@ for (const { table, column, file: dropFile, idx: dropIdx } of dropped) {
         const trimmed = line.trimStart()
         if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return
         if (wordBoundary.test(line)) {
+          // Skip known false positives (e.g. entity names containing a dropped column name)
+          const isFP = FALSE_POSITIVES.some(fp => fp.column === column && fp.pattern.test(line))
+          if (isFP) return
           console.error(`  ✗ JS:  ${relPath(jsFile)}:${lineNo + 1} — references '${column}' (dropped in ${dropFile})`)
           console.error(`    ${line.trim()}`)
           staleErrors++

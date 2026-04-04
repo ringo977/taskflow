@@ -12,6 +12,7 @@ import PartnersPanel from '@/components/PartnersPanel'
 import WorkpackagesPanel from '@/components/WorkpackagesPanel'
 import MilestonesPanel from '@/components/MilestonesPanel'
 import MilestoneMigrationHelper from '@/components/MilestoneMigrationHelper'
+import { updateTaskField } from '@/lib/db/tasks'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
 import { useMilestones } from '@/hooks/useMilestones'
@@ -199,7 +200,7 @@ export default function ProjectOverview({ project, tasks, sections, onUpdProj, o
         {/* Legacy milestone migration helper (one-time) */}
         <MilestoneMigrationHelper
           tasks={pTasks} milestones={milestones}
-          onAssign={(taskId, msId) => onUpd(taskId, { milestoneId: msId })}
+          onAssign={(taskId, msId) => updateTaskField(orgId, taskId, { milestoneId: msId })}
           onCreateMs={saveMs}
         />
 
