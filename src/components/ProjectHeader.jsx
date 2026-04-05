@@ -10,6 +10,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
   const VIEWS = [
     [t.dashboard ?? 'Dashboard', 'dashboard'], [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
+    [t.workpackages ?? 'WPs', 'workpackages'],
     ...(proj?.project_type && proj.project_type !== 'standard' ? [[t.supervision, 'supervision']] : []),
   ]
   return (

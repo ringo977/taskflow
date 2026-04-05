@@ -538,5 +538,10 @@ const en = {
   dashMilestones: 'Upcoming milestones',
   viewAll: 'View all',
   noDate: 'No date',
+  totalTasks: 'Total tasks',
+  wpUnassigned: 'Unassigned',
+  wpNoTasks: 'No tasks in this workpackage',
+  back: 'Back',
+  more: 'more',
 }
 export default en

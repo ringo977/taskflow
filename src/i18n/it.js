@@ -538,5 +538,10 @@ const it = {
   dashMilestones: 'Prossime milestone',
   viewAll: 'Vedi tutti',
   noDate: 'Nessuna data',
+  totalTasks: 'Task totali',
+  wpUnassigned: 'Senza WP',
+  wpNoTasks: 'Nessun task in questo workpackage',
+  back: 'Indietro',
+  more: 'altri',
 }
 export default it

@@ -14,6 +14,7 @@ const CalendarView = lazy(() => import('@/views/CalendarView'))
 const TimelineView = lazy(() => import('@/views/TimelineView'))
 const ProjectOverview = lazy(() => import('@/views/ProjectOverview'))
 const ProjectDashboard = lazy(() => import('@/views/ProjectDashboard'))
+const WorkpackagesView = lazy(() => import('@/views/WorkpackagesView'))
 const ProjectHeader = lazy(() => import('@/components/ProjectHeader'))
 const ProjectSupervisionPage = lazy(() => import('@/supervision/pages/ProjectSupervisionPage'))
 const SummaryPanel = lazy(() => import('@/components/SummaryPanel'))
@@ -62,7 +63,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && view !== 'dashboard' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
+      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
       {view === 'dashboard' && (
         <ProjectDashboard project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
@@ -74,6 +75,11 @@ function ProjectContent({
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
           myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject}
           orgId={ui.activeOrgId} />
+      )}
+      {view === 'workpackages' && (
+        <WorkpackagesView project={proj} tasks={tasks} currentUser={user}
+          myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
+          orgId={ui.activeOrgId} lang={lang} />
       )}
       {view === 'board' && (
         <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
