@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 277939,
-    "comment": "246.75 kB actual → 271.42 kB budget"
+    "maxBytes": 281268,
+    "comment": "249.71 kB actual → 274.68 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -59,13 +59,13 @@
     "maxBytes": 25046,
     "comment": "22.24 kB actual → 24.46 kB budget"
   },
+  "TimelineView.js": {
+    "maxBytes": 16193,
+    "comment": "14.38 kB actual → 15.81 kB budget"
+  },
   "CalendarView.js": {
     "maxBytes": 15860,
     "comment": "14.08 kB actual → 15.49 kB budget"
-  },
-  "TimelineView.js": {
-    "maxBytes": 15382,
-    "comment": "13.66 kB actual → 15.02 kB budget"
   },
   "index.css": {
     "maxBytes": 15262,
@@ -192,7 +192,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2510800,
-    "comment": "2229.05 kB actual → 2451.95 kB budget"
+    "maxBytes": 2514940,
+    "comment": "2232.72 kB actual → 2456.00 kB budget"
   }
 }

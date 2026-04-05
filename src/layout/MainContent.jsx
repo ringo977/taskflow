@@ -103,7 +103,7 @@ function ProjectContent({
       )}
       {view === 'timeline' && (
         <TimelineView tasks={pTasks} secs={pSecs} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles}
-          onOpen={setSelId} onUpd={updTask} filters={filters} lang={lang} />
+          onOpen={setSelId} onUpd={updTask} filters={filters} lang={lang} orgId={ui.activeOrgId} projectId={proj?.id} groupBy={groupBy} />
       )}
       {view === 'calendario' && (
         <CalendarView tasks={tasks} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}

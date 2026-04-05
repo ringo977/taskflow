@@ -39,7 +39,7 @@ const it = {
   high: 'Alta', medium: 'Media', low: 'Bassa',
   all: 'Tutti', today: 'Oggi', week: 'Settimana',
   stateAll: 'Stato', stateOpen: 'Aperti', stateDone: 'Completati',
-  resetFilters: '✕ reset',
+  resetFilters: '✕ reset', filters: 'Filtri', showFilters: 'Mostra filtri', hideFilters: 'Nascondi filtri',
   add: 'Aggiungi', addTaskTitle: 'Titolo task…',
   myTasksOpen: (n) => `${n} aperti · tutti i progetti`,
   noTasks: (q) => q ? `Nessun risultato per "${q}"` : 'Nessun task.',

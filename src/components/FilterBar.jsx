@@ -11,7 +11,8 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
-  const active = Object.values(filters).some(v => v && v !== 'all' && v !== '')
+  const activeCount = Object.entries(filters).filter(([k, v]) => k !== 'q' && v && v !== 'all').length
+  const active = activeCount > 0 || (filters.q && filters.q !== '')
 
   const { orgPartners } = usePartners(orgId, projectId)
   const { workpackages } = useWorkpackages(orgId, projectId)
@@ -19,6 +20,7 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
   const allTags = [...new Map(tasks.flatMap(tk => tk.tags ?? []).map(tg => [tg.name, tg])).values()]
 
   const [localQ, setLocalQ] = useState(filters.q || '')
+  const [collapsed, setCollapsed] = useState(false)
   const debounceRef = useRef(null)
 
   useEffect(() => { setLocalQ(filters.q || '') }, [filters.q])
@@ -37,8 +39,48 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
     setFilters(f => ({ ...f, q: '' }))
   }
 
+  // ── Collapsed mode: compact bar with filter icon + count ──
+  if (collapsed) {
+    return (
+      <div style={{ padding: '6px 18px', borderBottom: '1px solid var(--bd3)', background: 'var(--bg1)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={() => setCollapsed(false)} aria-label={t.showFilters ?? 'Show filters'}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 'var(--r1)', color: active ? 'var(--accent)' : 'var(--tx3)', fontSize: 12, fontWeight: active ? 600 : 400 }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1 3h14M3 8h10M5 13h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+          {t.filters ?? 'Filters'}
+          {activeCount > 0 && (
+            <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 8, padding: '1px 6px', fontSize: 10, fontWeight: 600, minWidth: 16, textAlign: 'center' }}>{activeCount}</span>
+          )}
+        </button>
+        {/* Always show search even when collapsed */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg2)', borderRadius: 'var(--r1)', padding: '5px 10px', border: '1px solid var(--bd3)', flex: 1, minWidth: 120 }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="var(--tx3)" strokeWidth="1.4"/><path d="M10.5 10.5L14 14" stroke="var(--tx3)" strokeWidth="1.4" strokeLinecap="round"/></svg>
+          <input value={localQ} onChange={e => onSearch(e.target.value)} placeholder={t.search} aria-label={t.search}
+            style={{ border: 'none', background: 'transparent', padding: 0, fontSize: 12, flex: 1, outline: 'none' }} />
+          {localQ && <span onClick={clearSearch} style={{ cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, lineHeight: 1 }}>✕</span>}
+        </div>
+        {/* GroupBy always visible */}
+        {onGroupByChange && (
+          <select value={groupBy ?? 'section'} onChange={e => onGroupByChange(e.target.value)} aria-label={t.groupBy ?? 'Group by'} style={{ fontSize: 12, padding: '5px 8px', fontWeight: groupBy && groupBy !== 'section' ? 600 : 400, color: groupBy && groupBy !== 'section' ? 'var(--accent)' : undefined }}>
+            <option value="section">{t.groupBySection ?? 'Group: Section'}</option>
+            {workpackages.length > 0 && <option value="wp">{t.groupByWp ?? 'Group: WP'}</option>}
+            {milestones.length > 0 && <option value="milestone">{t.groupByMilestone ?? 'Group: Milestone'}</option>}
+            <option value="assignee">{t.groupByAssignee ?? 'Group: Assignee'}</option>
+            <option value="priority">{t.groupByPriority ?? 'Group: Priority'}</option>
+            {orgPartners.length > 0 && <option value="partner">{t.groupByPartner ?? 'Group: Partner'}</option>}
+          </select>
+        )}
+      </div>
+    )
+  }
+
+  // ── Expanded mode (full filter bar) ───────────────────────
   return (
     <div style={{ padding: '10px 18px', borderBottom: '1px solid var(--bd3)', background: 'var(--bg1)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+      {/* Collapse button */}
+      <button onClick={() => setCollapsed(true)} aria-label={t.hideFilters ?? 'Hide filters'}
+        style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--tx3)', fontSize: 12 }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1 3h14M3 8h10M5 13h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+      </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg2)', borderRadius: 'var(--r1)', padding: '7px 12px', border: '1px solid var(--bd3)', flex: 1, minWidth: 160 }}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="var(--tx3)" strokeWidth="1.4"/><path d="M10.5 10.5L14 14" stroke="var(--tx3)" strokeWidth="1.4" strokeLinecap="round"/></svg>
         <input value={localQ} onChange={e => onSearch(e.target.value)} placeholder={t.search} aria-label={t.search}

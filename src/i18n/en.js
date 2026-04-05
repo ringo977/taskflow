@@ -39,7 +39,7 @@ const en = {
   high: 'High', medium: 'Medium', low: 'Low',
   all: 'All', today: 'Today', week: 'This week',
   stateAll: 'Status', stateOpen: 'Open', stateDone: 'Completed',
-  resetFilters: '✕ reset',
+  resetFilters: '✕ reset', filters: 'Filters', showFilters: 'Show filters', hideFilters: 'Hide filters',
   add: 'Add', addTaskTitle: 'Task title…',
   myTasksOpen: (n) => `${n} open · all projects`,
   noTasks: (q) => q ? `No results for "${q}"` : 'No tasks.',

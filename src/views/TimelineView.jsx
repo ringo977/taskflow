@@ -4,6 +4,10 @@ import { isOverdue, applyFilters, applyVisibilityFilter } from '@/utils/filters'
 import { fmtDate } from '@/utils/format'
 import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
+import { usePartners } from '@/hooks/usePartners'
+import { useWorkpackages } from '@/hooks/useWorkpackages'
+import { useMilestones } from '@/hooks/useMilestones'
+import { groupTasks } from '@/utils/groupBy'
 
 const BASE_DAY_W = 28
 const ROW_H = 44
@@ -23,7 +27,7 @@ function addDays(dateStr, days) {
   return d.toISOString().slice(0, 10)
 }
 
-export default function TimelineView({ tasks, secs, projects, project, currentUser, myProjectRoles: _myProjectRoles = {}, onOpen, onUpd, filters, lang }) {
+export default function TimelineView({ tasks, secs, projects, project, currentUser, myProjectRoles: _myProjectRoles = {}, onOpen, onUpd, filters, lang, orgId, projectId, groupBy = 'section' }) {
   const t = useLang()
   const scrollRef = useRef(null)
   const [zoomIdx, setZoomIdx] = useState(ZOOM_STEPS.indexOf(1))
@@ -43,10 +47,25 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
 
   const dw = Math.round(BASE_DAY_W * ZOOM_STEPS[zoomIdx])
 
+  // Lookups for groupBy
+  const { orgPartners } = usePartners(orgId, projectId)
+  const { workpackages } = useWorkpackages(orgId, projectId)
+  const { milestones } = useMilestones(orgId, projectId)
+  const wpById = useMemo(() => Object.fromEntries(workpackages.map(w => [w.id, w])), [workpackages])
+  const msById = useMemo(() => Object.fromEntries(milestones.map(m => [m.id, m])), [milestones])
+  const partnerById = useMemo(() => Object.fromEntries(orgPartners.map(p => [p.id, p])), [orgPartners])
+
   // Apply visibility and filters
   const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
   const filtered = useMemo(() => filters ? applyFilters(visibleTasks, filters) : visibleTasks, [visibleTasks, filters])
   const hasDates = filtered.filter(task => task.due)
+
+  const isGrouped = groupBy && groupBy !== 'section'
+  const groups = useMemo(() => {
+    if (!isGrouped) return null
+    const dated = hasDates
+    return groupTasks(dated, groupBy, { sections: secs, wpById, msById, partnerById, t })
+  }, [isGrouped, hasDates, groupBy, secs, wpById, msById, partnerById, t])
 
   const allDates = hasDates.flatMap(task => [task.startDate, task.due].filter(Boolean))
   const minMs = allDates.length ? Math.min(...allDates.map(dateToMs)) - 7 * 86400000 : 0
@@ -74,15 +93,26 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
 
   const activeSecs = secs.filter(s => hasDates.some(task => task.sec === s))
 
+  // Unified section list for layout: either grouped or by section
+  const renderGroups = useMemo(() => {
+    if (isGrouped && groups) {
+      return groups.filter(g => g.tasks.length > 0).map(g => ({
+        key: g.key, label: g.label, color: g.color, tasks: g.tasks,
+      }))
+    }
+    return activeSecs.filter(s => hasDates.some(tk => tk.sec === s)).map(sec => ({
+      key: sec, label: sec, color: undefined, tasks: hasDates.filter(tk => tk.sec === sec),
+    }))
+  }, [isGrouped, groups, activeSecs, hasDates])
+
   const rowLayout = useMemo(() => {
     if (!hasDates.length) return {}
     const layout = {}
     let y = HEADER_H
-    for (const sec of activeSecs) {
-      const secTasks = hasDates.filter(task => task.sec === sec)
-      if (!secTasks.length) continue
+    for (const grp of renderGroups) {
+      if (!grp.tasks.length) continue
       y += SEC_H
-      for (const task of secTasks) {
+      for (const task of grp.tasks) {
         const sd = task.startDate ?? task.due
         const startPx = Math.max(0, daysBetween(startStr, sd)) * dw
         const endPx = Math.max(0, daysBetween(startStr, task.due)) * dw + dw
@@ -92,7 +122,7 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
       }
     }
     return layout
-  }, [hasDates, activeSecs, dw, startStr])
+  }, [hasDates, renderGroups, dw, startStr])
 
   const depArrows = useMemo(() => {
     if (!hasDates.length) return []
@@ -232,7 +262,7 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
     return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 14 }}>{t.timelineEmpty}</div>
   }
 
-  const chartH = HEADER_H + activeSecs.length * SEC_H + hasDates.length * ROW_H
+  const chartH = HEADER_H + renderGroups.length * SEC_H + hasDates.length * ROW_H
   const getProj = pid => projects.find(p => p.id === pid)
   const zoomLabel = `${ZOOM_STEPS[zoomIdx]}×`
 
@@ -267,12 +297,11 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
         {/* Left: labels */}
         <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--bd3)', background: 'var(--bg1)', position: 'sticky', left: 0, zIndex: 10 }}>
           <div style={{ height: HEADER_H, borderBottom: '1px solid var(--bd3)', background: 'var(--bg2)' }} />
-          {activeSecs.map(sec => {
-            const secTasks = hasDates.filter(task => task.sec === sec)
+          {renderGroups.map(grp => {
             return (
-              <div key={sec}>
-                <div style={{ height: SEC_H, display: 'flex', alignItems: 'center', padding: '0 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)', fontSize: 11, fontWeight: 600, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{sec}</div>
-                {secTasks.map(task => {
+              <div key={grp.key}>
+                <div style={{ height: SEC_H, display: 'flex', alignItems: 'center', padding: '0 12px', background: 'var(--bg2)', borderBottom: grp.color ? `2px solid ${grp.color}` : '1px solid var(--bd3)', fontSize: 11, fontWeight: 600, color: grp.color ?? 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{grp.label}</div>
+                {grp.tasks.map(task => {
                   const p = getProj(task.pid)
                   const ov = isOverdue(task.due) && !task.done
                   const isBlocked = (task.deps ?? []).some(depId => tasks.find(x => x.id === depId && !x.done))
@@ -364,12 +393,11 @@ export default function TimelineView({ tasks, secs, projects, project, currentUs
           })()}
 
           {/* Chart rows */}
-          {activeSecs.map(sec => {
-            const secTasks = hasDates.filter(task => task.sec === sec)
+          {renderGroups.map(grp => {
             return (
-              <div key={sec}>
-                <div style={{ height: SEC_H, borderBottom: '1px solid var(--bd3)', background: 'var(--bg2)' }} />
-                {secTasks.map(task => {
+              <div key={grp.key}>
+                <div style={{ height: SEC_H, borderBottom: grp.color ? `2px solid ${grp.color}` : '1px solid var(--bd3)', background: 'var(--bg2)' }} />
+                {grp.tasks.map(task => {
                   const p = getProj(task.pid)
                   const ov = isOverdue(task.due) && !task.done
                   const hex = p?.color ?? '#888'
