@@ -293,6 +293,7 @@ const it = {
   doneEditing: '✓ Fatto',
   resetLayout: 'Ripristina layout',
   hidden: 'nascosto',
+  statusDistribution: 'Distribuzione stato', byPriority: 'Per priorità', upcomingMilestones: 'Milestone imminenti',
 
   // ── Forms ───────────────────────────────────────────────
   forms: 'Form',

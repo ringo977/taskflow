@@ -13,7 +13,7 @@ import {
   computeProjectHealth, computeProjectStats, computeOverdueByProject,
   computeWorkload, computeTasksPerPerson, computeStatusDistribution,
   computeSectionCompletion, computeTasksPerPartner, computeTasksPerWorkpackage,
-  computeTasksPerMilestone,
+  computeTasksPerMilestone, computeUpcomingMilestones,
 } from '@/utils/selectors'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { usePartners } from '@/hooks/usePartners'
@@ -24,6 +24,7 @@ import {
   TasksPerPersonWidget, TasksPerPartnerWidget, TasksPerWorkpackageWidget, TasksPerMilestoneWidget, PriorityWidget, ActivityChartWidget,
   ProgressWidget, BurndownWidget, StatusDistWidget,
   VelocityWidget, OverdueWidget, WorkloadWidget, SectionCompletionWidget,
+  UpcomingMilestonesWidget,
 } from '@/components/DashboardWidgets'
 
 import { WIDGET_REGISTRY } from './dashboardConfig'
@@ -247,6 +248,7 @@ export default function DashboardWidgetGrid({
   // Tasks per workpackage
   const wpData = useMemo(() => computeTasksPerWorkpackage(tasks, orgWorkpackages), [tasks, orgWorkpackages])
   const msData = useMemo(() => computeTasksPerMilestone(tasks, orgMilestones), [tasks, orgMilestones])
+  const upcomingMsData = useMemo(() => computeUpcomingMilestones(orgMilestones, tasks, projects), [orgMilestones, tasks, projects])
 
   // ── Widget content renderer ────────────────────────────────────
   const renderWidgetContent = (widgetId) => {
@@ -267,6 +269,7 @@ export default function DashboardWidgetGrid({
       case 'tasksPartner':      return <TasksPerPartnerWidget data={partnerData} t={t} />
       case 'tasksWorkpackage':  return <TasksPerWorkpackageWidget data={wpData} t={t} />
       case 'tasksMilestone':    return <TasksPerMilestoneWidget data={msData} t={t} />
+      case 'upcomingMilestones': return <UpcomingMilestonesWidget data={upcomingMsData} t={t} />
       default: return null
     }
   }

@@ -23,6 +23,7 @@ export const WIDGET_REGISTRY = [
   { id: 'tasksPartner', label: { it: 'Task per partner', en: 'Tasks per partner' }, defaultSize: 'half' },
   { id: 'tasksWorkpackage', label: { it: 'Task per workpackage', en: 'Tasks per workpackage' }, defaultSize: 'half' },
   { id: 'tasksMilestone', label: { it: 'Task per milestone', en: 'Tasks per milestone' }, defaultSize: 'half' },
+  { id: 'upcomingMilestones', label: { it: 'Milestone imminenti', en: 'Upcoming milestones' }, defaultSize: 'full' },
 ]
 
 export const DEFAULT_LAYOUT = WIDGET_REGISTRY.map(w => ({ id: w.id, visible: true, size: w.defaultSize }))

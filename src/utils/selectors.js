@@ -174,6 +174,31 @@ export function computeTasksPerMilestone(tasks, milestones) {
 }
 
 /** Section completion per project: [{ project, sections: { [sec]: { total, done } }, total }] */
+/**
+ * Cross-project upcoming milestones (next 8, sorted by dueDate).
+ * milestones: flat array from org-level fetch, each has projectId/dueDate/status/code/name.
+ */
+export function computeUpcomingMilestones(milestones, tasks, projects, limit = 8) {
+  const today = new Date().toISOString().slice(0, 10)
+  return milestones
+    .filter(m => m.isActive && m.status !== 'achieved' && (m.dueDate ?? '9') >= today)
+    .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''))
+    .slice(0, limit)
+    .map(ms => {
+      const msTasks = tasks.filter(tk => tk.milestoneId === ms.id)
+      const msDone = msTasks.filter(tk => tk.done).length
+      const proj = projects.find(p => p.id === ms.projectId)
+      return {
+        ...ms,
+        projectName: proj?.name ?? '',
+        projectColor: proj?.color ?? '#888',
+        total: msTasks.length,
+        done: msDone,
+        pct: msTasks.length ? Math.round(msDone / msTasks.length * 100) : 0,
+      }
+    })
+}
+
 export function computeSectionCompletion(tasks, projects, limit = 6) {
   return projects.slice(0, limit).map(p => {
     const pt = tasks.filter(t => t.pid === p.id)
