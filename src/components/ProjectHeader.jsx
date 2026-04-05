@@ -8,7 +8,7 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
   const done = tasks.filter(t => t.done).length
   const memberNames = useMemo(() => [...new Set(tasks.flatMap(t => Array.isArray(t.who) ? t.who : t.who ? [t.who] : []))], [tasks])
   const VIEWS = [
-    [t.overview, 'overview'], [t.list, 'lista'], [t.board, 'board'],
+    [t.dashboard ?? 'Dashboard', 'dashboard'], [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
     ...(proj?.project_type && proj.project_type !== 'standard' ? [[t.supervision, 'supervision']] : []),
   ]

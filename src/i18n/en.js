@@ -531,5 +531,12 @@ const en = {
   // ── Milestones: reporting ─────────────────────────────────────
   chartTasksPerMs: 'Tasks per milestone',
   reportMilestones: 'Milestone progress',
+
+  // ── Dashboard (project) ─────────────────────────────────────
+  dashboard: 'Dashboard',
+  dashDetails: 'Details & Settings',
+  dashMilestones: 'Upcoming milestones',
+  viewAll: 'View all',
+  noDate: 'No date',
 }
 export default en
