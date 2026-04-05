@@ -29,10 +29,31 @@ export default function ModalLayer({
   return (
     <Suspense fallback={<ChunkFallback />}>
       {selTask && (
-        <TaskPanel task={selTask} projects={projs} allTasks={tasks}
-          currentUser={user} orgId={activeOrgId} myProjectRoles={myProjectRoles}
-          onClose={() => setSelId(null)} onUpd={updTask} onDelete={delTask}
-          onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />
+        <div
+          role="dialog" aria-modal="true"
+          onClick={() => setSelId(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'var(--overlay)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 350, padding: 24,
+          }}
+        >
+          <div onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(680px, 100vw - 48px)',
+              maxHeight: 'calc(100vh - 48px)',
+              display: 'flex', flexDirection: 'column',
+              borderRadius: 'var(--r2)',
+              boxShadow: 'var(--shadow-lg)',
+              overflow: 'hidden',
+            }}
+          >
+            <TaskPanel task={selTask} projects={projs} allTasks={tasks}
+              currentUser={user} orgId={activeOrgId} myProjectRoles={myProjectRoles}
+              onClose={() => setSelId(null)} onUpd={updTask} onDelete={delTask}
+              onGenSubs={genSubs} aiLoad={aiLoad} lang={lang} />
+          </div>
+        </div>
       )}
       {showAdd && (
         <AddModal secs={pSecs} templates={proj?.taskTemplates ?? []}

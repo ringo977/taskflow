@@ -1,10 +1,12 @@
 /**
- * WorkpackagesView — WP list as navigable containers (F1.3).
+ * WorkpackagesView — WP list as navigable containers (F1.3 + v0.6.1).
  *
  * Shows all workpackages with progress, status, owner, and task count.
- * Click on a WP to drill down into its tasks (WorkpackageDetail).
+ * Click on a WP to drill down into its tasks with a mini-tab bar
+ * (List / Board / Timeline) — each view is the real component,
+ * pre-filtered for the selected WP's tasks.
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useState, lazy, Suspense } from 'react'
 import { useLang } from '@/i18n'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
 import { usePartners } from '@/hooks/usePartners'
@@ -14,6 +16,10 @@ import { isOverdue } from '@/utils/filters'
 import Avatar from '@/components/Avatar'
 import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
+
+const BoardView = lazy(() => import('@/views/BoardView'))
+const ListView = lazy(() => import('@/views/ListView'))
+const TimelineView = lazy(() => import('@/views/TimelineView'))
 
 const STATUS_COLORS = {
   draft:    'var(--tx3)',
@@ -33,9 +39,17 @@ const SECTION_TITLE = {
   textTransform: 'uppercase', letterSpacing: '0.06em',
 }
 
+const WP_VIEWS = [
+  { id: 'list',     icon: '☰' },
+  { id: 'board',    icon: '▦' },
+  { id: 'timeline', icon: '▬' },
+]
+
 export default function WorkpackagesView({
-  project, tasks, currentUser: _currentUser, myProjectRoles: _myProjectRoles,
-  onOpen, onToggle, orgId, lang: _lang,
+  project, tasks, secs = [], projects = [],
+  currentUser, myProjectRoles = {},
+  onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, onUpd,
+  filters, orgId, lang,
 }) {
   const t = useLang()
   const users = useOrgUsers()
@@ -44,6 +58,7 @@ export default function WorkpackagesView({
   const { milestones } = useMilestones(orgId, project?.id)
 
   const [selectedWpId, setSelectedWpId] = useState(null)
+  const [wpView, setWpView] = useState('list')
 
   const pTasks = useMemo(
     () => project ? tasks.filter(tk => tk.pid === project.id) : [],
@@ -86,116 +101,124 @@ export default function WorkpackagesView({
 
   const selectedWp = wpList.find(w => w.id === selectedWpId)
 
+  // Sections relevant to the selected WP's tasks
+  const wpSecs = useMemo(() => {
+    if (!selectedWp) return secs
+    const wpSecSet = new Set(selectedWp.tasks.map(tk => tk.sec))
+    return secs.filter(s => wpSecSet.has(s))
+  }, [selectedWp, secs])
+
   if (!project) return null
 
   // ── Detail view (drill-down into a WP) ────────────────────
   if (selectedWp) {
     return (
-      <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px' }}>
-        {/* Back + WP header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <button onClick={() => setSelectedWpId(null)}
-            style={{ fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: '4px 8px' }}>
-            ← {t.back ?? 'Back'}
-          </button>
-          <span style={{
-            fontSize: 11, fontWeight: 700,
-            color: STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)',
-            background: (STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)') + '18',
-            padding: '2px 8px', borderRadius: 'var(--r1)',
-          }}>
-            {selectedWp.code}
-          </span>
-          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx1)' }}>{selectedWp.name}</span>
-          <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{selectedWp.done}/{selectedWp.total}</span>
-        </div>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Back + WP header + mini-tab bar */}
+        <div style={{ padding: '14px 26px 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <button onClick={() => setSelectedWpId(null)}
+              style={{ fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: '4px 8px' }}>
+              ← {t.back ?? 'Back'}
+            </button>
+            <span style={{
+              fontSize: 11, fontWeight: 700,
+              color: STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)',
+              background: (STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)') + '18',
+              padding: '2px 8px', borderRadius: 'var(--r1)',
+            }}>
+              {selectedWp.code}
+            </span>
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx1)' }}>{selectedWp.name}</span>
+            <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{selectedWp.done}/{selectedWp.total}</span>
 
-        {/* WP meta row */}
-        <div style={{ display: 'flex', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
-          {/* Progress card */}
-          <div style={{ ...CARD, padding: '14px 18px', flex: 1, minWidth: 140 }}>
-            <div style={{ ...SECTION_TITLE, marginBottom: 6 }}>{t.progress}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx1)' }}>{selectedWp.pct}%</span>
-              <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{selectedWp.done}/{selectedWp.total}</span>
-            </div>
-            <div style={{ height: 5, background: 'var(--bg2)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${selectedWp.pct}%`, background: STATUS_COLORS[selectedWp.status] ?? 'var(--c-brand)', borderRadius: 3, transition: 'width 0.4s' }} />
-            </div>
-          </div>
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
 
-          {/* Meta card */}
-          <div style={{ ...CARD, padding: '14px 18px', minWidth: 180 }}>
-            <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
-              {resolveOwnerLabel(selectedWp) && <span>{t.wpOwner ?? 'Owner'}: <strong style={{ color: 'var(--tx1)' }}>{resolveOwnerLabel(selectedWp)}</strong></span>}
-            </div>
-            {selectedWp.startDate && <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.wpStartDate ?? 'Start'}: {selectedWp.startDate}</div>}
-            {selectedWp.dueDate && <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.wpDueDate ?? 'Due'}: {selectedWp.dueDate}</div>}
-            {selectedWp.description && <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 6, lineHeight: 1.5 }}>{selectedWp.description}</div>}
-          </div>
-
-          {/* Milestones card */}
-          {selectedWp.milestones.length > 0 && (
-            <div style={{ ...CARD, padding: '14px 18px', minWidth: 160 }}>
-              <div style={{ ...SECTION_TITLE, marginBottom: 6 }}>{t.milestones}</div>
-              {selectedWp.milestones.map(ms => (
-                <div key={ms.id} style={{ fontSize: 12, color: 'var(--tx2)', padding: '2px 0' }}>
-                  ◆ {ms.code} {ms.name}
-                  {ms.dueDate && <span style={{ color: 'var(--tx3)', marginLeft: 6 }}>{ms.dueDate}</span>}
-                </div>
+            {/* Mini-tab bar */}
+            <div style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+              {WP_VIEWS.map((v, i) => (
+                <button key={v.id} onClick={() => setWpView(v.id)}
+                  style={{
+                    padding: '4px 12px', fontSize: 12, border: 'none',
+                    borderRight: i < WP_VIEWS.length - 1 ? '1px solid var(--bd3)' : 'none',
+                    background: wpView === v.id ? 'var(--c-brand)' : 'transparent',
+                    color: wpView === v.id ? '#fff' : 'var(--tx2)',
+                    cursor: 'pointer', fontWeight: wpView === v.id ? 600 : 400,
+                    display: 'flex', alignItems: 'center', gap: 5,
+                  }}>
+                  <span style={{ fontSize: 13 }}>{v.icon}</span>
+                  {t[v.id] ?? v.id.charAt(0).toUpperCase() + v.id.slice(1)}
+                </button>
               ))}
             </div>
-          )}
+          </div>
+
+          {/* WP meta row */}
+          <div style={{ display: 'flex', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+            {/* Progress card */}
+            <div style={{ ...CARD, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 140 }}>
+              <div>
+                <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--tx1)' }}>{selectedWp.pct}%</span>
+                <span style={{ fontSize: 11, color: 'var(--tx3)', marginLeft: 6 }}>{selectedWp.done}/{selectedWp.total}</span>
+              </div>
+              <div style={{ flex: 1, height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${selectedWp.pct}%`, background: STATUS_COLORS[selectedWp.status] ?? 'var(--c-brand)', borderRadius: 'var(--r1)', transition: 'width 0.4s' }} />
+              </div>
+            </div>
+
+            {/* Meta */}
+            {(resolveOwnerLabel(selectedWp) || selectedWp.dueDate) && (
+              <div style={{ ...CARD, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--tx3)' }}>
+                {resolveOwnerLabel(selectedWp) && <span>{t.wpOwner ?? 'Owner'}: <strong style={{ color: 'var(--tx1)' }}>{resolveOwnerLabel(selectedWp)}</strong></span>}
+                {selectedWp.startDate && <span>{selectedWp.startDate}</span>}
+                {selectedWp.dueDate && <span>→ {selectedWp.dueDate}</span>}
+              </div>
+            )}
+
+            {/* Milestones */}
+            {selectedWp.milestones.length > 0 && (
+              <div style={{ ...CARD, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--tx2)' }}>
+                {selectedWp.milestones.map(ms => (
+                  <span key={ms.id} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    ◆ {ms.code}
+                    {ms.dueDate && <span style={{ color: 'var(--tx3)', fontSize: 11 }}>{ms.dueDate}</span>}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Task list */}
-        <div style={{ ...CARD, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--bd3)', background: 'var(--bg2)' }}>
-                <th style={{ width: 32, padding: '8px 4px' }} />
-                <th style={{ textAlign: 'left', padding: '8px 10px', ...SECTION_TITLE }}>{t.taskTitle ?? 'Task'}</th>
-                <th style={{ textAlign: 'left', padding: '8px 10px', ...SECTION_TITLE }}>{t.assignee ?? 'Assignee'}</th>
-                <th style={{ textAlign: 'left', padding: '8px 10px', ...SECTION_TITLE }}>{t.priority ?? 'Priority'}</th>
-                <th style={{ textAlign: 'left', padding: '8px 10px', ...SECTION_TITLE }}>{t.dueDate ?? 'Due'}</th>
-                <th style={{ textAlign: 'left', padding: '8px 10px', ...SECTION_TITLE }}>{t.status ?? 'Status'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedWp.tasks.length === 0 && (
-                <tr><td colSpan={6} style={{ padding: 16, textAlign: 'center', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>
-                  {t.wpNoTasks ?? 'No tasks in this workpackage'}
-                </td></tr>
-              )}
-              {selectedWp.tasks.map(task => {
-                const od = !task.done && isOverdue(task.due)
-                return (
-                  <tr key={task.id} className="row-interactive" onClick={() => onOpen(task.id)}
-                    style={{ borderBottom: '1px solid var(--bd3)', cursor: 'pointer' }}>
-                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                      <Checkbox checked={task.done} onChange={() => onToggle(task)} />
-                    </td>
-                    <td style={{ padding: '6px 10px', color: task.done ? 'var(--tx3)' : 'var(--tx1)', textDecoration: task.done ? 'line-through' : 'none' }}>
-                      {task.title}
-                    </td>
-                    <td style={{ padding: '6px 10px' }}>
-                      {task.who && <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={20} />
-                        <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{Array.isArray(task.who) ? task.who.join(', ') : task.who}</span>
-                      </div>}
-                    </td>
-                    <td style={{ padding: '6px 10px' }}>{task.pri && <Badge pri={task.pri} />}</td>
-                    <td style={{ padding: '6px 10px', fontSize: 12, color: od ? 'var(--c-danger)' : 'var(--tx3)' }}>
-                      {task.due ?? '—'}
-                    </td>
-                    <td style={{ padding: '6px 10px', fontSize: 12, color: task.done ? 'var(--c-success)' : 'var(--tx2)' }}>
-                      {task.sec}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        {/* Embedded view */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Suspense fallback={<div style={{ padding: 24, color: 'var(--tx3)', fontSize: 13 }}>Loading...</div>}>
+            {wpView === 'board' && (
+              <BoardView
+                tasks={selectedWp.tasks} secs={wpSecs} project={project}
+                currentUser={currentUser} myProjectRoles={myProjectRoles}
+                onOpen={onOpen} onToggle={onToggle} onMove={onMove} onReorder={onReorder}
+                onAddTask={onAddTask} onUpdateSecs={onUpdateSecs}
+                filters={filters} lang={lang} orgId={orgId}
+              />
+            )}
+            {wpView === 'timeline' && (
+              <TimelineView
+                tasks={selectedWp.tasks} secs={wpSecs} projects={projects} project={project}
+                currentUser={currentUser} myProjectRoles={myProjectRoles}
+                onOpen={onOpen} onUpd={onUpd}
+                filters={filters} lang={lang} orgId={orgId} projectId={project?.id}
+              />
+            )}
+            {wpView === 'list' && (
+              <ListView
+                tasks={selectedWp.tasks} secs={wpSecs} project={project}
+                currentUser={currentUser} myProjectRoles={myProjectRoles}
+                onOpen={onOpen} onToggle={onToggle} onMove={onMove} onAddTask={onAddTask}
+                filters={filters} lang={lang} orgId={orgId}
+              />
+            )}
+          </Suspense>
         </div>
       </div>
     )
@@ -239,7 +262,7 @@ export default function WorkpackagesView({
                 {/* Code badge */}
                 <span style={{
                   fontSize: 11, fontWeight: 700, color,
-                  background: color + '18', padding: '2px 8px', borderRadius: 3, flexShrink: 0,
+                  background: color + '18', padding: '2px 8px', borderRadius: 'var(--r1)', flexShrink: 0,
                 }}>
                   {wp.code}
                 </span>

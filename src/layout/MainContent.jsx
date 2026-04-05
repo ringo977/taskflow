@@ -79,9 +79,12 @@ function ProjectContent({
           orgId={ui.activeOrgId} />
       )}
       {view === 'workpackages' && (
-        <WorkpackagesView project={proj} tasks={tasks} currentUser={user}
-          myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
-          orgId={ui.activeOrgId} lang={lang} />
+        <WorkpackagesView project={proj} tasks={tasks} secs={pSecs} projects={projs}
+          currentUser={user} myProjectRoles={myProjectRoles}
+          onOpen={setSelId} onToggle={togTask} onMove={moveTask} onReorder={reorderTask}
+          onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
+          onUpdateSecs={handleUpdateSecs} onUpd={updTask}
+          filters={filters} orgId={ui.activeOrgId} lang={lang} />
       )}
       {view === 'settings' && (
         <ProjectSettings project={proj} sections={pSecs}

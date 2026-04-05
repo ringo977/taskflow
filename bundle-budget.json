@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 281506,
-    "comment": "249.92 kB actual → 274.91 kB budget"
+    "maxBytes": 282178,
+    "comment": "250.51 kB actual → 275.56 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -36,8 +36,8 @@
     "comment": "60.22 kB actual → 66.24 kB budget"
   },
   "TaskPanel.js": {
-    "maxBytes": 38844,
-    "comment": "34.48 kB actual → 37.93 kB budget"
+    "maxBytes": 38763,
+    "comment": "34.41 kB actual → 37.85 kB budget"
   },
   "FormsPanel.js": {
     "maxBytes": 35312,
@@ -84,8 +84,8 @@
     "comment": "12.26 kB actual → 13.49 kB budget"
   },
   "WorkpackagesView.js": {
-    "maxBytes": 11225,
-    "comment": "9.96 kB actual → 10.96 kB budget"
+    "maxBytes": 11552,
+    "comment": "10.25 kB actual → 11.28 kB budget"
   },
   "reportPdf.js": {
     "maxBytes": 10027,
@@ -192,7 +192,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2525937,
-    "comment": "2242.49 kB actual → 2466.74 kB budget"
+    "maxBytes": 2526856,
+    "comment": "2243.30 kB actual → 2467.63 kB budget"
   }
 }
