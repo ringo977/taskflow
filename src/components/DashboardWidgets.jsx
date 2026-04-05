@@ -13,6 +13,7 @@ const CARD_STYLE = {
   borderRadius: 'var(--r2)',
   border: '1px solid var(--bd3)',
   padding: '16px 18px',
+  boxShadow: 'var(--shadow-sm)',
 }
 
 export const SectionTitle = ({ children }) => (

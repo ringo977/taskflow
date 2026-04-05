@@ -155,7 +155,7 @@ export default function HomeDashboard({ tasks, projects, currentUser, onOpen, on
               <Avatar name={u.name} size={26} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx1)' }}>{u.name}</div>
-                <div style={{ height: 3, background: 'var(--bg2)', borderRadius: 'var(--r1)', marginTop: 4, overflow: 'hidden' }}>
+                <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', marginTop: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: u.color, borderRadius: 'var(--r1)' }} />
                 </div>
               </div>

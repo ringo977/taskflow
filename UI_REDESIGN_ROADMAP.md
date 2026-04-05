@@ -1,6 +1,6 @@
 # TaskFlow — UI Redesign Roadmap
 
-> Stato: proposta · v0.6.x · Data: aprile 2026
+> Stato: ✅ completato · v0.6.0 · Data: aprile 2026
 > Prerequisito: v0.5.4 stabile (governance, templates, regole completate)
 
 ---

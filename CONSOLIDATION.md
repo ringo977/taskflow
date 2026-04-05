@@ -1,6 +1,6 @@
 # TaskFlow — Consolidation Playbook
 
-> Stato: v0.5.4 · ~160 file sorgente · ~27k LOC · 787 unit test · 7 suite E2E
+> Stato: v0.6.0 · ~170 file sorgente · ~29k LOC · 805 unit test · 7 suite E2E
 > Data: aprile 2026
 
 TaskFlow non ha più come collo di bottiglia le feature. I tre colli di bottiglia attuali sono disciplina operativa, stabilità dell'esperienza e complessità accumulata. Questo documento definisce le regole operative per i prossimi cicli di sviluppo.
@@ -172,6 +172,18 @@ Questi non sono task — sono direzioni. La priorità dipende da quello che emer
 ---
 
 ## Changelog recente
+
+### v0.6.0 — UI Redesign: two-level architecture (foundation → views → reporting → hardening)
+
+Complete 4-phase UI redesign implementing the dual-level experience (operational + strategic):
+
+- **Phase 1 — Foundation**: ProjectDashboard (lightweight KPI view replacing monolithic Overview), WorkpackagesView (navigable WP containers with drill-down), ProjectSettings (extracted config), tab bar redesigned to Dashboard|List|Board|Timeline|Calendar|WPs.
+- **Phase 2 — Views**: Group By abstraction (`groupTasks()` utility) for Board/List/Timeline supporting Section/WP/Milestone/Assignee/Priority/Partner grouping. Collapsible FilterBar with active filter count badge. Timeline cross-WP grouping.
+- **Phase 3 — Reporting**: ProjectDashboard configurable widget grid (drag-and-drop, resize, show/hide, per-project localStorage). New project widgets: status distribution, priority breakdown, 30-day burndown. HomeDashboard gains cross-project upcoming milestones widget.
+- **Phase 4 — Hardening**: Design system consistency (progress bars → var(--r1), card boxShadow unified, height 4px standard). 18 new unit tests (groupBy utility, computeUpcomingMilestones). All views lazy-loaded, heavy computations memoized. Bundle budget: 2242 kB (48 chunks).
+- **Test**: 801 test (era 787), 36 file.
+- **New files**: ProjectDashboard.jsx, WorkpackagesView.jsx, ProjectSettings.jsx, groupBy.js, projectDashboardConfig.js, groupBy.test.js.
+- **Constraint**: no data model changes — WP navigation is purely UI (workpackageId stays as field on tasks).
 
 ### v0.5.4 — Templates + Rules + Governance (punti 5-6 roadmap WP+Partners)
 

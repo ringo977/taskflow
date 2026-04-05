@@ -102,7 +102,7 @@ export default function WorkpackagesView({
             fontSize: 11, fontWeight: 700,
             color: STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)',
             background: (STATUS_COLORS[selectedWp.status] ?? 'var(--tx3)') + '18',
-            padding: '2px 8px', borderRadius: 3,
+            padding: '2px 8px', borderRadius: 'var(--r1)',
           }}>
             {selectedWp.code}
           </span>
@@ -263,8 +263,8 @@ export default function WorkpackagesView({
               </div>
 
               {/* Progress bar */}
-              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${wp.pct}%`, background: color, borderRadius: 2, transition: 'width 0.3s' }} />
+              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${wp.pct}%`, background: color, borderRadius: 'var(--r1)', transition: 'width 0.3s' }} />
               </div>
 
               {/* Milestone count + dates */}

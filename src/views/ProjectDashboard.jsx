@@ -181,8 +181,8 @@ export default function ProjectDashboard({
                 <span style={{ fontSize: 12, color: 'var(--tx1)', fontWeight: 500 }}>{wp.code} {wp.name}</span>
                 <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{wp.done}/{wp.total}</span>
               </div>
-              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${wp.pct}%`, background: 'var(--c-purple, #9C27B0)', borderRadius: 2, transition: 'width 0.3s' }} />
+              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${wp.pct}%`, background: 'var(--c-purple, #9C27B0)', borderRadius: 'var(--r1)', transition: 'width 0.3s' }} />
               </div>
             </div>
           ))}
@@ -217,8 +217,8 @@ export default function ProjectDashboard({
                 <span style={{ fontSize: 12, color: 'var(--tx1)', fontWeight: 500 }}>{p.name}</span>
                 <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{p.done}/{p.total}</span>
               </div>
-              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${p.pct}%`, background: 'var(--c-brand)', borderRadius: 2, transition: 'width 0.3s' }} />
+              <div style={{ height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${p.pct}%`, background: 'var(--c-brand)', borderRadius: 'var(--r1)', transition: 'width 0.3s' }} />
               </div>
             </div>
           ))}
@@ -268,8 +268,8 @@ export default function ProjectDashboard({
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: 'var(--tx2)', flex: 1 }}>{d.label}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{d.value}</span>
-              <div style={{ width: 60, height: 4, background: 'var(--bg2)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pTasks.length ? Math.round(d.value / pTasks.filter(tk => !tk.done).length * 100) : 0}%`, background: d.color, borderRadius: 2 }} />
+              <div style={{ width: 60, height: 4, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pTasks.length ? Math.round(d.value / pTasks.filter(tk => !tk.done).length * 100) : 0}%`, background: d.color, borderRadius: 'var(--r1)' }} />
               </div>
             </div>
           ))}
@@ -329,8 +329,8 @@ export default function ProjectDashboard({
             <span style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx1)' }}>{pct}%</span>
             <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{done}/{pTasks.length} {t.completedLower ?? 'completed'}</span>
           </div>
-          <div style={{ height: 5, background: 'var(--bg2)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: proj.color, borderRadius: 3, transition: 'width 0.4s' }} />
+          <div style={{ height: 5, background: 'var(--bg2)', borderRadius: 'var(--r1)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: proj.color, borderRadius: 'var(--r1)', transition: 'width 0.4s' }} />
           </div>
         </div>
 

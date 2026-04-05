@@ -7,6 +7,7 @@ import {
   computeWorkload, computeTasksPerPerson,
   computeStatusDistribution, computeSectionCompletion,
   computeTasksPerPartner, computeTasksPerWorkpackage, computeTasksPerMilestone,
+  computeUpcomingMilestones,
 } from './selectors'
 
 // ── Fixtures ──────────────────────────────────────────────────────
@@ -354,5 +355,56 @@ describe('computeTasksPerMilestone', () => {
     const result = computeTasksPerMilestone(msTasks, milestones)
     expect(result[0].id).toBe('ms1') // 2 tasks > 1 task
     expect(result[1].id).toBe('ms2')
+  })
+})
+
+// ── Upcoming milestones (cross-project) ─────────────────────────
+
+describe('computeUpcomingMilestones', () => {
+  const futureDate = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)
+  const pastDate = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+
+  const milestones = [
+    { id: 'ms1', code: 'M1', name: 'Gate 1', dueDate: futureDate, status: 'pending', isActive: true, projectId: 'p1' },
+    { id: 'ms2', code: 'M2', name: 'Gate 2', dueDate: pastDate, status: 'pending', isActive: true, projectId: 'p1' },
+    { id: 'ms3', code: 'M3', name: 'Final', dueDate: futureDate, status: 'achieved', isActive: true, projectId: 'p2' },
+    { id: 'ms4', code: 'M4', name: 'Inactive', dueDate: futureDate, status: 'pending', isActive: false, projectId: 'p2' },
+  ]
+  const msTasks = [
+    { id: 't1', milestoneId: 'ms1', done: false, pid: 'p1' },
+    { id: 't2', milestoneId: 'ms1', done: true,  pid: 'p1' },
+    { id: 't3', milestoneId: 'ms2', done: false, pid: 'p1' },
+  ]
+
+  it('filters to active, non-achieved, future milestones', () => {
+    const result = computeUpcomingMilestones(milestones, msTasks, projects)
+    expect(result).toHaveLength(1) // only ms1 (future + active + pending)
+    expect(result[0].id).toBe('ms1')
+  })
+
+  it('computes task progress per milestone', () => {
+    const result = computeUpcomingMilestones(milestones, msTasks, projects)
+    expect(result[0].total).toBe(2)
+    expect(result[0].done).toBe(1)
+    expect(result[0].pct).toBe(50)
+  })
+
+  it('attaches project info', () => {
+    const result = computeUpcomingMilestones(milestones, msTasks, projects)
+    expect(result[0].projectName).toBe('Project Alpha')
+    expect(result[0].projectColor).toBe('#aaa')
+  })
+
+  it('returns empty for no milestones', () => {
+    expect(computeUpcomingMilestones([], msTasks, projects)).toEqual([])
+  })
+
+  it('respects limit parameter', () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      id: `m${i}`, code: `M${i}`, name: `G${i}`, dueDate: futureDate,
+      status: 'pending', isActive: true, projectId: 'p1',
+    }))
+    const result = computeUpcomingMilestones(many, [], projects, 5)
+    expect(result).toHaveLength(5)
   })
 })
