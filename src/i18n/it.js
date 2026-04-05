@@ -544,5 +544,17 @@ const it = {
   back: 'Indietro',
   more: 'altri',
   projectSettings: 'Impostazioni progetto',
+  groupBy: 'Raggruppa per',
+  groupBySection: 'Gruppo: Sezione',
+  groupByWp: 'Gruppo: WP',
+  groupByMilestone: 'Gruppo: Milestone',
+  groupByAssignee: 'Gruppo: Assegnatario',
+  groupByPriority: 'Gruppo: Priorità',
+  groupByPartner: 'Gruppo: Partner',
+  noWorkpackage: 'Senza WP',
+  noMilestone: 'Senza milestone',
+  noPartnerGroup: 'Senza partner',
+  noPriority: 'Senza priorità',
+  unassigned: 'Non assegnato',
 }
 export default it

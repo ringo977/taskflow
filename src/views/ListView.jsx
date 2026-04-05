@@ -14,6 +14,7 @@ import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
 import { useMilestones } from '@/hooks/useMilestones'
+import { groupTasks } from '@/utils/groupBy'
 
 const SORT_OPTIONS = [
   { id: 'none', label: { it: 'Predefinito', en: 'Default' } },
@@ -35,7 +36,7 @@ function sortTasks(tasks, sortId) {
   return sorted
 }
 
-export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang, orgId }) {
+export default function ListView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onAddTask, filters, lang, orgId, groupBy = 'section' }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
@@ -72,16 +73,33 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
   const bulkMove = (sec) => { if (onMove) selected.forEach(id => onMove(id, sec)); clearSel() }
 
   const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+  const isGrouped = groupBy && groupBy !== 'section'
+
+  // Compute groups for non-section groupBy
+  const groups = useMemo(() => {
+    if (!isGrouped) return null
+    const filtered = applyFilters(visibleTasks, filters)
+    return groupTasks(filtered, groupBy, {
+      sections: secs,
+      wpById,
+      msById,
+      partnerById,
+      t,
+    }).map(grp => ({ ...grp, tasks: sortTasks(grp.tasks, sortBy) }))
+  }, [isGrouped, visibleTasks, filters, groupBy, secs, wpById, msById, partnerById, t, sortBy])
 
   // Build flat sorted+filtered list for pagination
   const allFiltered = useMemo(() => {
+    if (isGrouped && groups) {
+      return groups.flatMap(grp => grp.tasks)
+    }
     const out = []
     for (const sec of secs) {
       const all = visibleTasks.filter(task => task.sec === sec)
       out.push(...sortTasks(applyFilters(all, filters), sortBy))
     }
     return out
-  }, [visibleTasks, secs, filters, sortBy])
+  }, [isGrouped, groups, visibleTasks, secs, filters, sortBy])
 
   const pg = usePagination(allFiltered, DEFAULT_PAGE_SIZE)
 
@@ -114,7 +132,56 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
         canPrev={pg.canPrev} canNext={pg.canNext}
         onPrev={pg.prev} onNext={pg.next} />
 
-      {secs.map(sec => {
+      {/* ── Grouped sections (non-section groupBy) ──────── */}
+      {isGrouped && groups && groups.map(grp => {
+        const paged = grp.tasks.filter(task => pagedIds.has(task.id))
+        const isC = collapsed[grp.key]
+        return (
+          <div key={grp.key} style={{ marginBottom: 16 }}>
+            <div aria-label="Toggle group" onClick={() => setCollapsed(c => ({ ...c, [grp.key]: !c[grp.key] }))}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: `2px solid ${grp.color ?? 'var(--bd3)'}`, marginBottom: 4, cursor: 'pointer' }}>
+              <span style={{ fontSize: 12, color: 'var(--tx3)', display: 'inline-block', transform: isC ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.12s' }}>▼</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: grp.color ?? 'var(--tx1)' }}>{grp.label}</span>
+              <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{grp.tasks.length}</span>
+            </div>
+            {!isC && paged.map(task => {
+              const ov = isOverdue(task.due) && !task.done
+              const isBlocked = (task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))
+              const isSel = selected.has(task.id)
+              return (
+                <div key={task.id} onClick={() => onOpen(task.id)} className="row-interactive"
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 'var(--r1)', borderBottom: '1px solid var(--bd3)', background: isSel ? 'color-mix(in srgb, var(--c-brand) 8%, transparent)' : undefined }}>
+                  <input type="checkbox" checked={isSel} onChange={e => toggleSel(task.id, e)} disabled={readOnly} onClick={e => e.stopPropagation()}
+                    style={{ width: 14, height: 14, accentColor: 'var(--c-brand)', cursor: readOnly ? 'default' : 'pointer', flexShrink: 0, opacity: readOnly ? 0.5 : 1 }} />
+                  <Checkbox done={task.done} onToggle={(e) => { e?.stopPropagation?.(); onToggle(task.id) }} size={15} disabled={readOnly} />
+                  <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: task.done ? 'var(--tx3)' : 'var(--tx1)', textDecoration: task.done ? 'line-through' : 'none' }}>
+                    {highlight(task.title, q)}
+                    {isBlocked && <span style={{ color: 'var(--c-warning)', fontSize: 12 }}>⊘</span>}
+                  </span>
+                  <Badge pri={task.pri} />
+                  {task.due && <span style={{ fontSize: 13, color: ov ? 'var(--c-danger)' : 'var(--tx3)', flexShrink: 0 }}>{fmtDate(task.due, lang)}</span>}
+                  {Array.isArray(task.who) && task.who.length > 1 ? <AvatarGroup names={task.who} size={20} /> : <Avatar name={Array.isArray(task.who) ? task.who[0] : task.who} size={20} />}
+                  {task.workpackageId && wpById[task.workpackageId] && (
+                    <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-purple, #9C27B0) 12%, transparent)', color: 'var(--c-purple, #9C27B0)', fontWeight: 600, flexShrink: 0 }} title={wpById[task.workpackageId].name}>{wpById[task.workpackageId].code}</span>
+                  )}
+                  {task.milestoneId && msById[task.milestoneId] && (
+                    <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-success, #4CAF50) 12%, transparent)', color: 'var(--c-success, #4CAF50)', fontWeight: 600, flexShrink: 0 }} title={msById[task.milestoneId].name}>◆ {msById[task.milestoneId].code}</span>
+                  )}
+                  {task.partnerId && partnerById[task.partnerId] && (
+                    <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500, flexShrink: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={partnerById[task.partnerId].name}>{partnerById[task.partnerId].name}</span>
+                  )}
+                </div>
+              )
+            })}
+            {!isC && grp.tasks.length === 0 && (
+              <div style={{ padding: '12px 10px', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>{t.emptySection ?? 'No tasks'}</div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* ── Section groups (default) ───────────────────── */}
+      {!isGrouped && secs.map(sec => {
         const all      = visibleTasks.filter(task => task.sec === sec)
         const filtered = sortTasks(applyFilters(all, filters), sortBy)
         const paged    = filtered.filter(task => pagedIds.has(task.id))

@@ -7,7 +7,7 @@ import { useMilestones } from '@/hooks/useMilestones'
 
 const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', partner: 'all', wp: 'all', ms: 'all' }
 
-export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId }) {
+export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId, groupBy, onGroupByChange }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
@@ -71,6 +71,16 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
         <select value={filters.ms || 'all'} onChange={e => setFilters(f => ({ ...f, ms: e.target.value }))} aria-label={t.milestone ?? 'Milestone'} style={{ fontSize: 13, padding: '7px 10px' }}>
           <option value="all">{t.milestone ?? 'MS'}</option>
           {milestones.filter(m => m.isActive).map(m => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
+        </select>
+      )}
+      {onGroupByChange && (
+        <select value={groupBy ?? 'section'} onChange={e => onGroupByChange(e.target.value)} aria-label={t.groupBy ?? 'Group by'} style={{ fontSize: 13, padding: '7px 10px', fontWeight: groupBy && groupBy !== 'section' ? 600 : 400, color: groupBy && groupBy !== 'section' ? 'var(--accent)' : undefined }}>
+          <option value="section">{t.groupBySection ?? 'Group: Section'}</option>
+          {workpackages.length > 0 && <option value="wp">{t.groupByWp ?? 'Group: WP'}</option>}
+          {milestones.length > 0 && <option value="milestone">{t.groupByMilestone ?? 'Group: Milestone'}</option>}
+          <option value="assignee">{t.groupByAssignee ?? 'Group: Assignee'}</option>
+          <option value="priority">{t.groupByPriority ?? 'Group: Priority'}</option>
+          {orgPartners.length > 0 && <option value="partner">{t.groupByPartner ?? 'Group: Partner'}</option>}
         </select>
       )}
       {active && <button onClick={() => setFilters(EMPTY)} style={{ fontSize: 12, padding: '5px 10px', color: 'var(--c-danger)', borderColor: 'var(--bd2)' }}>{t.resetFilters}</button>}

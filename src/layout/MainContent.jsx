@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import FilterBar from '@/components/FilterBar'
 
@@ -38,6 +38,7 @@ function ProjectContent({
     getSum, delProject, archiveProject, updProj,
   } = actions
   const { setShowAdd, setAddDue, setSelId, openAddOnDate, setActiveForm } = ui
+  const [groupBy, setGroupBy] = useState('section')
 
   return (
     <>
@@ -64,7 +65,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'settings' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
+      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'settings' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} groupBy={groupBy} onGroupByChange={setGroupBy} />}
       {view === 'dashboard' && (
         <ProjectDashboard project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
@@ -92,13 +93,13 @@ function ProjectContent({
         <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
           onMove={moveTask} onReorder={reorderTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
-          onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} orgId={ui.activeOrgId} />
+          onUpdateSecs={handleUpdateSecs} filters={filters} lang={lang} orgId={ui.activeOrgId} groupBy={groupBy} />
       )}
       {view === 'lista' && (
         <ListView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId}
           onToggle={togTask} onMove={moveTask}
           onAddTask={(tl, s) => addTask({ title: tl, sec: s, who: user.name, startDate: null, due: '', pri: 'medium' })}
-          filters={filters} lang={lang} orgId={ui.activeOrgId} />
+          filters={filters} lang={lang} orgId={ui.activeOrgId} groupBy={groupBy} />
       )}
       {view === 'timeline' && (
         <TimelineView tasks={pTasks} secs={pSecs} projects={projs} project={proj} currentUser={user} myProjectRoles={myProjectRoles}

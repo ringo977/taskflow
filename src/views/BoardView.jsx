@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, applyVisibilityFilter } from '@/utils/filters'
 import { getProjectRole, canEditTasks } from '@/utils/permissions'
@@ -7,10 +7,11 @@ import TaskCard from '@/components/TaskCard'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
 import { useMilestones } from '@/hooks/useMilestones'
+import { groupTasks } from '@/utils/groupBy'
 
 const BOARD_PAGE_SIZE = 20
 
-export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang, orgId }) {
+export default function BoardView({ tasks, secs, project, currentUser, myProjectRoles = {}, onOpen, onToggle, onMove, onReorder, onAddTask, onUpdateSecs, filters, lang, orgId, groupBy = 'section' }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
@@ -80,6 +81,20 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   }, [])
 
   const visibleTasks = applyVisibilityFilter(tasks, project, currentUser?.name)
+  const isGrouped = groupBy && groupBy !== 'section'
+
+  // Compute groups for non-section groupBy
+  const groups = useMemo(() => {
+    if (!isGrouped) return null
+    const filtered = applyFilters(visibleTasks, filters)
+    return groupTasks(filtered, groupBy, {
+      sections: secs,
+      wpById,
+      msById,
+      partnerById,
+      t,
+    })
+  }, [isGrouped, visibleTasks, filters, groupBy, secs, wpById, msById, partnerById, t])
 
   const handleDrop = (sec, e) => {
     e.preventDefault()
@@ -113,7 +128,49 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
       .board-col { transition: background 0.15s var(--ease), border-color 0.15s var(--ease); }
     `}</style>
     <div className="board-container" style={{ display: 'flex', gap: 14, padding: 18, overflow: 'auto', flex: 1, alignItems: 'flex-start' }}>
-      {secs.map(sec => {
+      {/* ── Grouped columns (non-section groupBy) ──────── */}
+      {isGrouped && groups && groups.map(grp => {
+        const limit = colLimit[grp.key] ?? BOARD_PAGE_SIZE
+        const shown = grp.tasks.slice(0, limit)
+        const hasMore = grp.tasks.length > limit
+        return (
+          <div key={grp.key} className="board-col"
+            style={{ minWidth: 280, width: 280, flexShrink: 0, padding: 10, background: 'var(--bg2)', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: grp.color ?? 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {grp.label}
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--tx3)', background: 'var(--bg1)', padding: '1px 6px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)' }}>
+                {grp.tasks.length}
+              </span>
+            </div>
+            {shown.map((task, i) => (
+              <div key={task.id} className="board-card" style={{ animationDelay: `${i * 30}ms` }}>
+                <TaskCard task={task} onOpen={onOpen} onToggle={onToggle} q={q} lang={lang}
+                  blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
+                  wpCode={task.workpackageId && wpById[task.workpackageId]?.code}
+                  msCode={task.milestoneId && msById[task.milestoneId]?.code}
+                  partnerName={task.partnerId && partnerById[task.partnerId]?.name}
+                />
+              </div>
+            ))}
+            {hasMore && (
+              <button onClick={() => setColLimit(prev => ({ ...prev, [grp.key]: limit + BOARD_PAGE_SIZE }))}
+                style={{ width: '100%', padding: '8px 0', margin: '4px 0', fontSize: 12, color: 'var(--accent)', background: 'transparent', border: '1px dashed var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer', fontWeight: 500 }}>
+                {t.showMore ?? 'Show more'} ({grp.tasks.length - limit})
+              </button>
+            )}
+            {grp.tasks.length === 0 && (
+              <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>
+                {t.emptySection ?? 'No tasks'}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* ── Section columns (default groupBy) ──────────── */}
+      {!isGrouped && secs.map(sec => {
         const filtered = applyFilters(visibleTasks.filter(t => t.sec === sec), filters)
         const total    = visibleTasks.filter(t => t.sec === sec).length
         const limit    = colLimit[sec] ?? BOARD_PAGE_SIZE
@@ -230,8 +287,8 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
         )
       })}
 
-      {/* Add section column */}
-      {!readOnly && (addingSec ? (
+      {/* Add section column (only in section groupBy) */}
+      {!isGrouped && !readOnly && (addingSec ? (
         <div style={{ minWidth: 280, width: 280, flexShrink: 0, padding: 10, background: 'var(--bg2)', borderRadius: 'var(--r2)', border: '1px dashed var(--bd3)' }}>
           <input value={newSecName} onChange={e => setNewSecName(e.target.value)} autoFocus
             placeholder={t.sectionNamePlaceholder}

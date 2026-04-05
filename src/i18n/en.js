@@ -544,5 +544,17 @@ const en = {
   back: 'Back',
   more: 'more',
   projectSettings: 'Project Settings',
+  groupBy: 'Group by',
+  groupBySection: 'Group: Section',
+  groupByWp: 'Group: WP',
+  groupByMilestone: 'Group: Milestone',
+  groupByAssignee: 'Group: Assignee',
+  groupByPriority: 'Group: Priority',
+  groupByPartner: 'Group: Partner',
+  noWorkpackage: 'No WP',
+  noMilestone: 'No milestone',
+  noPartnerGroup: 'No partner',
+  noPriority: 'No priority',
+  unassigned: 'Unassigned',
 }
 export default en
