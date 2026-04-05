@@ -8,8 +8,8 @@
     "comment": "382.09 kB actual → 420.30 kB budget"
   },
   "index.js": {
-    "maxBytes": 275750,
-    "comment": "244.81 kB actual → 269.29 kB budget"
+    "maxBytes": 276195,
+    "comment": "245.20 kB actual → 269.72 kB budget"
   },
   "html2canvas.esm.js": {
     "maxBytes": 222617,
@@ -32,12 +32,16 @@
     "comment": "94.82 kB actual → 104.31 kB budget"
   },
   "ProjectOverview.js": {
-    "maxBytes": 102997,
-    "comment": "91.44 kB actual → 100.58 kB budget"
+    "maxBytes": 67832,
+    "comment": "60.22 kB actual → 66.24 kB budget"
   },
   "TaskPanel.js": {
     "maxBytes": 38844,
     "comment": "34.48 kB actual → 37.93 kB budget"
+  },
+  "FormsPanel.js": {
+    "maxBytes": 35312,
+    "comment": "31.35 kB actual → 34.48 kB budget"
   },
   "ProjectSupervisionPage.js": {
     "maxBytes": 33273,
@@ -76,8 +80,8 @@
     "comment": "9.94 kB actual → 10.93 kB budget"
   },
   "ProjectDashboard.js": {
-    "maxBytes": 10509,
-    "comment": "9.33 kB actual → 10.26 kB budget"
+    "maxBytes": 10502,
+    "comment": "9.32 kB actual → 10.26 kB budget"
   },
   "ListView.js": {
     "maxBytes": 10461,
@@ -86,6 +90,10 @@
   "reportPdf.js": {
     "maxBytes": 10027,
     "comment": "8.90 kB actual → 9.79 kB budget"
+  },
+  "ProjectSettings.js": {
+    "maxBytes": 10013,
+    "comment": "8.89 kB actual → 9.78 kB budget"
   },
   "DashboardWidgetGrid.js": {
     "maxBytes": 8155,
@@ -180,7 +188,7 @@
     "comment": "0.00 kB actual → 0.00 kB budget"
   },
   "_total": {
-    "maxBytes": 2490363,
-    "comment": "2210.90 kB actual → 2432.00 kB budget"
+    "maxBytes": 2500960,
+    "comment": "2220.31 kB actual → 2442.34 kB budget"
   }
 }

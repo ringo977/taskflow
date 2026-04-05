@@ -211,7 +211,7 @@ export default function ProjectDashboard({
       {/* ── Quick links row ────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
         {[
-          { key: 'overview', label: t.dashDetails ?? 'Details & Settings', icon: '⚙' },
+          { key: 'settings', label: t.projectSettings ?? 'Settings', icon: '⚙' },
           { key: 'workpackages', label: t.workpackages ?? 'Workpackages', icon: '📦' },
         ].map(link => (
           <button key={link.key} onClick={() => onNavigate?.(link.key)}

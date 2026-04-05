@@ -543,5 +543,6 @@ const en = {
   wpNoTasks: 'No tasks in this workpackage',
   back: 'Back',
   more: 'more',
+  projectSettings: 'Project Settings',
 }
 export default en

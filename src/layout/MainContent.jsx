@@ -15,6 +15,7 @@ const TimelineView = lazy(() => import('@/views/TimelineView'))
 const ProjectOverview = lazy(() => import('@/views/ProjectOverview'))
 const ProjectDashboard = lazy(() => import('@/views/ProjectDashboard'))
 const WorkpackagesView = lazy(() => import('@/views/WorkpackagesView'))
+const ProjectSettings = lazy(() => import('@/views/ProjectSettings'))
 const ProjectHeader = lazy(() => import('@/components/ProjectHeader'))
 const ProjectSupervisionPage = lazy(() => import('@/supervision/pages/ProjectSupervisionPage'))
 const SummaryPanel = lazy(() => import('@/components/SummaryPanel'))
@@ -63,7 +64,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
+      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'settings' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} />}
       {view === 'dashboard' && (
         <ProjectDashboard project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
@@ -80,6 +81,12 @@ function ProjectContent({
         <WorkpackagesView project={proj} tasks={tasks} currentUser={user}
           myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}
           orgId={ui.activeOrgId} lang={lang} />
+      )}
+      {view === 'settings' && (
+        <ProjectSettings project={proj} sections={pSecs}
+          onUpdProj={updProj} currentUser={user}
+          myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject}
+          onNavigate={(target) => setView(target)} />
       )}
       {view === 'board' && (
         <BoardView tasks={pTasks} secs={pSecs} project={proj} currentUser={user} myProjectRoles={myProjectRoles} onOpen={setSelId} onToggle={togTask}

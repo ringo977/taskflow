@@ -543,5 +543,6 @@ const it = {
   wpNoTasks: 'Nessun task in questo workpackage',
   back: 'Indietro',
   more: 'altri',
+  projectSettings: 'Impostazioni progetto',
 }
 export default it
