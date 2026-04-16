@@ -140,8 +140,8 @@
     "comment": "3.25 kB actual → 3.58 kB budget"
   },
   "ProjectHeader.js": {
-    "maxBytes": 3653,
-    "comment": "3.24 kB actual → 3.57 kB budget"
+    "maxBytes": 5120,
+    "comment": "4.75 kB actual (F2.5 hierarchical tab bar) → 5.00 kB budget"
   },
   "groupBy.js": {
     "maxBytes": 2172,
