@@ -228,15 +228,21 @@ export default function ProjectDashboard({
         <>
           <span style={{ ...SECTION_TITLE, display: 'block', marginBottom: 12 }}>{t.recentActivity}</span>
           {recent.length === 0 && <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.noActivity}</div>}
-          {recent.map(task => (
-            <div key={task.id} className="row-interactive" onClick={() => onOpen(task.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.done ? 'var(--c-success)' : proj.color, flexShrink: 0 }} />
-              {task.who ? <Avatar name={task.who} size={18} /> : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--bg3)', flexShrink: 0 }} />}
-              <span style={{ fontSize: 12, color: 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</span>
-              {task.done && <span style={{ fontSize: 12, color: 'var(--c-success)', flexShrink: 0 }}>✓</span>}
-            </div>
-          ))}
+          {recent.map(task => {
+            // task.who may be undefined, a string, or an array of assignees
+            // (Supabase data shape varies). Normalise to a single string —
+            // falsy (undefined/null/'' or empty array) renders a neutral dot.
+            const who = Array.isArray(task.who) ? task.who[0] : task.who
+            return (
+              <div key={task.id} className="row-interactive" onClick={() => onOpen(task.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.done ? 'var(--c-success)' : proj.color, flexShrink: 0 }} />
+                {who ? <Avatar name={who} size={18} /> : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--bg3)', flexShrink: 0 }} />}
+                <span style={{ fontSize: 12, color: 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</span>
+                {task.done && <span style={{ fontSize: 12, color: 'var(--c-success)', flexShrink: 0 }}>✓</span>}
+              </div>
+            )
+          })}
         </>
       )
       case 'statusDist': return (
