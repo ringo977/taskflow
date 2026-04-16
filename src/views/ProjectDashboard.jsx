@@ -391,17 +391,8 @@ export default function ProjectDashboard({
         })}
       </div>
 
-      {/* ── Quick links row ───────────────────────────────── */}
+      {/* ── Quick actions row (Settings & WPs moved to tab bar in F1.5b) ── */}
       <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
-        {[
-          { key: 'settings', label: t.projectSettings ?? 'Settings', icon: '⚙' },
-          { key: 'workpackages', label: t.workpackages ?? 'Workpackages', icon: '📦' },
-        ].map(link => (
-          <button key={link.key} onClick={() => onNavigate?.(link.key)}
-            style={{ fontSize: 12, padding: '8px 14px', borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', background: 'var(--bg1)', color: 'var(--tx2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: 'var(--shadow-sm)' }}>
-            <span>{link.icon}</span> {link.label}
-          </button>
-        ))}
         <button
           onClick={async () => {
             const { generateProjectReport } = await import('@/utils/reportPdf')

@@ -8,7 +8,9 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
   const done = tasks.filter(t => t.done).length
   const memberNames = useMemo(() => [...new Set(tasks.flatMap(t => Array.isArray(t.who) ? t.who : t.who ? [t.who] : []))], [tasks])
   const VIEWS = [
-    [t.dashboard ?? 'Dashboard', 'dashboard'], [t.list, 'lista'], [t.board, 'board'],
+    [t.dashboard ?? 'Dashboard', 'dashboard'],
+    [t.overview ?? 'Overview', 'overview'],
+    [t.list, 'lista'], [t.board, 'board'],
     [t.timeline, 'timeline'], [t.calendar, 'calendario'],
     [t.workpackages ?? 'WPs', 'workpackages'],
     ...(proj?.project_type && proj.project_type !== 'standard' ? [[t.supervision, 'supervision']] : []),
@@ -21,9 +23,9 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
       <span style={{ fontSize: 13, color: 'var(--tx3)', flexShrink: 0 }}>{done}/{tasks.length}</span>
       {memberNames.length > 0 && <AvatarGroup names={memberNames} size={26} />}
       <div style={{ flex: 1 }} />
-      <div className="view-tabs" style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden', flexShrink: 0 }}>
+      <div className="view-tabs" role="tablist" aria-label={t.projectViews ?? 'Project views'} style={{ display: 'flex', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', overflow: 'hidden', flexShrink: 0 }}>
         {VIEWS.map(([lb, v], i, arr) => (
-          <button key={v} data-testid={`tab-${v}`} onClick={() => setView(v)} style={{
+          <button key={v} role="tab" aria-selected={view === v} data-testid={`tab-${v}`} onClick={() => setView(v)} style={{
             padding: '5px 12px', fontSize: 12, border: 'none',
             borderRight: i < arr.length - 1 ? '1px solid var(--bd3)' : 'none',
             background: view === v ? 'var(--bg2)' : 'transparent',
@@ -32,6 +34,21 @@ export default function ProjectHeader({ proj, view, setView, tasks, onAddTask, o
           }}>{lb}</button>
         ))}
       </div>
+      {/* Settings icon (governance) — distinct from content tabs */}
+      <button
+        data-testid="tab-settings"
+        aria-label={t.projectSettings ?? 'Project settings'}
+        title={t.projectSettings ?? 'Project settings'}
+        aria-pressed={view === 'settings'}
+        onClick={() => setView(view === 'settings' ? 'dashboard' : 'settings')}
+        style={{
+          fontSize: 14, padding: '5px 9px', borderRadius: 'var(--r1)',
+          border: '1px solid var(--bd3)',
+          background: view === 'settings' ? 'var(--bg2)' : 'transparent',
+          color: view === 'settings' ? 'var(--tx1)' : 'var(--tx3)',
+          cursor: 'pointer', lineHeight: 1, flexShrink: 0,
+        }}
+      >⚙</button>
       {onSubmitForm && forms.length > 0 && (
         forms.length === 1
           ? <button onClick={() => onSubmitForm(forms[0])} style={{ fontSize: 12, padding: '5px 12px', color: 'var(--c-purple, var(--accent))', borderColor: 'var(--c-purple, var(--accent))' }}>📋 {forms[0].name}</button>
