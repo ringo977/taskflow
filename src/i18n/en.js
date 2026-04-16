@@ -33,7 +33,7 @@ const en = {
   teamMembers: (n) => `${n} team members`,
   openTasks: 'Open', overdueLabel: 'Overdue', completed: 'Completed',
   list: 'List', board: 'Board', calendar: 'Calendar',
-  timeline: 'Timeline', overview: 'Overview',
+  timeline: 'Timeline', overview: 'Overview', work: 'Work',
   addTask: '+ Task',
   search: 'Search…', priority: 'Priority', assigned: 'Assigned', deadline: 'Deadline',
   high: 'High', medium: 'Medium', low: 'Low',

@@ -33,7 +33,7 @@ const it = {
   teamMembers: (n) => `${n} membri del team`,
   openTasks: 'Aperti', overdueLabel: 'Scaduti', completed: 'Completati',
   list: 'Lista', board: 'Board', calendar: 'Calendario',
-  timeline: 'Timeline', overview: 'Overview',
+  timeline: 'Timeline', overview: 'Overview', work: 'Lavoro',
   addTask: '+ Task',
   search: 'Cerca…', priority: 'Priorità', assigned: 'Assegnato', deadline: 'Scadenza',
   high: 'Alta', medium: 'Media', low: 'Bassa',
