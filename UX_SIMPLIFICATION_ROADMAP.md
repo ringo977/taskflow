@@ -1,7 +1,7 @@
 # UX Simplification Roadmap
 
 **Version:** draft 1 — 2026-04-16
-**Status:** proposta, non ancora approvata
+**Status:** F1–F3 eseguite (branch `refactor/ux-simplification`), F4 completata parzialmente. Vedi § **Exit report** in fondo.
 **Autore:** brainstorming con Claude, ancorato al codice reale
 
 ---
@@ -255,3 +255,59 @@ Prima di scrivere una sola riga di codice, tre scelte da fare:
 1. **Setup vs Overview come nome:** meglio rinominare per forzare il reset mentale, o mantenere "Overview" per non spaccare i bookmark?
 2. **Settings come tab o come icona ⚙:** tab esplicita aumenta la discoverability; icona riduce visual clutter. Pattern Asana Starter preferisce l'icona.
 3. **Fase 3 (TaskPanel) ora o dopo:** si può fermare a Fase 1+2 e vedere se basta, oppure andare dritti con la refactor del side panel.
+
+**Decisioni prese (2026-04-16):** (1) mantenere "Overview", (2) Settings come ⚙ icona, (3) procedere fino a Fase 3 inclusa, tracciando tutto su git per rollback.
+
+---
+
+## Exit report (2026-04-16)
+
+Branch: `refactor/ux-simplification`. Sette commit atomici sopra `06eaf3a` (main):
+
+| Commit | Fase | Cosa ha fatto |
+|---|---|---|
+| `48ec3fb` | F0 | `docs(ux):` aggiunta di questa roadmap |
+| `083d16a` | F1.5a | Rimossi 7 pannelli duplicati da ProjectOverview (Status, Project Type, Project Dates, Permissions, Custom Fields, Rules, Forms) + 4 summary di monitoring (Progress, Partners, WP, Milestones). Overview: 579 → 230 LOC (−321 netti, −349 nel file + −28 contestuali). ConfirmModal e archive/delete spostati verso Settings. |
+| `326aac6` | F1.5b | Overview reinstated nel tab bar come secondo tab. Settings convertito in icona ⚙ (non più tab). Rimossa "Quick links row" dal fondo di ProjectDashboard. ARIA: `role=tablist`, `aria-selected`, `aria-pressed`. |
+| `feb86d1` | F2.5 | Tab bar gerarchica. Primario: Dashboard · Overview · Work ▾ · WPs · Supervision (cond). Secondario (visibile solo in Work): List · Board · Timeline · Calendar. Work ricorda l'ultima sotto-view usata. Tutti i `data-testid` preservati per e2e (`tab-lista`, `tab-board`, `tab-timeline`, `tab-calendario`, `tab-overview`, `tab-supervision`). |
+| `833b8bc` | F3.5a | TaskPanel decomposto: `src/pages/taskpanel/DetailTab.jsx` (208 LOC), `ActivityTab.jsx` (115), `FilesTimeTab.jsx` (26). TaskPanel shell: 407 → 129 LOC. Stato locale delle tab spostato dentro i rispettivi componenti. Nessun cambio di UX. |
+| `201a3a3` | F3.5b | Layout tabbed: Details / Activity / Files & Time, solo una tab visibile alla volta. Titolo e tab bar pinnati sotto l'header, il delete migra in un menu ⋯. WP lock banner rimane sempre visibile (nell'area pinnata). Nuovi `data-testid`: `tab-task-details`, `tab-task-activity`, `tab-task-filestime`, `task-more-menu`. i18n: 5 chiavi nuove en/it. |
+
+### F1.5c — verdetto: differito
+
+La rimozione di `MilestoneMigrationHelper` richiede (per `MILESTONES_ROADMAP.md` righe 41-46) che:
+
+- il migration helper UI sia deployato — ✅ fatto
+- la conversione sia completata su tutti gli org (zero task con `_legacy_milestone=true`) **oppure** l'utente abbia dismissato il pannello esplicitamente — ⚠️ non verificabile senza query di produzione
+- almeno un ciclo di release sia trascorso — ⚠️ dipendente dalla release cadence
+
+La colonna `_legacy_milestone` è tuttora letta da `src/lib/db/adapters.js:45`. Il componente è self-hiding (`return null` se `legacyTasks.length === 0`), quindi non ha costo runtime nel caso comune. Rimuoverlo ora senza prima droppare la colonna lascerebbe i dati legacy scoperti. **Azione proposta:** Marco esegue `SELECT COUNT(*) FROM tasks WHERE _legacy_milestone = true;` sull'ambiente principale; se 0, procedere con migration `040_drop_legacy_milestone.sql` e solo dopo rimuovere Helper + adapter.
+
+### F4.5 — stato
+
+- **F4.5a (lint/test):** `npx eslint` pulito su tutti i file toccati (1 solo warning pre-esistente in `MentionPopup.jsx`). Vitest run targeted: `useUIState` (37 test), `filters` (39), `constants` (16), `useTaskActions` (21), `useRuleEngine` (48), `permissions` — **tutti verdi**. Full suite non eseguibile in questo ambiente (vite-build e full vitest eccedono il timeout sandbox).
+- **F4.5b (docs):** questo paragrafo. `README.md`/`manualContent.jsx` **non aggiornati in questa sessione** — task residuo per Marco (low-risk, tempo basso).
+- **F4.5c (bundle):** `vite build` non eseguibile in sandbox (permission su `dist/`). Marco deve eseguire `npm run bundle-size` localmente per aggiornare `bundle-budget.json` — attesa di una riduzione su `ProjectOverview` (−320 LOC → ~−15 KB gzip) e marginale su `TaskPanel` (neutro o leggermente giù grazie all'estrazione).
+
+### Riduzione LOC — misurata
+
+```
+ProjectOverview.jsx   579 → 230    (-321)
+ProjectDashboard.jsx   ~ → ~       (-~40 quick-links)
+ProjectHeader.jsx     69  → 136    (+67, nuovo segmented control)
+TaskPanel.jsx         407 → 202    (-205)
+ + taskpanel/DetailTab.jsx          +208
+ + taskpanel/ActivityTab.jsx        +115
+ + taskpanel/FilesTimeTab.jsx        +26
+Totale netto src/                   ≈ −150 LOC
+```
+
+Meno aggressivo del target −300 perché F1.5c è differito e perché il nuovo segmented control + menu ⋯ + i18n keys hanno un costo fisso. La riduzione **reale** percepita è molto maggiore della differenza netta: TaskPanel è la superficie che l'utente vede di più, e lì il guadagno è −205 LOC sullo shell + scroll tutto-in-uno che diventa tab selezionate.
+
+### Todo residui (fuori sessione)
+
+1. Eseguire `npm run test` e `npm run bundle-size` localmente, committare eventuale update di `bundle-budget.json`.
+2. Verificare il migration helper su `_legacy_milestone` (query di cui sopra) prima di rimuoverlo.
+3. Playwright smoke test: aprire un task, cliccare le 3 tab del TaskPanel, verificare che Details mostri il titolo + meta, Activity mostri comment input, Files & Time mostri gli attachments.
+4. Aggiornare `README.md` e `manualContent.jsx` con la nuova IA (1 h di lavoro).
+5. Merge `refactor/ux-simplification` → `main` come singolo fast-forward (la cronologia atomica dei 7 commit è utile per bisect).
