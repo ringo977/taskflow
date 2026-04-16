@@ -73,9 +73,9 @@ function ProjectContent({
           onNavigate={(target) => setView(target)} />
       )}
       {view === 'overview' && (
-        <ProjectOverview project={proj} tasks={tasks} sections={pSecs}
+        <ProjectOverview project={proj} tasks={tasks}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
-          myProjectRoles={myProjectRoles} onDeleteProject={delProject} onArchiveProject={archiveProject}
+          myProjectRoles={myProjectRoles}
           orgId={ui.activeOrgId} />
       )}
       {view === 'workpackages' && (
