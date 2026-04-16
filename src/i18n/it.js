@@ -90,6 +90,8 @@ const it = {
   resourceTitle: 'Titolo', resourceUrl: 'URL',
   recentActivity: 'Attività recente',
   noActivity: 'Nessuna attività recente.',
+  tabDetails: 'Dettagli', tabActivity: 'Attività', tabFilesTime: 'File e tempo',
+  taskTabs: 'Sezioni task', moreActions: 'Altre azioni',
   taskAdded: 'aggiunto',
   taskCompleted: 'completato',
   taskUpdated: 'aggiornato',

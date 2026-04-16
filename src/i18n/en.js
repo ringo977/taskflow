@@ -90,6 +90,8 @@ const en = {
   resourceTitle: 'Title', resourceUrl: 'URL',
   recentActivity: 'Recent activity',
   noActivity: 'No recent activity.',
+  tabDetails: 'Details', tabActivity: 'Activity', tabFilesTime: 'Files & Time',
+  taskTabs: 'Task sections', moreActions: 'More actions',
   taskAdded: 'added',
   taskCompleted: 'completed',
   taskUpdated: 'updated',
