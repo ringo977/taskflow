@@ -84,13 +84,17 @@ export async function upsertTask(orgId, task, sectionRows) {
   const t = validate(TaskUpsertSchema, task)
   const secRow = sectionRows?.find(s => s.project_id === t.pid && s.name === t.sec)
 
-  // Resolve assignee names → UUIDs via profiles
+  // Resolve assignee names → UUIDs via profiles.
+  // Preserve input order: `.in()` does not guarantee output order, and the
+  // UI renders chips in the order of assignee_ids. Re-sorting by the input
+  // `names` array keeps existing chips stable when a new one is added.
   const names = Array.isArray(t.who) ? t.who : t.who ? [t.who] : []
   let assigneeIds = []
   if (names.length > 0) {
     const { data: profiles } = await supabase
       .from('profiles').select('id, display_name').in('display_name', names)
-    assigneeIds = (profiles ?? []).map(p => p.id)
+    const byName = Object.fromEntries((profiles ?? []).map(p => [p.display_name, p.id]))
+    assigneeIds = names.map(n => byName[n]).filter(Boolean)
   }
 
   const { error } = await supabase.from('tasks').upsert({
@@ -179,7 +183,12 @@ export async function updateTaskField(orgId, taskId, patch) {
         const missing = names.filter(n => !resolved.some(pr => pr.display_name === n))
         throw new Error(`Cannot resolve assignees: ${missing.join(', ')}`)
       }
-      db.assignee_ids = resolved.map(pr => pr.id)
+      // Preserve input order — `resolve_assignees` uses `= ANY(p_names)`
+      // which doesn't guarantee output order. The UI renders chips in the
+      // order of assignee_ids, so persisting out-of-order ids makes existing
+      // assignees visually shuffle every time a new one is added.
+      const byName = Object.fromEntries(resolved.map(pr => [pr.display_name, pr.id]))
+      db.assignee_ids = names.map(n => byName[n])
     } else {
       db.assignee_ids = []
     }
