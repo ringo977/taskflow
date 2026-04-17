@@ -158,13 +158,28 @@ export async function updateTaskField(orgId, taskId, patch) {
       db[col] = v ?? (typeof v === 'number' ? 0 : col === 'tags' || col === 'activity' ? [] : null)
     }
   }
-  // Resolve who names → UUIDs
+  // Resolve who names → UUIDs via SECURITY DEFINER RPC.
+  // We call `resolve_assignees` (migration 029) instead of SELECTing from
+  // `profiles` directly, because the profiles RLS policy scopes reads to
+  // org mates only. Project-only collaborators (project_members who are
+  // not org_members) would otherwise 403 on the direct SELECT even though
+  // they legitimately appear in the assignee dropdown.
+  //
+  // Explicit error / length check: a silent failure here would persist
+  // `assignee_ids: []` on the task and make the optimistic chip vanish on
+  // the next refetch.
   if ('who' in p) {
     const names = Array.isArray(p.who) ? p.who : p.who ? [p.who] : []
     if (names.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles').select('id, display_name').in('display_name', names)
-      db.assignee_ids = (profiles ?? []).map(pr => pr.id)
+      const { data: profiles, error: profilesErr } = await supabase
+        .rpc('resolve_assignees', { p_names: names })
+      if (profilesErr) throw profilesErr
+      const resolved = profiles ?? []
+      if (resolved.length !== names.length) {
+        const missing = names.filter(n => !resolved.some(pr => pr.display_name === n))
+        throw new Error(`Cannot resolve assignees: ${missing.join(', ')}`)
+      }
+      db.assignee_ids = resolved.map(pr => pr.id)
     } else {
       db.assignee_ids = []
     }

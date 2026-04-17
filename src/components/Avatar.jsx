@@ -3,9 +3,16 @@ import { getInitials } from '@/utils/initials'
 
 export default function Avatar({ name, size = 26, showName = false }) {
   const users = useOrgUsers()
-  const user = users.find(u => u.name === name)
+  // task.who can be string | null | undefined | string[] depending on source
+  // (Supabase persistence vs. seed data). Normalise to a single string, and
+  // render nothing when there is no actual assignee — callers that want an
+  // explicit empty-state (e.g. a neutral dot in Recent Activity widgets)
+  // should handle the falsy case themselves with a ternary.
+  const resolvedName = Array.isArray(name) ? name[0] : name
+  if (!resolvedName || typeof resolvedName !== 'string') return null
+  const user = users.find(u => u.name === resolvedName)
   const color = user?.color ?? '#888'
-  const initials = getInitials(name)
+  const initials = getInitials(resolvedName)
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -18,7 +25,7 @@ export default function Avatar({ name, size = 26, showName = false }) {
       }}>
         {initials}
       </div>
-      {showName && <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{name}</span>}
+      {showName && <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{resolvedName}</span>}
     </div>
   )
 }

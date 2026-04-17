@@ -38,7 +38,7 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
 
     // ── Helpers ──────────────────────────────────────────────────
 
-    /** Fetch a single task by ID with subtasks, comments, and deps. */
+    /** Fetch a single task by ID with subtasks, comments, deps, and assignee names. */
     const fetchSingleTask = async (taskId) => {
       const [
         { data: row },
@@ -59,7 +59,17 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
         id: c.id, who: c.author_name, txt: c.body, d: c.created_at?.slice(0, 10),
       }))
       const mappedDeps = (depRows ?? []).map(d => d.depends_on_id)
-      return toTask(row, secName, mappedSubs, mappedCmts, mappedDeps)
+      // Resolve assignee_ids → display_name so the chip renders immediately
+      // on INSERT. Without this the freshly inserted task appears with an
+      // empty `who` array until the next full reload.
+      const assigneeIds = Array.isArray(row.assignee_ids) ? row.assignee_ids : []
+      const profileById = {}
+      if (assigneeIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles').select('id, display_name').in('id', assigneeIds)
+        for (const p of profs ?? []) profileById[p.id] = p.display_name
+      }
+      return toTask(row, secName, mappedSubs, mappedCmts, mappedDeps, profileById)
     }
 
     /** Fetch a single project by ID. Member names come from the RPC, not assignee_name (dropped). */
@@ -82,11 +92,30 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
       if (eventType === 'UPDATE' && row) {
         const secRows = secRowsRef?.current ?? []
         const secName = secRows.find(s => s.id === row.section_id)?.name ?? ''
+        let needsReload = false
         setTasks?.(prev => prev.map(t => {
           if (t.id !== row.id) return t
-          // Merge DB scalars from payload, preserve local subs/cmts/deps
-          return toTask(row, secName, t.subs, t.cmts, t.deps)
+          // Merge DB scalars from payload, preserve local subs/cmts/deps.
+          //
+          // Rebuild profileById from the local task's own resolved names so
+          // the realtime UPDATE doesn't wipe assignee chips that were already
+          // resolved client-side (via fetchTasks or optimistic updates).
+          // useAppBootstrap lives outside OrgUsersProvider in App.jsx, so we
+          // can't inject the org directory here — instead we leverage the
+          // fact that `t.who[i]` ↔ `t.whoIds[i]` are already paired.
+          const profileById = {}
+          const tWho    = Array.isArray(t.who)    ? t.who    : []
+          const tWhoIds = Array.isArray(t.whoIds) ? t.whoIds : []
+          tWhoIds.forEach((id, i) => { if (tWho[i]) profileById[id] = tWho[i] })
+          const merged = toTask(row, secName, t.subs, t.cmts, t.deps, profileById)
+          // If the payload adds assignees we can't resolve from local state,
+          // we'd render them as missing chips. Trigger a debounced full
+          // reload so the authoritative names hydrate.
+          const rowIds = Array.isArray(row.assignee_ids) ? row.assignee_ids : []
+          if (merged.who.length < rowIds.length) needsReload = true
+          return merged
         }))
+        if (needsReload) debouncedFullReload()
         return
       }
 

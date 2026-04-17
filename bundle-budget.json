@@ -172,8 +172,8 @@
     "comment": "0.59 kB actual → 0.64 kB budget"
   },
   "Avatar.js": {
-    "maxBytes": 633,
-    "comment": "0.56 kB actual → 0.62 kB budget"
+    "maxBytes": 724,
+    "comment": "0.64 kB actual → 0.71 kB budget (defensive normalisation for array/null name, 2026-04-17 assignee fix)"
   },
   "Badge.js": {
     "maxBytes": 481,
