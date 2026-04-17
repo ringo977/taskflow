@@ -92,30 +92,43 @@ export function useRealtimeSync(orgId, { onFullReload, setTasks, setProjs, secRo
       if (eventType === 'UPDATE' && row) {
         const secRows = secRowsRef?.current ?? []
         const secName = secRows.find(s => s.id === row.section_id)?.name ?? ''
-        let needsReload = false
+        const rowIds = Array.isArray(row.assignee_ids) ? row.assignee_ids : []
+
+        // Build profileById primarily from the local task's `who ↔ whoIds`
+        // pairs, then fetch profiles for any ids we can't resolve locally.
+        // Applying a partial merge (dropping unresolved names) would cause
+        // the assignee chip to vanish between the optimistic UI update and
+        // the next full reload, which in turn would cause a second write
+        // to overwrite the DB with a truncated assignee_ids array.
+        let localTask = null
+        setTasks?.(prev => {
+          localTask = prev.find(t => t.id === row.id) ?? null
+          return prev
+        })
+
+        const profileById = {}
+        if (localTask) {
+          const tWho    = Array.isArray(localTask.who)    ? localTask.who    : []
+          const tWhoIds = Array.isArray(localTask.whoIds) ? localTask.whoIds : []
+          tWhoIds.forEach((id, i) => { if (tWho[i]) profileById[id] = tWho[i] })
+        }
+        const missingIds = rowIds.filter(id => !profileById[id])
+        if (missingIds.length > 0) {
+          try {
+            const { data: profs } = await supabase
+              .from('profiles').select('id, display_name').in('id', missingIds)
+            for (const p of profs ?? []) profileById[p.id] = p.display_name
+          } catch (e) {
+            log.warn('UPDATE profile lookup failed, falling back to reload:', e.message)
+            debouncedFullReload()
+            return
+          }
+        }
+
         setTasks?.(prev => prev.map(t => {
           if (t.id !== row.id) return t
-          // Merge DB scalars from payload, preserve local subs/cmts/deps.
-          //
-          // Rebuild profileById from the local task's own resolved names so
-          // the realtime UPDATE doesn't wipe assignee chips that were already
-          // resolved client-side (via fetchTasks or optimistic updates).
-          // useAppBootstrap lives outside OrgUsersProvider in App.jsx, so we
-          // can't inject the org directory here — instead we leverage the
-          // fact that `t.who[i]` ↔ `t.whoIds[i]` are already paired.
-          const profileById = {}
-          const tWho    = Array.isArray(t.who)    ? t.who    : []
-          const tWhoIds = Array.isArray(t.whoIds) ? t.whoIds : []
-          tWhoIds.forEach((id, i) => { if (tWho[i]) profileById[id] = tWho[i] })
-          const merged = toTask(row, secName, t.subs, t.cmts, t.deps, profileById)
-          // If the payload adds assignees we can't resolve from local state,
-          // we'd render them as missing chips. Trigger a debounced full
-          // reload so the authoritative names hydrate.
-          const rowIds = Array.isArray(row.assignee_ids) ? row.assignee_ids : []
-          if (merged.who.length < rowIds.length) needsReload = true
-          return merged
+          return toTask(row, secName, t.subs, t.cmts, t.deps, profileById)
         }))
-        if (needsReload) debouncedFullReload()
         return
       }
 
