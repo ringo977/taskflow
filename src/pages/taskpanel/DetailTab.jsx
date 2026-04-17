@@ -21,11 +21,6 @@ export default function DetailTab({
 }) {
   const [depSearch, setDepSearch] = useState('')
   const [showDepPicker, setShowDepPicker] = useState(false)
-  // Compact-by-default assignee chip: show the first assignee + a "+N" badge
-  // when there are multiple. Click the badge (or any chip) to expand into the
-  // full list with individual remove buttons. Saves horizontal space on the
-  // meta grid when a task has several people on it.
-  const [assigneesExpanded, setAssigneesExpanded] = useState(false)
 
   const deps = (task.deps ?? []).map(id => allTasks.find(t => t.id === id)).filter(Boolean)
   const blockers = allTasks.filter(t => (t.deps ?? []).includes(task.id))
@@ -38,8 +33,6 @@ export default function DetailTab({
   const removeDep = (depId) => onUpd(task.id, { deps: (task.deps ?? []).filter(id => id !== depId) })
 
   const whoArray = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
-  const extraCount = Math.max(0, whoArray.length - 1)
-  const visibleWho = assigneesExpanded || whoArray.length <= 1 ? whoArray : whoArray.slice(0, 1)
 
   return (
     <>
@@ -47,39 +40,15 @@ export default function DetailTab({
       <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', fontSize: 13, marginBottom: 20, alignItems: 'start' }}>
         <span style={{ color: 'var(--tx3)' }}>{t.assigned}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          {visibleWho.map((name, i) => (
-            <span key={name} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--bg2)', padding: '2px 8px 2px 4px', borderRadius: 'var(--r1)', fontSize: 12 }}>
+          {whoArray.map(name => (
+            <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--bg2)', padding: '2px 8px 2px 4px', borderRadius: 'var(--r1)', fontSize: 12 }}>
               <Avatar name={name} size={16} />
               <span style={{ color: 'var(--tx2)' }}>{name}</span>
               <button onClick={() => onUpd(task.id, { who: whoArray.filter(n => n !== name) })}
                 disabled={readOnly}
                 style={{ border: 'none', background: 'transparent', color: 'var(--tx3)', cursor: readOnly ? 'default' : 'pointer', fontSize: 12, padding: '0 2px', lineHeight: 1, opacity: readOnly ? 0.5 : 1 }}>✕</button>
-              {/* +N badge on the first chip when collapsed — click to expand */}
-              {i === 0 && !assigneesExpanded && extraCount > 0 && (
-                <button
-                  onClick={() => setAssigneesExpanded(true)}
-                  title={whoArray.slice(1).join(', ')}
-                  style={{
-                    position: 'absolute', top: -6, right: -6,
-                    minWidth: 18, height: 18, padding: '0 4px',
-                    border: '1px solid var(--bg1)', borderRadius: 9,
-                    background: 'var(--c-brand)', color: 'white',
-                    fontSize: 10, fontWeight: 600, lineHeight: 1,
-                    cursor: 'pointer', display: 'inline-flex',
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                  +{extraCount}
-                </button>
-              )}
             </span>
           ))}
-          {assigneesExpanded && whoArray.length > 1 && (
-            <button
-              onClick={() => setAssigneesExpanded(false)}
-              style={{ border: '1px solid var(--bd3)', background: 'transparent', color: 'var(--tx3)', fontSize: 11, padding: '2px 6px', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
-              ⌄ {t.collapseAssignees ?? 'collapse'}
-            </button>
-          )}
           <select value=""
             onChange={e => {
               if (!e.target.value) return

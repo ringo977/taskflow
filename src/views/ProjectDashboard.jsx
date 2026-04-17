@@ -230,14 +230,28 @@ export default function ProjectDashboard({
           {recent.length === 0 && <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.noActivity}</div>}
           {recent.map(task => {
             // task.who may be undefined, a string, or an array of assignees
-            // (Supabase data shape varies). Normalise to a single string —
-            // falsy (undefined/null/'' or empty array) renders a neutral dot.
-            const who = Array.isArray(task.who) ? task.who[0] : task.who
+            // (Supabase data shape varies). Show first assignee's avatar plus
+            // a "+N" overlay when the task has multiple people on it.
+            const whoArr = Array.isArray(task.who) ? task.who : task.who ? [task.who] : []
+            const who = whoArr[0]
+            const extra = whoArr.length - 1
             return (
               <div key={task.id} className="row-interactive" onClick={() => onOpen(task.id)}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--bd3)', borderRadius: 'var(--r1)', cursor: 'pointer' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.done ? 'var(--c-success)' : proj.color, flexShrink: 0 }} />
-                {who ? <Avatar name={who} size={18} /> : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--bg3)', flexShrink: 0 }} />}
+                <div style={{ position: 'relative', width: 18, height: 18, flexShrink: 0 }} title={whoArr.join(', ')}>
+                  {who ? <Avatar name={who} size={18} /> : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--bg3)' }} />}
+                  {extra > 0 && (
+                    <span style={{
+                      position: 'absolute', top: -5, right: -8,
+                      minWidth: 14, height: 14, padding: '0 3px',
+                      border: '1px solid var(--bg1)', borderRadius: 7,
+                      background: 'var(--c-brand)', color: 'white',
+                      fontSize: 9, fontWeight: 600, lineHeight: 1,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>+{extra}</span>
+                  )}
+                </div>
                 <span style={{ fontSize: 12, color: 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</span>
                 {task.done && <span style={{ fontSize: 12, color: 'var(--c-success)', flexShrink: 0 }}>✓</span>}
               </div>
