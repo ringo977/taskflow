@@ -159,7 +159,7 @@ export async function updateTaskField(orgId, taskId, patch) {
     }
   }
   // Resolve who names → UUIDs via SECURITY DEFINER RPC.
-  // We call `resolve_assignees` (migration 029) instead of SELECTing from
+  // We call `resolve_assignees` (migration 041) instead of SELECTing from
   // `profiles` directly, because the profiles RLS policy scopes reads to
   // org mates only. Project-only collaborators (project_members who are
   // not org_members) would otherwise 403 on the direct SELECT even though

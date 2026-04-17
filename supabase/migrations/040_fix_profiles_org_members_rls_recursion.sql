@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration 028: Fix RLS recursion on profiles ↔ org_members
+-- Migration 040: Fix RLS recursion on profiles ↔ org_members
 -- ============================================================
 -- Symptom:
 --   SELECT on public.profiles (for any user other than self) returned

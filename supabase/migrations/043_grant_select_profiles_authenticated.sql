@@ -1,8 +1,8 @@
 -- ============================================================
--- Migration 031: Grant SELECT on profiles to authenticated role
+-- Migration 043: Grant SELECT on profiles to authenticated role
 -- ============================================================
 -- Context:
---   After 028/029/030 fixed the RLS policies and introduced an RPC
+--   After 040/041/042 fixed the RLS policies and introduced an RPC
 --   path for assignee resolution, direct SELECT queries from the
 --   client against public.profiles still returned HTTP 403 with:
 --     { code: "42501", message: "permission denied for table profiles" }
@@ -20,7 +20,7 @@
 --
 --   Once `fetchTasks` started querying profiles directly (to
 --   resolve assignee_ids → display_name), the 403 surfaced. Until
---   migration 028, the RLS recursion masked the underlying GRANT
+--   migration 040, the RLS recursion masked the underlying GRANT
 --   issue as a 500.
 --
 -- SAFE TO RUN:

@@ -1,8 +1,8 @@
 -- ============================================================
--- Migration 029: RPC to resolve assignee names → UUIDs
+-- Migration 041: RPC to resolve assignee names → UUIDs
 -- ============================================================
 -- Context:
---   After migration 028 fixed the RLS recursion on profiles, a
+--   After migration 040 fixed the RLS recursion on profiles, a
 --   second class of failures surfaced: HTTP 403 when resolving
 --   display_names that belong to users who are project_members
 --   but NOT org_members of the current user's org. These users

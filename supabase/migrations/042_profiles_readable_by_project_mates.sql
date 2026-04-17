@@ -1,8 +1,8 @@
 -- ============================================================
--- Migration 030: Extend profiles SELECT to project mates
+-- Migration 042: Extend profiles SELECT to project mates
 -- ============================================================
 -- Context:
---   After 028 (RLS recursion fix) and 029 (resolve_assignees RPC),
+--   After 040 (RLS recursion fix) and 041 (resolve_assignees RPC),
 --   task assignment via the UI succeeded but the chip vanished on
 --   the next refetch. Root cause traced to `fetchTasks` doing a
 --   direct `SELECT id, display_name FROM profiles` to build the
@@ -23,7 +23,7 @@
 -- SAFE TO RUN:
 --   • Only policies and a helper function change — no data
 --   • Idempotent: DROP IF EXISTS before every CREATE
---   • is_org_mate / is_in_org (from 028) unchanged
+--   • is_org_mate / is_in_org (from 040) unchanged
 -- ============================================================
 
 -- ── 0. Helper: project-level membership check (bypasses RLS) ──
