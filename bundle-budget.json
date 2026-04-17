@@ -92,8 +92,8 @@
     "comment": "8.90 kB actual → 9.79 kB budget"
   },
   "ProjectSettings.js": {
-    "maxBytes": 10013,
-    "comment": "8.89 kB actual → 9.78 kB budget"
+    "maxBytes": 47104,
+    "comment": "40.10 kB actual (F1.5a centralised governance) → 46.00 kB budget"
   },
   "DashboardWidgetGrid.js": {
     "maxBytes": 8274,
