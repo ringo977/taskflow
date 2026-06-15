@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { useLang } from '@/i18n'
 
 const UndoCtx = createContext(null)
 
@@ -39,12 +40,13 @@ export function useUndo() {
 }
 
 function UndoBar({ label, onUndo, onDismiss }) {
+  const t = useLang()
   return (
     <>
       <style>{`
         @keyframes undo-slide { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
       `}</style>
-      <div style={{
+      <div role="status" aria-live="polite" style={{
         position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '10px 18px', borderRadius: 'var(--r2)',
@@ -58,7 +60,7 @@ function UndoBar({ label, onUndo, onDismiss }) {
           background: 'transparent', border: '1px solid rgba(255,255,255,0.3)',
           color: 'var(--bg1)', fontSize: 13, fontWeight: 600, padding: '4px 14px',
           borderRadius: 'var(--r1)', cursor: 'pointer',
-        }}>Undo</button>
+        }}>{t.undo}</button>
         <button onClick={onDismiss} style={{
           background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)',
           cursor: 'pointer', fontSize: 14, padding: '2px 6px', lineHeight: 1,

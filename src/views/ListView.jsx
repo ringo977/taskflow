@@ -11,9 +11,7 @@ import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
 import Pagination from '@/components/Pagination'
 import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
-import { usePartners } from '@/hooks/usePartners'
-import { useWorkpackages } from '@/hooks/useWorkpackages'
-import { useMilestones } from '@/hooks/useMilestones'
+import { useProjectLookups } from '@/hooks/useProjectLookups'
 import { groupTasks } from '@/utils/groupBy'
 
 const SORT_OPTIONS = [
@@ -46,12 +44,12 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
   const [collapsed, setCollapsed] = useState({})
   const [sortBy, setSortBy] = useState('none')
   const [selected, setSelected] = useState(new Set())
-  const { orgPartners } = usePartners(orgId, project?.id)
-  const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
-  const { workpackages } = useWorkpackages(orgId, project?.id)
-  const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
-  const { milestones } = useMilestones(orgId, project?.id)
-  const msById = Object.fromEntries(milestones.map(m => [m.id, m]))
+  const { partnerById, wpById, msById } = useProjectLookups(orgId, project?.id)
+  // Precompute incomplete-task ids once so "blocked" is O(deps) per row, not O(deps × tasks).
+  const incompleteIds = useMemo(
+    () => new Set(tasks.filter(t => !t.done).map(t => t.id)),
+    [tasks]
+  )
   const q = filters.q
 
   const commitAdd = (sec) => {
@@ -118,7 +116,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
         {selected.size > 0 && !readOnly && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'var(--bg2)', padding: '4px 12px', borderRadius: 'var(--r1)', border: '1px solid var(--bd3)' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx1)' }}>{selected.size} {t.nSelected}</span>
-            <button onClick={bulkDone} style={{ fontSize: 12, padding: '3px 8px', color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>✓ Toggle</button>
+            <button onClick={bulkDone} style={{ fontSize: 12, padding: '3px 8px', color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>✓ {t.toggle}</button>
             {secs.map(s => (
               <button key={s} onClick={() => bulkMove(s)} style={{ fontSize: 11, padding: '3px 8px' }}>→ {s}</button>
             ))}
@@ -138,7 +136,9 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
         const isC = collapsed[grp.key]
         return (
           <div key={grp.key} style={{ marginBottom: 16 }}>
-            <div aria-label="Toggle group" onClick={() => setCollapsed(c => ({ ...c, [grp.key]: !c[grp.key] }))}
+            <div aria-label="Toggle group" role="button" tabIndex={0} aria-expanded={!isC}
+              onClick={() => setCollapsed(c => ({ ...c, [grp.key]: !c[grp.key] }))}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(c => ({ ...c, [grp.key]: !c[grp.key] })) } }}
               style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: `2px solid ${grp.color ?? 'var(--bd3)'}`, marginBottom: 4, cursor: 'pointer' }}>
               <span style={{ fontSize: 12, color: 'var(--tx3)', display: 'inline-block', transform: isC ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.12s' }}>▼</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: grp.color ?? 'var(--tx1)' }}>{grp.label}</span>
@@ -146,7 +146,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
             </div>
             {!isC && paged.map(task => {
               const ov = isOverdue(task.due) && !task.done
-              const isBlocked = (task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))
+              const isBlocked = (task.deps ?? []).some(depId => incompleteIds.has(depId))
               const isSel = selected.has(task.id)
               return (
                 <div key={task.id} onClick={() => onOpen(task.id)} className="row-interactive"
@@ -189,7 +189,9 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
 
         return (
           <div key={sec} style={{ marginBottom: 16 }}>
-            <div aria-label="Toggle section" onClick={() => setCollapsed(c => ({ ...c, [sec]: !c[sec] }))}
+            <div aria-label="Toggle section" role="button" tabIndex={0} aria-expanded={!collapsed[sec]}
+              onClick={() => setCollapsed(c => ({ ...c, [sec]: !c[sec] }))}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(c => ({ ...c, [sec]: !c[sec] })) } }}
               style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: '1px solid var(--bd3)', marginBottom: 4, cursor: 'pointer' }}>
               <span style={{ fontSize: 12, color: 'var(--tx3)', display: 'inline-block', transform: isC ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 0.12s' }}>▼</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{sec}</span>
@@ -200,7 +202,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
               <>
                 {paged.map(task => {
                   const ov = isOverdue(task.due) && !task.done
-                  const isBlocked = (task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))
+                  const isBlocked = (task.deps ?? []).some(depId => incompleteIds.has(depId))
                   const isSel = selected.has(task.id)
                   return (
                     <div key={task.id} onClick={() => onOpen(task.id)}
@@ -258,7 +260,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
                     <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder={t.addTaskTitle}
                       style={{ flex: 1, fontSize: 14 }} autoFocus
                       onKeyDown={e => { if (e.key === 'Enter') commitAdd(sec); if (e.key === 'Escape') { setAddIn(null); setNewTitle('') } }} />
-                    <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
+                    <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>{t.ok}</button>
                     <button aria-label="Cancel" onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
                   </div>
                 ) : (

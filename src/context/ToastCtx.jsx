@@ -60,7 +60,7 @@ function ToastContainer({ toasts, onDismiss }) {
           border-radius: 0 0 var(--r2) var(--r2);
         }
       `}</style>
-      <div style={{
+      <div aria-live="polite" aria-atomic="false" style={{
         position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
         display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'none',
       }}>
@@ -69,6 +69,7 @@ function ToastContainer({ toasts, onDismiss }) {
           return (
             <div key={t.id}
               className="toast-item"
+              role={t.type === 'error' || t.type === 'warning' ? 'alert' : 'status'}
               style={{
                 pointerEvents: 'auto',
                 display: 'flex', alignItems: 'center', gap: 10,

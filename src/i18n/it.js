@@ -113,6 +113,10 @@ const it = {
   chartAllProjects: 'Tutti i progetti', chartLast30d: 'ultimi 30 giorni', chartWeeks: 'settimane',
   // Board
   dblClickRename: 'Doppio clic per rinominare', deleteSection: 'Elimina sezione',
+  ok: 'OK', toggle: 'Attiva/disattiva', undo: 'Annulla',
+  viewOnly: 'Sola lettura',
+  noCreatePermission: 'Non hai i permessi per creare task in questo progetto.',
+  confirmDeleteSection: (n) => `Eliminare la sezione "${n}"? I task al suo interno verranno spostati in un'altra sezione.`,
   sectionNamePlaceholder: 'Nome sezione…', addSectionLabel: 'Aggiungi sezione', emptySection: 'Nessun task in questa sezione',
   // List
   sort: 'Ordina', nSelected: 'selezionati', prev: 'Prec', next: 'Succ', showMore: 'Mostra altri',

@@ -261,7 +261,10 @@ export async function moveTaskToSection(orgId, taskId, secName, projectId, secti
 
 export async function updateTaskPositions(updates) {
   const now = new Date().toISOString()
-  await Promise.all(updates.map(({ id, position }) =>
+  const results = await Promise.all(updates.map(({ id, position }) =>
     supabase.from('tasks').update({ position, updated_at: now }).eq('id', id)
   ))
+  // Surface any failure so the caller can revert the optimistic UI.
+  const failed = results.find(r => r.error)
+  if (failed) throw failed.error
 }

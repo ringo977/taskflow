@@ -132,8 +132,10 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
         <div
           title={`${currentUser.name} — ${t.logout}`}
           onClick={() => setShowLogout(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowLogout(true) } }}
           role="button"
           tabIndex={0}
+          aria-label={t.logout}
           data-testid="btn-user"
           className="hoverable"
           style={{ width: 36, height: 36, borderRadius: '50%', background: userColor + '28', color: userColor, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}

@@ -113,6 +113,10 @@ const en = {
   chartAllProjects: 'All projects', chartLast30d: 'last 30 days', chartWeeks: 'weeks',
   // Board
   dblClickRename: 'Double-click to rename', deleteSection: 'Delete section',
+  ok: 'OK', toggle: 'Toggle', undo: 'Undo',
+  viewOnly: 'View only',
+  noCreatePermission: "You don't have permission to create tasks in this project.",
+  confirmDeleteSection: (n) => `Delete the section "${n}"? Its tasks will be moved to another section.`,
   sectionNamePlaceholder: 'Section name…', addSectionLabel: 'Add section', emptySection: 'No tasks in this section',
   // List
   sort: 'Sort', nSelected: 'selected', prev: 'Prev', next: 'Next', showMore: 'Show more',

@@ -100,7 +100,7 @@ export default function TaskPanel({ task, projects, allTasks = [], currentUser, 
         )}
         {readOnly && (
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx3)', background: 'color-mix(in srgb, var(--tx3) 12%, transparent)', padding: '2px 8px', borderRadius: 'var(--r1)' }}>
-            View only
+            {t.viewOnly}
           </span>
         )}
         <Badge pri={task.pri} />

@@ -4,9 +4,8 @@ import { applyFilters, applyVisibilityFilter } from '@/utils/filters'
 import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
-import { usePartners } from '@/hooks/usePartners'
-import { useWorkpackages } from '@/hooks/useWorkpackages'
-import { useMilestones } from '@/hooks/useMilestones'
+import ConfirmModal from '@/components/ConfirmModal'
+import { useProjectLookups } from '@/hooks/useProjectLookups'
 import { groupTasks } from '@/utils/groupBy'
 
 const BOARD_PAGE_SIZE = 20
@@ -16,12 +15,12 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   const orgUsers = useOrgUsers()
   const projectRole = getProjectRole(currentUser, project, orgUsers, myProjectRoles)
   const readOnly = !canEditTasks(projectRole)
-  const { orgPartners } = usePartners(orgId, project?.id)
-  const partnerById = Object.fromEntries(orgPartners.map(p => [p.id, p]))
-  const { workpackages } = useWorkpackages(orgId, project?.id)
-  const wpById = Object.fromEntries(workpackages.map(w => [w.id, w]))
-  const { milestones } = useMilestones(orgId, project?.id)
-  const msById = Object.fromEntries(milestones.map(m => [m.id, m]))
+  const { partnerById, wpById, msById } = useProjectLookups(orgId, project?.id)
+  // Precompute incomplete-task ids once so "blocked" is O(deps) per card, not O(deps × tasks).
+  const incompleteIds = useMemo(
+    () => new Set(tasks.filter(t => !t.done).map(t => t.id)),
+    [tasks]
+  )
   const [drag, setDrag] = useState(null)
   const [over, setOver] = useState(null)
   const [dropIdx, setDropIdx] = useState(null)
@@ -31,6 +30,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
   const [newSecName, setNewSecName] = useState('')
   const [editingSec, setEditingSec] = useState(null)
   const [editSecName, setEditSecName] = useState('')
+  const [confirmDelSec, setConfirmDelSec] = useState(null)
   const [colLimit, setColLimit] = useState({})  // per-column visible limit
   const q = filters.q
   const cardRefs = useRef({})
@@ -147,7 +147,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
             {shown.map((task, i) => (
               <div key={task.id} className="board-card" style={{ animationDelay: `${i * 30}ms` }}>
                 <TaskCard task={task} onOpen={onOpen} onToggle={onToggle} q={q} lang={lang}
-                  blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
+                  blocked={(task.deps ?? []).some(depId => incompleteIds.has(depId))}
                   wpCode={task.workpackageId && wpById[task.workpackageId]?.code}
                   msCode={task.milestoneId && msById[task.milestoneId]?.code}
                   partnerName={task.partnerId && partnerById[task.partnerId]?.name}
@@ -216,7 +216,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                   {q ? `${filtered.length}/${total}` : total}
                 </span>
                 {secs.length > 1 && (
-                  <button aria-label="Delete section" onClick={() => deleteSec(sec)} disabled={readOnly} title={readOnly ? '' : t.deleteSection}
+                  <button aria-label={t.deleteSection} onClick={() => { if (tasks.some(tk => tk.sec === sec)) setConfirmDelSec(sec); else deleteSec(sec) }} disabled={readOnly} title={readOnly ? '' : t.deleteSection}
                     style={{ border: 'none', background: 'transparent', color: readOnly ? 'var(--tx3)' : 'var(--tx3)', cursor: readOnly ? 'default' : 'pointer', fontSize: 13, padding: '2px 4px', lineHeight: 1, opacity: readOnly ? 0.3 : 0.5 }}>✕</button>
                 )}
               </div>
@@ -237,7 +237,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                     onToggle={onToggle}
                     q={q}
                     lang={lang}
-                    blocked={(task.deps ?? []).some(depId => tasks.find(t => t.id === depId && !t.done))}
+                    blocked={(task.deps ?? []).some(depId => incompleteIds.has(depId))}
                     wpCode={task.workpackageId && wpById[task.workpackageId]?.code}
                     msCode={task.milestoneId && msById[task.milestoneId]?.code}
                     partnerName={task.partnerId && partnerById[task.partnerId]?.name}
@@ -273,7 +273,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
                   style={{ width: '100%', fontSize: 14, marginBottom: 5 }} autoFocus
                   onKeyDown={e => { if (e.key === 'Enter') commitAdd(sec); if (e.key === 'Escape') { setAddIn(null); setNewTitle('') } }} />
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
+                  <button onClick={() => commitAdd(sec)} style={{ fontSize: 13, padding: '6px 10px' }}>{t.ok}</button>
                   <button aria-label="Cancel" onClick={() => { setAddIn(null); setNewTitle('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
             style={{ width: '100%', fontSize: 13, marginBottom: 6 }}
             onKeyDown={e => { if (e.key === 'Enter') commitAddSec(); if (e.key === 'Escape') { setAddingSec(false); setNewSecName('') } }} />
           <div style={{ display: 'flex', gap: 4 }}>
-            <button onClick={commitAddSec} style={{ fontSize: 13, padding: '6px 10px' }}>OK</button>
+            <button onClick={commitAddSec} style={{ fontSize: 13, padding: '6px 10px' }}>{t.ok}</button>
             <button aria-label="Cancel" onClick={() => { setAddingSec(false); setNewSecName('') }} style={{ fontSize: 13, padding: '6px 10px' }}>✕</button>
           </div>
         </div>
@@ -307,6 +307,13 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
         </div>
       ))}
     </div>
+    {confirmDelSec && (
+      <ConfirmModal
+        message={t.confirmDeleteSection?.(confirmDelSec) ?? `Delete section "${confirmDelSec}"?`}
+        onConfirm={() => { deleteSec(confirmDelSec); setConfirmDelSec(null) }}
+        onCancel={() => setConfirmDelSec(null)}
+      />
+    )}
     </>
   )
 }

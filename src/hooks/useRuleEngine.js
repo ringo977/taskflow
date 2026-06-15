@@ -37,12 +37,14 @@ const log = logger('RuleEngine')
 // ── Loop guard constants (exported for testing) ───────────
 export const MAX_RULE_DEPTH = 3          // max cascading rule evaluations
 export const DEDUP_WINDOW_MS = 500       // ignore same rule+task within this window
-export const MAX_FIRES_PER_TICK = 20     // circuit breaker: max rule fires per evaluation batch
+export const MAX_FIRES_PER_TICK = 20     // circuit breaker: max rule fires per window
+export const TICK_WINDOW_MS = 1000       // circuit breaker window length
 
 export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, moveTask, onWpStatusChange, onMsStatusChange }) {
   const firedDeadlineRef = useRef(new Set())
   const depthRef = useRef(0)                    // current cascade depth
-  const firesThisTickRef = useRef(0)            // fires in current evaluation batch
+  const firesThisTickRef = useRef(0)            // fires in current circuit-breaker window
+  const tickStartRef = useRef(0)                // start time of current circuit-breaker window
   const recentFiresRef = useRef(new Map())      // Map<"ruleId:taskId", timestamp> for dedup
 
   // ── Execute a single action ──────────────────────────────
@@ -271,6 +273,14 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
   const evaluateTaskChange = useCallback((taskId, patch, prevTask) => {
     if (!prevTask) return
 
+    // ── Circuit-breaker window: reset the fire counter deterministically once
+    // per TICK_WINDOW_MS, instead of a fragile per-call setTimeout reset. ──
+    const nowTs = Date.now()
+    if (nowTs - tickStartRef.current > TICK_WINDOW_MS) {
+      tickStartRef.current = nowTs
+      firesThisTickRef.current = 0
+    }
+
     // ── Loop guard: depth check ──
     if (depthRef.current >= MAX_RULE_DEPTH) return
     // ── Loop guard: circuit breaker ──
@@ -412,9 +422,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
       }
     }
 
-    // Reset tick counter at end of synchronous evaluation
-    // (next microtask will have a fresh budget via setTimeout)
-    setTimeout(() => { firesThisTickRef.current = 0 }, 0)
+    // (tick counter resets on a time window at the top of this callback)
 
     // Periodically clean stale dedup entries (keep map small)
     if (recentFiresRef.current.size > 100) {
@@ -432,7 +440,16 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
       const now = new Date()
 
       for (const task of tasks) {
-        if (task.done || !task.due) continue
+        const globalKey = `due_soon:${task.id}`
+        const rules = getProjectRules(task.pid)
+
+        // Task no longer eligible (done / no due date): clear its fired keys so
+        // it can notify again if reopened or rescheduled, and the Set stays bounded.
+        if (task.done || !task.due) {
+          firedDeadlineRef.current.delete(globalKey)
+          for (const rule of rules) firedDeadlineRef.current.delete(`${rule.id}:${task.id}`)
+          continue
+        }
 
         const dueDate = new Date(task.due + 'T23:59:59')
         const diffMs = dueDate - now
@@ -440,7 +457,6 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
 
         // ── Global due-date-approaching notification (1 day) ──
         if (diffDays >= 0 && diffDays <= 1) {
-          const globalKey = `due_soon:${task.id}`
           if (!firedDeadlineRef.current.has(globalKey)) {
             firedDeadlineRef.current.add(globalKey)
             inbox?.push?.({
@@ -450,19 +466,23 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
               taskId: task.id,
             })
           }
+        } else {
+          // Out of window (rescheduled forward or overdue): allow a future re-fire.
+          firedDeadlineRef.current.delete(globalKey)
         }
 
         // ── Project-level deadline rules ──
-        const rules = getProjectRules(task.pid)
         for (const rule of rules) {
           if (rule.trigger.type !== 'deadline_approaching') continue
           const days = rule.trigger.config?.days ?? 1
+          const key = `${rule.id}:${task.id}`
           if (diffDays >= 0 && diffDays <= days) {
-            const key = `${rule.id}:${task.id}`
             if (!firedDeadlineRef.current.has(key) && matchesConditions(rule.conditions, task)) {
               firedDeadlineRef.current.add(key)
               executeRuleActions(rule, task)
             }
+          } else {
+            firedDeadlineRef.current.delete(key)
           }
         }
       }

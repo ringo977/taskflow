@@ -220,21 +220,24 @@ export function useTaskActions({
   )
 
   const reorderTask = useCallback(
-    (id, sec, newIndex) => {
-      setTasks(prev => {
-        const task = prev.find(t => t.id === id)
-        if (!task) return prev
-        const inSec = prev.filter(t => t.sec === sec && t.pid === task.pid && t.id !== id)
-        const others = prev.filter(t => !(t.sec === sec && t.pid === task.pid) && t.id !== id)
-        const reordered = [...inSec.slice(0, newIndex), { ...task, sec }, ...inSec.slice(newIndex)]
-          .map((t, i) => ({ ...t, position: i }))
-        updateTaskPositions(reordered.map(t => ({ id: t.id, position: t.position }))).catch(e =>
-          log.error('reorder failed:', e)
-        )
-        return [...others, ...reordered]
-      })
+    async (id, sec, newIndex) => {
+      const task = tasks.find(t => t.id === id)
+      if (!task) return
+      const prevTasks = tasks
+      const inSec = tasks.filter(t => t.sec === sec && t.pid === task.pid && t.id !== id)
+      const others = tasks.filter(t => !(t.sec === sec && t.pid === task.pid) && t.id !== id)
+      const reordered = [...inSec.slice(0, newIndex), { ...task, sec }, ...inSec.slice(newIndex)]
+        .map((t, i) => ({ ...t, position: i }))
+      setTasks([...others, ...reordered])
+      try {
+        await updateTaskPositions(reordered.map(t => ({ id: t.id, position: t.position })))
+      } catch (e) {
+        log.error('reorder failed:', e)
+        setTasks(prevTasks) // revert: keep UI consistent with the DB
+        toast(tr.msgSaveError, 'error')
+      }
     },
-    [setTasks]
+    [tasks, setTasks, toast, tr]
   )
 
   const addTask = useCallback(

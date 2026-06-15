@@ -113,7 +113,7 @@ export default function AddModal({ secs, onAdd, onClose, aiLoad, onAICreate, cur
 
         {!canCreate && (
           <div style={{ padding: '10px 12px', background: 'color-mix(in srgb, var(--c-warning) 12%, transparent)', borderRadius: 'var(--r1)', border: '1px solid var(--c-warning)', color: 'var(--c-warning)', fontSize: 12 }}>
-            You don't have permission to create tasks in this project.
+            {t.noCreatePermission}
           </div>
         )}
 
