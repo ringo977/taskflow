@@ -5,6 +5,7 @@ import { highlight } from '@/utils/highlight'
 import { fmtDate } from '@/utils/format'
 import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
+import { ensureCalendarToken, rotateCalendarToken, calendarFeedUrl } from '@/lib/db/calendar'
 
 export default function MyTasksView({ tasks, projects, currentUser, filters, onOpen, onToggle, lang }) {
   const t = useLang()
@@ -32,6 +33,8 @@ export default function MyTasksView({ tasks, projects, currentUser, filters, onO
     <div style={{ flex: 1, overflow: 'auto', padding: '20px 26px' }}>
       <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx1)', marginBottom: 6, letterSpacing: '-0.01em' }}>{t.myTasks}</div>
       <div style={{ fontSize: 13, color: 'var(--tx3)', marginBottom: 20 }}>{t.myTasksOpen(openMine.length)}</div>
+
+      <CalendarFeedCard t={t} />
 
       {mine.length === 0 && <div style={{ fontSize: 14, color: 'var(--tx3)' }}>{t.noTasks(q)}</div>}
 
@@ -71,6 +74,52 @@ export default function MyTasksView({ tasks, projects, currentUser, filters, onO
           })}
         </div>
       ))}
+    </div>
+  )
+}
+
+function CalendarFeedCard({ t }) {
+  const [url, setUrl] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [err, setErr] = useState(false)
+
+  const load = async (rotate) => {
+    setBusy(true); setErr(false); setCopied(false)
+    try {
+      const token = rotate ? await rotateCalendarToken() : await ensureCalendarToken()
+      setUrl(calendarFeedUrl(token))
+    } catch { setErr(true) }
+    setBusy(false)
+  }
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* clipboard unavailable */ }
+  }
+
+  return (
+    <div style={{ marginBottom: 22, padding: '12px 14px', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', background: 'var(--bg2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>📅 {t.calFeed}</span>
+        <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.calFeedDesc}</span>
+        {!url && (
+          <button onClick={() => load(false)} disabled={busy} style={{ marginLeft: 'auto', fontSize: 12, padding: '4px 10px' }}>
+            {t.calFeedShow}
+          </button>
+        )}
+      </div>
+      {err && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--c-danger)' }}>{t.calFeedError}</div>}
+      {url && (
+        <>
+          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            <input readOnly value={url} aria-label={t.calFeed} onFocus={e => e.target.select()}
+              style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', padding: '6px 8px', borderRadius: 'var(--r1)' }} />
+            <button onClick={copy} style={{ fontSize: 12, padding: '6px 10px' }}>{copied ? t.calFeedCopied : t.calFeedCopy}</button>
+            <button onClick={() => load(true)} disabled={busy} style={{ fontSize: 12, padding: '6px 10px' }}>{t.calFeedRotate}</button>
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--tx3)', lineHeight: 1.5 }}>{t.calFeedHint}</div>
+        </>
+      )}
     </div>
   )
 }
