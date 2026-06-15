@@ -400,7 +400,7 @@ describe('useRuleEngine resilience', () => {
         vi.advanceTimersByTime(100)
       })
 
-      expect(updTask).toHaveBeenCalledWith('t1', { tags: ['urgent'] })
+      expect(updTask).toHaveBeenCalledWith('t1', { tags: [{ name: 'urgent' }] })
     })
 
     it('handles task with subs as undefined (create_subtask)', () => {
@@ -414,7 +414,7 @@ describe('useRuleEngine resilience', () => {
       })
 
       expect(updTask).toHaveBeenCalledWith('t1', {
-        subs: expect.arrayContaining([expect.objectContaining({ title: 'Review', done: false })]),
+        subs: expect.arrayContaining([expect.objectContaining({ t: 'Review', done: false })]),
       })
     })
 
@@ -606,7 +606,7 @@ describe('useRuleEngine resilience', () => {
     })
 
     it('tag_added: same tags (no new ones) does not fire', () => {
-      const task = { ...TASK, tags: ['bug'] }
+      const task = { ...TASK, tags: [{ name: 'bug' }] }
       const rule = makeRule(
         { type: 'tag_added', config: {} },
         act1('notify', { message: 'tagged' })
@@ -614,7 +614,7 @@ describe('useRuleEngine resilience', () => {
       const { result, toast } = setup([rule], [task])
 
       act(() => {
-        result.current.evaluateTaskChange('t1', { tags: ['bug'] }, task) // same
+        result.current.evaluateTaskChange('t1', { tags: [{ name: 'bug' }] }, task) // same
         vi.advanceTimersByTime(100)
       })
 
@@ -622,12 +622,12 @@ describe('useRuleEngine resilience', () => {
     })
 
     it('comment_added: same comment count does not fire', () => {
-      const task = { ...TASK, comments: [{ text: 'hi' }] }
+      const task = { ...TASK, cmts: [{ id: 'c1', txt: 'hi' }] }
       const rule = makeRule('comment_added', act1('notify', { message: 'comment' }))
       const { result, toast } = setup([rule], [task])
 
       act(() => {
-        result.current.evaluateTaskChange('t1', { comments: [{ text: 'hi' }] }, task) // same count
+        result.current.evaluateTaskChange('t1', { cmts: [{ id: 'c1', txt: 'hi' }] }, task) // same count
         vi.advanceTimersByTime(100)
       })
 

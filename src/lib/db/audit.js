@@ -33,15 +33,15 @@ const log = logger('Audit')
  */
 export async function writeAudit(orgId, { action, entityType, entityId, entityName, diff }) {
   await withRetry(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('audit_log').insert({
-      org_id:      orgId,
-      user_id:     user?.id ?? null,
-      action,
-      entity_type: entityType,
-      entity_id:   String(entityId),
-      entity_name: entityName ?? null,
-      diff:        diff ?? null,
+    // Server-side RPC forces user_id := auth.uid() and validates the entry,
+    // so audit entries cannot be spoofed/attributed to another user.
+    const { error } = await supabase.rpc('write_audit_entry', {
+      p_org_id:      orgId,
+      p_action:      action,
+      p_entity_type: entityType,
+      p_entity_id:   String(entityId),
+      p_entity_name: entityName ?? null,
+      p_diff:        diff ?? null,
     })
     if (error) throw error
   }, { label: `audit:${action}`, maxAttempts: 3 })

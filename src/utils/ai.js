@@ -8,6 +8,8 @@
  * function returns a graceful fallback so the UI never breaks.
  */
 
+import { supabase } from '@/lib/supabase'
+
 const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || ''
 
 // ── Error classification ────────────────────────────────────────
@@ -73,11 +75,21 @@ export async function callAI(system, user, maxTokens = 1000) {
     throw new AIError(AI_ERROR_MESSAGES.NOT_CONFIGURED, 'NOT_CONFIGURED')
   }
 
+  // The proxy requires an authenticated user: send the session access token.
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new AIError(AI_ERROR_MESSAGES.AUTH, 'AUTH', 401)
+  }
+
   let response
   try {
     response = await fetch(AI_PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
       body: JSON.stringify({ system, user, maxTokens }),
     })
   } catch {

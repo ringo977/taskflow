@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { enrollTotp, verifyTotp, getFactors } from '@/lib/auth'
+import { enrollTotp, verifyTotp, getFactors, signOut } from '@/lib/auth'
 
 export default function MfaPage({ onComplete, lang }) {
   const [step, setStep]       = useState('loading')
@@ -85,8 +85,10 @@ export default function MfaPage({ onComplete, lang }) {
             <div style={{ fontSize: 13, color: 'var(--c-danger)', background: 'var(--bg-danger)', borderRadius: 'var(--r1)', padding: '12px 14px', marginBottom: 18 }}>
               {err}
             </div>
-            <button onClick={onComplete} style={{ fontSize: 14, padding: '8px 16px' }}>
-              {isIt ? 'Continua senza 2FA' : 'Continue without 2FA'}
+            {/* No bypass: la 2FA non è opzionale. In caso di errore si esce e si
+                riprova (l'amministratore deve abilitare MFA/TOTP su Supabase). */}
+            <button onClick={() => { signOut().catch(() => {}) }} style={{ fontSize: 14, padding: '8px 16px' }}>
+              {isIt ? 'Esci e riprova' : 'Sign out and retry'}
             </button>
           </>
         )}

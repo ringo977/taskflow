@@ -166,7 +166,7 @@ export function useTaskActions({
         await updateTaskField(activeOrgId, id, { done })
         inbox.push({
           type: done ? 'task_completed' : 'task_reopened',
-          actor: user.name,
+          actor: user?.name ?? 'System',
           message: done ? tr.msgDidComplete(task.title) : tr.msgDidReopen(task.title),
           taskId: id,
         })
@@ -176,7 +176,7 @@ export function useTaskActions({
           for (const bt of blocked) {
             inbox.push({
               type: 'dep_resolved',
-              actor: user.name,
+              actor: user?.name ?? 'System',
               message: tr.msgDepResolved?.(task.title, bt.title) ?? `"${task.title}" completed — "${bt.title}" unblocked`,
               taskId: bt.id,
             })
@@ -260,7 +260,7 @@ export function useTaskActions({
         toast(tr.msgTaskCreated(title), 'success')
         inbox.push({
           type: 'task_created',
-          actor: user.name,
+          actor: user?.name ?? 'System',
           message: tr.msgDidCreate(title),
           taskId: newTask.id,
         })

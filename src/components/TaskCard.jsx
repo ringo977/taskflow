@@ -8,7 +8,9 @@ import Checkbox from './Checkbox'
 
 export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, wpCode, msCode, partnerName }) {
   const ov       = isOverdue(task.due) && !task.done
-  const doneSubs = task.subs.filter(s => s.done).length
+  const subs     = task.subs ?? []
+  const cmts     = task.cmts ?? []
+  const doneSubs = subs.filter(s => s.done).length
   return (
     <div onClick={() => onOpen(task.id)}
       className="row-interactive"
@@ -41,8 +43,8 @@ export default function TaskCard({ task, onOpen, onToggle, q, lang, blocked, wpC
             {partnerName && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r1)', background: 'color-mix(in srgb, var(--c-brand) 12%, transparent)', color: 'var(--c-brand)', fontWeight: 500 }}>{partnerName}</span>}
             {blocked && <span style={{ fontSize: 12, color: 'var(--c-warning)' }}>⊘</span>}
             {task.due && <span style={{ fontSize: 12, color: ov ? 'var(--c-danger)' : 'var(--tx3)' }}>{fmtDate(task.due, lang)}{ov ? ' ⚠' : ''}</span>}
-            {task.subs.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✓ {doneSubs}/{task.subs.length}</span>}
-            {task.cmts.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✉ {task.cmts.length}</span>}
+            {subs.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✓ {doneSubs}/{subs.length}</span>}
+            {cmts.length > 0 && <span style={{ fontSize: 12, color: 'var(--tx3)' }}>✉ {cmts.length}</span>}
             {task.approval?.status === 'pending' && <span style={{ fontSize: 11, color: 'var(--c-warning)', fontWeight: 500 }}>⏳</span>}
             {task.approval?.status === 'approved' && <span style={{ fontSize: 11, color: 'var(--c-success)', fontWeight: 500 }}>✓</span>}
             {task.approval?.status === 'rejected' && <span style={{ fontSize: 11, color: 'var(--c-danger)', fontWeight: 500 }}>✕</span>}

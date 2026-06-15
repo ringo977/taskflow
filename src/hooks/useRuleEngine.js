@@ -98,8 +98,9 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         const tag = action.config?.tag
         if (tag) {
           const current = task.tags ?? []
-          if (!current.includes(tag)) {
-            updTask(task.id, { tags: [...current, tag] })
+          // Tags are objects { name, color } — compare/push by name.
+          if (!current.some(t => t.name === tag)) {
+            updTask(task.id, { tags: [...current, { name: tag }] })
           }
         }
         break
@@ -118,7 +119,8 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
       case 'create_subtask': {
         const title = action.config?.subtaskTitle
         if (title) {
-          const subs = [...(task.subs ?? []), { id: `s${Date.now()}`, title, done: false }]
+          // Subtasks use the shape { id, t, done } (see tasks.js subToRow / schema).
+          const subs = [...(task.subs ?? []), { id: `s${Date.now()}`, t: title, done: false }]
           updTask(task.id, { subs })
         }
         break
@@ -234,7 +236,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         case 'assignee':
           return cond.value ? (Array.isArray(task.who) ? task.who.includes(cond.value) : task.who === cond.value) : true
         case 'tag':
-          return cond.value ? (task.tags ?? []).includes(cond.value) : true
+          return cond.value ? (task.tags ?? []).some(t => t.name === cond.value) : true
         case 'section':
           return cond.value ? task.sec === cond.value : true
         default:
@@ -323,9 +325,10 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
           break
 
         case 'comment_added':
-          if ('comments' in patch) {
-            const prev = prevTask.comments?.length ?? 0
-            const curr = patch.comments?.length ?? 0
+          // Comments travel in the `cmts` property everywhere (patch/adapter/schema).
+          if ('cmts' in patch) {
+            const prev = prevTask.cmts?.length ?? 0
+            const curr = patch.cmts?.length ?? 0
             if (curr > prev) shouldFire = true
           }
           break
@@ -338,10 +341,11 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
 
         case 'tag_added':
           if ('tags' in patch) {
-            const prevTags = new Set(prevTask.tags ?? [])
-            const newTags = (patch.tags ?? []).filter(tg => !prevTags.has(tg))
+            // Tags are objects { name, color } — compare by name.
+            const prevNames = new Set((prevTask.tags ?? []).map(t => t.name))
+            const newTags = (patch.tags ?? []).filter(tg => !prevNames.has(tg.name))
             if (newTags.length > 0) {
-              if (!trigger.config?.tag || newTags.includes(trigger.config.tag)) {
+              if (!trigger.config?.tag || newTags.some(t => t.name === trigger.config.tag)) {
                 shouldFire = true
               }
             }
@@ -419,7 +423,7 @@ export function useRuleEngine({ projects, tasks, updTask, toast, inbox, _tr, mov
         if (now - ts > DEDUP_WINDOW_MS * 2) recentFiresRef.current.delete(k)
       }
     }
-  }, [getProjectRules, executeRuleActions, matchesConditions])
+  }, [tasks, getProjectRules, executeRuleActions, matchesConditions])
 
   // ── Periodic deadline check (runs every 60s) ────────────
 

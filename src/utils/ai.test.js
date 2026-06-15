@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { AIError, AI_ERROR_MESSAGES } from './ai'
 
+// ai.js now sends the user's session token to the proxy.
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'test-token' } } }),
+    },
+  },
+}))
+
 // ── AIError class ──────────────────────────────────────────────
 
 describe('AIError', () => {
@@ -116,11 +125,14 @@ describe('callAI (with proxy configured)', () => {
 
     const result = await callAI('system prompt', 'user message', 500)
     expect(result).toBe('Hello from AI')
-    expect(fetch).toHaveBeenCalledWith('https://proxy.test/ai', {
+    expect(fetch).toHaveBeenCalledWith('https://proxy.test/ai', expect.objectContaining({
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: expect.objectContaining({
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-token',
+      }),
       body: JSON.stringify({ system: 'system prompt', user: 'user message', maxTokens: 500 }),
-    })
+    }))
   })
 
   it('callAI returns empty string when text is missing', async () => {

@@ -51,6 +51,21 @@ const hexColor = z.string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Expected #RRGGBB')
   .catch('#378ADD')
 
+/**
+ * Tags are objects { name, color } in the UI. Legacy/string tags are coerced
+ * to { name } so old data and AI-generated string tags don't break validation.
+ * NB: no `.catch([])` here — silently dropping tags would lose user data.
+ */
+const tagsArray = z.array(
+  z.preprocess(
+    v => (typeof v === 'string' ? { name: v } : v),
+    z.object({
+      name:  z.string().trim().min(1).max(100),
+      color: z.string().max(40).optional().nullable(),
+    }),
+  ),
+)
+
 // ── Entity schemas ─────────────────────────────────────────────
 
 export const TaskUpsertSchema = z.object({
@@ -64,7 +79,7 @@ export const TaskUpsertSchema = z.object({
   done:         z.boolean().catch(false),
   milestoneId:  uuid.optional().nullable(),
   attachments:  z.array(z.any()).catch([]),
-  tags:         z.array(z.string().max(100)).catch([]),
+  tags:         tagsArray.optional().default([]),
   activity:     z.array(z.any()).catch([]),
   position:     z.number().int().min(0).catch(0),
   customValues: z.record(z.any()).catch({}),
@@ -96,7 +111,7 @@ export const TaskPatchSchema = z.object({
   done:         z.boolean().optional(),
   milestoneId:  uuid.optional().nullable(),
   recurrence:   z.any().optional(),
-  tags:         z.array(z.string().max(100)).optional(),
+  tags:         tagsArray.optional(),
   activity:     z.array(z.any()).optional(),
   position:     z.number().int().min(0).optional(),
   customValues: z.record(z.any()).optional(),

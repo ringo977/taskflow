@@ -23,15 +23,18 @@ export default function ActivityTab({
   const [mentionQuery, setMentionQuery] = useState(null)
   const commentRef = useRef(null)
 
+  const subs = task.subs ?? []
+  const cmts = task.cmts ?? []
+
   const addSub = () => {
     if (!ns.trim()) return
-    onUpd(task.id, { subs: [...task.subs, { id: `s${Date.now()}`, t: ns.trim(), done: false }] })
+    onUpd(task.id, { subs: [...subs, { id: `s${Date.now()}`, t: ns.trim(), done: false }] })
     setNs('')
   }
 
   const addCmt = () => {
     if (!nc.trim()) return
-    onUpd(task.id, { cmts: [...task.cmts, { id: `c${Date.now()}`, who: currentUser?.name ?? 'User', txt: nc.trim(), d: new Date().toISOString().slice(0, 10) }] })
+    onUpd(task.id, { cmts: [...cmts, { id: `c${Date.now()}`, who: currentUser?.name ?? 'User', txt: nc.trim(), d: new Date().toISOString().slice(0, 10) }] })
     setNc('')
     setMentionQuery(null)
   }
@@ -59,16 +62,16 @@ export default function ActivityTab({
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <div style={sectionTitle}>
-            {t.subtasks}{task.subs.length > 0 ? ` (${task.subs.filter(s => s.done).length}/${task.subs.length})` : ''}
+            {t.subtasks}{subs.length > 0 ? ` (${subs.filter(s => s.done).length}/${subs.length})` : ''}
           </div>
           <button onClick={() => onGenSubs(task)} disabled={aiLoad}
             style={{ fontSize: 12, padding: '5px 10px', cursor: aiLoad ? 'wait' : 'pointer', opacity: aiLoad ? 0.5 : 1, color: 'var(--c-success)', borderColor: 'var(--c-success)' }}>
             {aiLoad ? t.generating : '✦ AI'}
           </button>
         </div>
-        {task.subs.map(s => (
+        {subs.map(s => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 0', borderBottom: '1px solid var(--bd3)' }}>
-            <Checkbox done={s.done} size={16} onToggle={() => onUpd(task.id, { subs: task.subs.map(x => x.id === s.id ? { ...x, done: !x.done } : x) })} />
+            <Checkbox done={s.done} size={16} onToggle={() => onUpd(task.id, { subs: subs.map(x => x.id === s.id ? { ...x, done: !x.done } : x) })} />
             <span style={{ fontSize: 13, flex: 1, color: s.done ? 'var(--tx3)' : 'var(--tx2)', textDecoration: s.done ? 'line-through' : 'none' }}>{s.t}</span>
           </div>
         ))}
@@ -82,7 +85,7 @@ export default function ActivityTab({
       {/* Comments */}
       <div>
         <div style={{ ...sectionTitle, marginBottom: 10 }}>{t.comments}</div>
-        {task.cmts.map(c => (
+        {cmts.map(c => (
           <div key={c.id} style={{ padding: '10px 12px', background: 'var(--bg2)', borderRadius: 'var(--r1)', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
               <Avatar name={c.who} size={18} />

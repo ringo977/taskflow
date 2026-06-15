@@ -6,7 +6,7 @@ import { useRuleEngine, MAX_RULE_DEPTH, MAX_FIRES_PER_TICK } from './useRuleEngi
 
 const TASK = {
   id: 't1', pid: 'p1', title: 'Test Task', sec: 'To Do', who: ['Alice'],
-  done: false, pri: 'medium', desc: '', subs: [], comments: [],
+  done: false, pri: 'medium', desc: '', subs: [], cmts: [],
   tags: [], due: '2026-04-01',
 }
 
@@ -188,7 +188,7 @@ describe('useRuleEngine', () => {
 
       act(() => {
         result.current.evaluateTaskChange('t1', {
-          comments: [{ user: 'Bob', text: 'Hi', date: new Date().toISOString() }]
+          cmts: [{ id: 'c1', who: 'Bob', txt: 'Hi', d: '2026-04-01' }]
         }, TASK)
         vi.advanceTimersByTime(100)
       })
@@ -204,7 +204,7 @@ describe('useRuleEngine', () => {
       const { result, toast } = setup([rule])
 
       act(() => {
-        result.current.evaluateTaskChange('t1', { tags: ['urgent'] }, TASK)
+        result.current.evaluateTaskChange('t1', { tags: [{ name: 'urgent' }] }, TASK)
         vi.advanceTimersByTime(100)
       })
       expect(toast).toHaveBeenCalled()
@@ -218,13 +218,13 @@ describe('useRuleEngine', () => {
       const { result, toast } = setup([rule])
 
       act(() => {
-        result.current.evaluateTaskChange('t1', { tags: ['minor'] }, TASK)
+        result.current.evaluateTaskChange('t1', { tags: [{ name: 'minor' }] }, TASK)
         vi.advanceTimersByTime(100)
       })
       expect(toast).not.toHaveBeenCalled()
 
       act(() => {
-        result.current.evaluateTaskChange('t1', { tags: ['critical'] }, TASK)
+        result.current.evaluateTaskChange('t1', { tags: [{ name: 'critical' }] }, TASK)
         vi.advanceTimersByTime(100)
       })
       expect(toast).toHaveBeenCalledWith('Critical!', 'info')
@@ -305,7 +305,7 @@ describe('useRuleEngine', () => {
         result.current.evaluateTaskChange('t1', { done: true }, TASK)
         vi.advanceTimersByTime(100)
       })
-      expect(updTask).toHaveBeenCalledWith('t1', { tags: ['archived'] })
+      expect(updTask).toHaveBeenCalledWith('t1', { tags: [{ name: 'archived' }] })
     })
 
     it('set_due_date sets relative date', () => {
@@ -331,7 +331,7 @@ describe('useRuleEngine', () => {
       })
       expect(updTask).toHaveBeenCalledWith('t1', expect.objectContaining({
         subs: expect.arrayContaining([
-          expect.objectContaining({ title: 'Review code', done: false }),
+          expect.objectContaining({ t: 'Review code', done: false }),
         ]),
       }))
     })
@@ -403,7 +403,7 @@ describe('useRuleEngine', () => {
     })
 
     it('checks tag condition', () => {
-      const taggedTask = { ...TASK, tags: ['vip'] }
+      const taggedTask = { ...TASK, tags: [{ name: 'vip' }] }
       const rule = makeRule('section_change', act1('notify', { message: 'VIP moved' }), {
         conditions: [{ field: 'tag', value: 'vip' }],
       })

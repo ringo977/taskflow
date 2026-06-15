@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { AI_ERROR_MESSAGES } from './ai'
 
+// ai.js now sends the user's session token to the proxy.
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'test-token' } } }),
+    },
+  },
+}))
+
 /**
  * Resilience tests for the AI module.
  *
