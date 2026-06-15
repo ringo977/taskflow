@@ -4,10 +4,11 @@ import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { usePartners } from '@/hooks/usePartners'
 import { useWorkpackages } from '@/hooks/useWorkpackages'
 import { useMilestones } from '@/hooks/useMilestones'
+import SavedViews from '@/components/SavedViews'
 
 const EMPTY = { q: '', pri: 'all', who: 'all', due: 'all', done: 'all', tag: 'all', partner: 'all', wp: 'all', ms: 'all' }
 
-export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId, groupBy, onGroupByChange }) {
+export default function FilterBar({ filters, setFilters, tasks = [], orgId, projectId, groupBy, onGroupByChange, view, setView }) {
   const t = useLang()
   const orgUsers = useOrgUsers()
   const memberNames = orgUsers.map(u => u.name)
@@ -114,6 +115,10 @@ export default function FilterBar({ filters, setFilters, tasks = [], orgId, proj
           <option value="all">{t.milestone ?? 'MS'}</option>
           {milestones.filter(m => m.isActive).map(m => <option key={m.id} value={m.id}>{m.code} — {m.name}</option>)}
         </select>
+      )}
+      {setView && (
+        <SavedViews projectId={projectId} view={view} setView={setView}
+          groupBy={groupBy} onGroupByChange={onGroupByChange} filters={filters} setFilters={setFilters} />
       )}
       {onGroupByChange && (
         <select value={groupBy ?? 'section'} onChange={e => onGroupByChange(e.target.value)} aria-label={t.groupBy ?? 'Group by'} style={{ fontSize: 13, padding: '7px 10px', fontWeight: groupBy && groupBy !== 'section' ? 600 : 400, color: groupBy && groupBy !== 'section' ? 'var(--accent)' : undefined }}>

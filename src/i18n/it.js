@@ -40,6 +40,7 @@ const it = {
   all: 'Tutti', today: 'Oggi', week: 'Settimana',
   stateAll: 'Stato', stateOpen: 'Aperti', stateDone: 'Completati',
   resetFilters: '✕ reset', filters: 'Filtri', showFilters: 'Mostra filtri', hideFilters: 'Nascondi filtri',
+  savedViews: 'Viste', noSavedViews: 'Nessuna vista salvata', saveView: 'Salva', saveViewPlaceholder: 'Salva vista corrente…', deleteView: 'Elimina vista',
   add: 'Aggiungi', addTaskTitle: 'Titolo task…',
   myTasksOpen: (n) => `${n} aperti · tutti i progetti`,
   noTasks: (q) => q ? `Nessun risultato per "${q}"` : 'Nessun task.',

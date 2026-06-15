@@ -65,7 +65,7 @@ function ProjectContent({
         onSubmitForm={proj?.forms?.length ? (form) => setActiveForm(form) : null}
         forms={proj?.forms ?? []}
       />
-      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'settings' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} groupBy={groupBy} onGroupByChange={setGroupBy} />}
+      {view !== 'overview' && view !== 'dashboard' && view !== 'workpackages' && view !== 'settings' && view !== 'supervision' && <FilterBar filters={filters} setFilters={setFilters} tasks={pTasks} orgId={ui.activeOrgId} projectId={proj?.id} groupBy={groupBy} onGroupByChange={setGroupBy} view={view} setView={setView} />}
       {view === 'dashboard' && (
         <ProjectDashboard project={proj} tasks={tasks} sections={pSecs}
           onUpdProj={updProj} onOpen={setSelId} lang={lang} currentUser={user}
