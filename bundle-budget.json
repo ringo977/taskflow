@@ -132,8 +132,12 @@
     "comment": "4.06 kB actual → 4.47 kB budget"
   },
   "MyTasksView.js": {
-    "maxBytes": 3856,
-    "comment": "3.42 kB actual → 3.77 kB budget"
+    "maxBytes": 5952,
+    "comment": "5.28 kB actual → 5.81 kB budget (incl. calendar feed card)"
+  },
+  "useProjectLookups.js": {
+    "maxBytes": 517,
+    "comment": "0.46 kB actual → 0.50 kB budget"
   },
   "InboxView.js": {
     "maxBytes": 3664,
