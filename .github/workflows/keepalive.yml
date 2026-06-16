@@ -1,0 +1,73 @@
+name: Supabase keep-alive
+
+# Evita la pausa automatica del free-tier Supabase (~7 giorni di inattività).
+# Esegue un ping leggero sull'endpoint REST ogni 3 giorni.
+#
+# Richiede le repo variables (Settings → Secrets and variables → Actions → Variables),
+# già usate da ci.yml:
+#   - VITE_SUPABASE_URL
+#   - VITE_SUPABASE_ANON_KEY
+# e la migrazione 044_keepalive.sql applicata sul DB.
+
+on:
+  schedule:
+    # Ogni 3 giorni alle 07:17 UTC. L'orario "dispari" riduce il rischio di
+    # ritardi/skip negli slot più affollati del cron di GitHub.
+    - cron: '17 7 */3 * *'
+  workflow_dispatch: {}
+
+# Necessario per il commit del timestamp (vedi step "Keep workflow enabled").
+permissions:
+  contents: write
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ping Supabase REST
+        env:
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY non configurati come repo variables"
+            exit 1
+          fi
+          url="${SUPABASE_URL%/}/rest/v1/keepalive?select=last_ping&limit=1"
+          echo "Ping → $url"
+          code=$(curl -fsS -o /tmp/resp.json -w '%{http_code}' "$url" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" || true)
+          echo "HTTP $code"
+          cat /tmp/resp.json 2>/dev/null || true
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::error::Keepalive ping fallito (HTTP $code). Il progetto potrebbe essere in pausa, oppure manca la tabella/policy (migrazione 044)."
+            exit 1
+          fi
+
+      # GitHub disabilita i workflow schedulati dopo 60 giorni SENZA attività sul
+      # repo. Questo step scrive un timestamp e lo committa (con [skip ci] per non
+      # innescare CI/deploy), così il cron resta sempre attivo anche se non ci sono
+      # altri commit. Se il repo è già aggiornato spesso, puoi rimuovere questo step.
+      - name: Keep workflow enabled (anti auto-disable a 60gg)
+        run: |
+          set -euo pipefail
+          mkdir -p .github
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/last-keepalive.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/last-keepalive.txt
+          if git diff --staged --quiet; then
+            echo "Nessuna modifica da committare."
+          else
+            git commit -m "chore: keepalive ping [skip ci]"
+            git push
+          fi
