@@ -38,7 +38,7 @@ export function content(lang) {
           </tbody>
         </table>
         <h3>Barra inferiore</h3>
-        <p>Sotto la navigazione trovi: il pulsante Manuale (📖), il selettore lingua (IT/EN), il selettore tema (scuro/chiaro/automatico), l'indicatore stato database (verde = Supabase, giallo = localStorage, rosso = offline), e l'avatar utente (clic per logout).</p>
+        <p>Sotto la navigazione trovi l'indicatore stato database (verde = Supabase, giallo = localStorage, rosso = offline) e l'avatar utente. <strong>Clicca l'avatar per aprire il menu utente</strong>, che contiene: nome ed email, selettore tema (automatico/chiaro/scuro), selettore lingua (IT/EN), link al Manuale e Esci. Il menu si chiude con Esc o cliccando fuori.</p>
         <h3>Selettore organizzazione</h3>
         <p>In cima alla barra, subito sotto il logo, trovi il selettore organizzazione. Cliccaci per passare a un'altra organizzazione o crearne una nuova.</p>
       </>
@@ -59,7 +59,7 @@ export function content(lang) {
           </tbody>
         </table>
         <h3>Bottom bar</h3>
-        <p>Below the navigation: the Manual button (📖), language selector (IT/EN), theme selector (dark/light/auto), database status indicator (green = Supabase, yellow = localStorage, red = offline), and user avatar (click to sign out).</p>
+        <p>Below the navigation: the database status indicator (green = Supabase, yellow = localStorage, red = offline) and the user avatar. <strong>Click the avatar to open the user menu</strong>, which contains: name and email, theme selector (auto/light/dark), language selector (IT/EN), Manual link, and Sign out. The menu closes with Esc or by clicking outside.</p>
         <h3>Organization selector</h3>
         <p>At the top of the sidebar, just below the logo, you'll find the organization selector. Click to switch to another organization or create a new one.</p>
       </>
@@ -348,6 +348,12 @@ export function content(lang) {
 
         <h3>Cambio vista</h3>
         <p>Usa i tab nella barra superiore del progetto per passare tra Board, Lista, Calendario, Timeline e Overview.</p>
+
+        <h3>Filtri e viste salvate</h3>
+        <p>La barra filtri (sotto l'intestazione) permette di filtrare per ricerca, priorità, assegnatario, scadenza, stato, tag, partner, workpackage e milestone, e di raggruppare i task (per sezione, WP, milestone, assegnatario, priorità o partner). Con <strong>★ Viste</strong> puoi salvare la combinazione corrente di vista + raggruppamento + filtri con un nome (es. "Scadenze WP3") e richiamarla con un clic. Le viste salvate sono per progetto e per utente.</p>
+
+        <h3>Feed calendario (iCal)</h3>
+        <p>In <strong>I miei task</strong>, la card "📅 Calendar feed" genera un link iCal personale e segreto da sottoscrivere in Google/Outlook Calendar: mostra in sola lettura i tuoi task con scadenza e le milestone, aggiornandosi da solo. Il link è <strong>per organizzazione</strong> (cambia con l'org attiva), così le scadenze di organizzazioni diverse restano separate. Usa "Rigenera link" per revocare il vecchio URL.</p>
       </>
     ) : (
       <>
@@ -368,6 +374,12 @@ export function content(lang) {
 
         <h3>Switching views</h3>
         <p>Use the tabs in the project header bar to switch between Board, List, Calendar, Timeline and Overview.</p>
+
+        <h3>Filters and saved views</h3>
+        <p>The filter bar (below the header) lets you filter by search, priority, assignee, due date, status, tag, partner, workpackage and milestone, and group tasks (by section, WP, milestone, assignee, priority or partner). With <strong>★ Views</strong> you can save the current combination of view + grouping + filters under a name (e.g. "WP3 deadlines") and recall it with one click. Saved views are per project and per user.</p>
+
+        <h3>Calendar feed (iCal)</h3>
+        <p>In <strong>My Tasks</strong>, the "📅 Calendar feed" card generates a personal, secret iCal link to subscribe to in Google/Outlook Calendar: it shows your tasks with due dates and milestones, read-only and auto-updating. The link is <strong>per organization</strong> (it changes with the active org), so deadlines from different organizations stay separate. Use "Regenerate link" to revoke the old URL.</p>
       </>
     ),
 
