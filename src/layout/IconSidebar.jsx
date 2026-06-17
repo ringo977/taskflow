@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import { useInbox } from '@/context/InboxCtx'
@@ -48,7 +48,23 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
   const orgUsers = useOrgUsers()
   const { unread } = useInbox()
   const [showLogout, setShowLogout] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
   const userColor = orgUsers.find(u => u.name === currentUser.name)?.color ?? '#888'
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDoc = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false) }
+    const onEsc = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onEsc)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onEsc) }
+  }, [menuOpen])
+
+  const themeLabel = theme === 'dark' ? t.themeDark : theme === 'light' ? t.themeLight : t.themeAuto
+  const themeIcon = theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '⚙️'
+  const cycleTheme = () => setTheme(p => p === 'dark' ? 'light' : p === 'light' ? 'auto' : 'dark')
+  const menuRowStyle = { width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'transparent', border: 'none', color: 'var(--tx1)', fontSize: 13, cursor: 'pointer', padding: '7px 8px', borderRadius: 'var(--r1)' }
 
   const NAV = [
     { id: 'home',       label: t.home,       icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14H10v-3.5H6V14H2V6.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
@@ -83,39 +99,6 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-        <button
-          onClick={() => window.open('/taskflow/manual', '_blank')}
-          aria-label={t.manual ?? 'Manual'}
-          title={t.manual ?? 'Manual'}
-          data-testid="btn-manual"
-          className="hoverable"
-          style={{ width: 36, height: 36, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, padding: 0 }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M2 2.5A1.5 1.5 0 013.5 1H6c.8 0 1.5.3 2 .8.5-.5 1.2-.8 2-.8h2.5A1.5 1.5 0 0114 2.5v9a1.5 1.5 0 01-1.5 1.5H10c-.6 0-1.1.2-1.5.6l-.5.5-.5-.5c-.4-.4-.9-.6-1.5-.6H3.5A1.5 1.5 0 012 11.5v-9z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-            <path d="M8 2.5V13" stroke="currentColor" strokeWidth="1.1"/>
-          </svg>
-        </button>
-        <button
-          aria-label="Toggle language"
-          data-testid="btn-lang"
-          onClick={() => setLang(l => l === 'it' ? 'en' : 'it')}
-          style={{ fontSize: 11, fontWeight: 600, padding: '4px 8px', border: '1px solid var(--bd3)', borderRadius: 'var(--r1)', color: 'var(--tx3)', background: 'transparent', cursor: 'pointer' }}
-        >
-          {lang === 'it' ? 'EN' : 'IT'}
-        </button>
-        {setTheme && (
-          <button
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}
-            aria-label="Theme"
-            data-testid="btn-theme"
-            title={theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'}
-            className="hoverable"
-            style={{ width: 36, height: 36, borderRadius: 'var(--r1)', background: 'var(--bg1)', border: '1px solid var(--bd3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, padding: 0 }}
-          >
-            {theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '⚙️'}
-          </button>
-        )}
         {dbStatus && (() => {
           const db = DB_CFG[dbStatus] ?? DB_CFG.local
           return (
@@ -129,18 +112,50 @@ export default function IconSidebar({ active, onNav, currentUser, onLogout, lang
             </div>
           )
         })()}
-        <div
-          title={`${currentUser.name} — ${t.logout}`}
-          onClick={() => setShowLogout(true)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowLogout(true) } }}
-          role="button"
-          tabIndex={0}
-          aria-label={t.logout}
-          data-testid="btn-user"
-          className="hoverable"
-          style={{ width: 36, height: 36, borderRadius: '50%', background: userColor + '28', color: userColor, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-        >
-          {getInitials(currentUser.name)}
+        <div ref={menuRef} style={{ position: 'relative' }}>
+          <div
+            title={currentUser.name}
+            onClick={() => setMenuOpen(o => !o)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenuOpen(o => !o) } }}
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label={currentUser.name}
+            data-testid="btn-user"
+            className="hoverable"
+            style={{ width: 36, height: 36, borderRadius: '50%', background: userColor + '28', color: userColor, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            {getInitials(currentUser.name)}
+          </div>
+          {menuOpen && (
+            <div role="menu" style={{ position: 'absolute', bottom: 0, left: 'calc(100% + 10px)', zIndex: 100, minWidth: 220, background: 'var(--bg1)', border: '1px solid var(--bd2)', borderRadius: 'var(--r2)', boxShadow: 'var(--shadow-lg)', padding: 8 }}>
+              <div style={{ padding: '6px 8px 8px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>{currentUser.name}</div>
+                {currentUser.email && <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2, wordBreak: 'break-all' }}>{currentUser.email}</div>}
+              </div>
+              <div style={{ height: 1, background: 'var(--bd3)', margin: '4px 0' }} />
+              {setTheme && (
+                <button role="menuitem" onClick={cycleTheme} className="row-interactive" style={menuRowStyle}>
+                  <span>{t.themeLabel ?? 'Theme'}</span>
+                  <span style={{ color: 'var(--tx3)' }}>{themeIcon} {themeLabel}</span>
+                </button>
+              )}
+              <button role="menuitem" onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="row-interactive" style={menuRowStyle}>
+                <span>{t.langLabel ?? 'Language'}</span>
+                <span style={{ color: 'var(--tx3)' }}>{lang === 'it' ? 'Italiano' : 'English'}</span>
+              </button>
+              <button role="menuitem" onClick={() => { setMenuOpen(false); window.open('/taskflow/manual', '_blank') }} className="row-interactive" style={menuRowStyle}>
+                <span>{t.manual ?? 'Manual'}</span>
+                <span style={{ color: 'var(--tx3)' }}>↗</span>
+              </button>
+              <div style={{ height: 1, background: 'var(--bd3)', margin: '4px 0' }} />
+              <button role="menuitem" onClick={() => { setMenuOpen(false); setShowLogout(true) }} className="row-interactive" style={{ ...menuRowStyle, color: 'var(--c-danger)' }}>
+                <span>{t.logout}</span>
+                <span>⎋</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {showLogout && (

@@ -84,6 +84,7 @@ const en = {
   wdaysFull: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
   logout: 'Sign out',
   manual: 'Manual',
+  themeLabel: 'Theme', langLabel: 'Language', themeAuto: 'Auto', themeLight: 'Light', themeDark: 'Dark',
   // Overview
   projectDescription: 'Project description',
   descPlaceholder: 'What is this project about?',

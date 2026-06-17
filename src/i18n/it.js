@@ -84,6 +84,7 @@ const it = {
   wdaysFull: ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'],
   logout: 'Esci',
   manual: 'Manuale',
+  themeLabel: 'Tema', langLabel: 'Lingua', themeAuto: 'Auto', themeLight: 'Chiaro', themeDark: 'Scuro',
   // Overview
   projectDescription: 'Descrizione progetto',
   descPlaceholder: 'A cosa serve questo progetto?',
