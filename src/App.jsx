@@ -84,7 +84,7 @@ function App() {
 
   // Shared UI bag for child components
   const uiBag = {
-    ...ui, activeForm, setActiveForm, activeOrgId,
+    ...ui, activeForm, setActiveForm, activeOrgId, orgs,
     aiCreate: actions.aiCreate,
   }
 

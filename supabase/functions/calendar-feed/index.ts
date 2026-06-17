@@ -57,7 +57,9 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  const token = new URL(req.url).searchParams.get('token') ?? ''
+  const params = new URL(req.url).searchParams
+  const token = params.get('token') ?? ''
+  const org = params.get('org') || null   // optional: scope the feed to one org
   if (!UUID_RE.test(token)) {
     return new Response('Invalid or missing token', { status: 400 })
   }
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
         apikey: SERVICE_ROLE_KEY,
         Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       },
-      body: JSON.stringify({ p_token: token }),
+      body: JSON.stringify({ p_token: token, p_org: org }),
     })
     if (!res.ok) {
       console.error(`get_calendar_feed failed: ${res.status} ${await res.text()}`)

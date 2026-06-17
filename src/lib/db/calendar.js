@@ -21,8 +21,9 @@ export async function rotateCalendarToken() {
   return data
 }
 
-/** Build the public feed URL for a token. */
-export function calendarFeedUrl(token) {
+/** Build the public feed URL for a token, optionally scoped to one org. */
+export function calendarFeedUrl(token, org) {
   const base = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
-  return `${base}/functions/v1/calendar-feed?token=${token}`
+  const orgParam = org ? `&org=${encodeURIComponent(org)}` : ''
+  return `${base}/functions/v1/calendar-feed?token=${token}${orgParam}`
 }

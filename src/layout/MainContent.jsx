@@ -164,7 +164,8 @@ export default function MainContent({
           <>
             <FilterBar filters={filters} setFilters={setFilters} tasks={tasks} orgId={ui.activeOrgId} />
             <MyTasksView tasks={tasks} projects={projs} currentUser={user} filters={filters}
-              onOpen={setSelId} onToggle={togTask} lang={lang} />
+              onOpen={setSelId} onToggle={togTask} lang={lang}
+              orgId={ui.activeOrgId} orgName={(ui.orgs || []).find(o => o.id === ui.activeOrgId)?.name || ui.activeOrgId} />
           </>
         )}
         {nav === 'people' && <PeopleView tasks={tasks} projects={projs} currentUser={user} activeOrgId={ui.activeOrgId} />}

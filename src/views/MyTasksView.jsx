@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLang } from '@/i18n'
 import { applyFilters, isOverdue } from '@/utils/filters'
 import { highlight } from '@/utils/highlight'
@@ -7,7 +7,7 @@ import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
 import { ensureCalendarToken, rotateCalendarToken, calendarFeedUrl } from '@/lib/db/calendar'
 
-export default function MyTasksView({ tasks, projects, currentUser, filters, onOpen, onToggle, lang }) {
+export default function MyTasksView({ tasks, projects, currentUser, filters, onOpen, onToggle, lang, orgId, orgName }) {
   const t = useLang()
   const [collapsed, setCollapsed] = useState({ done: true })
 
@@ -34,7 +34,7 @@ export default function MyTasksView({ tasks, projects, currentUser, filters, onO
       <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx1)', marginBottom: 6, letterSpacing: '-0.01em' }}>{t.myTasks}</div>
       <div style={{ fontSize: 13, color: 'var(--tx3)', marginBottom: 20 }}>{t.myTasksOpen(openMine.length)}</div>
 
-      <CalendarFeedCard t={t} />
+      <CalendarFeedCard t={t} orgId={orgId} orgName={orgName} />
 
       {mine.length === 0 && <div style={{ fontSize: 14, color: 'var(--tx3)' }}>{t.noTasks(q)}</div>}
 
@@ -78,17 +78,20 @@ export default function MyTasksView({ tasks, projects, currentUser, filters, onO
   )
 }
 
-function CalendarFeedCard({ t }) {
+function CalendarFeedCard({ t, orgId, orgName }) {
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [err, setErr] = useState(false)
 
+  // Reset when switching org so a stale (other-org) URL isn't shown.
+  useEffect(() => { setUrl(''); setCopied(false); setErr(false) }, [orgId])
+
   const load = async (rotate) => {
     setBusy(true); setErr(false); setCopied(false)
     try {
       const token = rotate ? await rotateCalendarToken() : await ensureCalendarToken()
-      setUrl(calendarFeedUrl(token))
+      setUrl(calendarFeedUrl(token, orgId))
     } catch { setErr(true) }
     setBusy(false)
   }
@@ -100,7 +103,7 @@ function CalendarFeedCard({ t }) {
   return (
     <div style={{ marginBottom: 22, padding: '12px 14px', border: '1px solid var(--bd3)', borderRadius: 'var(--r2)', background: 'var(--bg2)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>📅 {t.calFeed}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx1)' }}>📅 {t.calFeed}{orgName ? ` · ${orgName}` : ''}</span>
         <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t.calFeedDesc}</span>
         {!url && (
           <button onClick={() => load(false)} disabled={busy} style={{ marginLeft: 'auto', fontSize: 12, padding: '4px 10px' }}>
