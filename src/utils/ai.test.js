@@ -252,6 +252,36 @@ describe('callAI (with proxy configured)', () => {
     }
   })
 
+  it('callAI surfaces the server message for UNKNOWN errors', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 418,
+      json: () => Promise.resolve({ error: 'teapot: unsupported model' }),
+    }))
+    try {
+      await callAI('s', 'u')
+      expect.fail('should throw')
+    } catch (e) {
+      expect(e.code).toBe('UNKNOWN')
+      expect(e.message).toBe('teapot: unsupported model')
+      expect(e.serverMessage).toBe('teapot: unsupported model')
+    }
+  })
+
+  it('callAI keeps the friendly message for classified codes but retains serverMessage', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 429,
+      json: () => Promise.resolve({ error: 'rate limit hit: 20 req/min' }),
+    }))
+    try {
+      await callAI('s', 'u')
+      expect.fail('should throw')
+    } catch (e) {
+      expect(e.code).toBe('RATE_LIMIT')
+      expect(e.message).toBe(AI_ERROR_MESSAGES.RATE_LIMIT)
+      expect(e.serverMessage).toBe('rate limit hit: 20 req/min')
+    }
+  })
+
   it('callAI handles non-JSON error body gracefully', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false, status: 500,

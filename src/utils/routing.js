@@ -21,6 +21,7 @@ export function buildPath(nav, pid, view, taskId) {
   if ((nav === 'projects' || nav === 'portfolios') && pid) {
     let p = `/${nav}/${pid}`
     if (view) p += `/${view}`
+    else if (taskId) p += '/-' // placeholder: keeps taskId in slot 4 for parseRoute
     if (taskId) p += `/${taskId}`
     return p
   }

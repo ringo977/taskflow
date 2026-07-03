@@ -104,8 +104,15 @@ export async function callAI(system, user, maxTokens = 1000) {
     } catch { /* ignore parse errors */ }
 
     const code = classifyStatus(response.status, serverMsg)
-    const friendlyMsg = AI_ERROR_MESSAGES[code] || serverMsg || `AI request failed (${response.status})`
-    throw new AIError(friendlyMsg, code, response.status)
+    // For classified codes prefer the friendly i18n message; for UNKNOWN the
+    // server message (when present) is more informative than the generic one.
+    const friendlyMsg =
+      code === 'UNKNOWN' && serverMsg
+        ? serverMsg
+        : AI_ERROR_MESSAGES[code] || serverMsg || `AI request failed (${response.status})`
+    const err = new AIError(friendlyMsg, code, response.status)
+    if (serverMsg) err.serverMessage = serverMsg // always kept for debugging/logging
+    throw err
   }
 
   let data

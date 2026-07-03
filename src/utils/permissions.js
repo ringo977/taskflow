@@ -52,12 +52,23 @@ export function canViewProject(user, project, orgUsers, myProjectRoles) {
   return !!role && role !== 'none'
 }
 
-/** Check if user can see a section based on section access rules */
-export function canViewSection(user, section, sectionAccess) {
+/**
+ * Check if user can see a section based on section access rules.
+ * Access values: 'all' (default), 'editors' (project editors and above,
+ * same semantics as applyVisibilityFilter in filters.js), or an array of
+ * user names. Unrecognised values fail closed.
+ *
+ * @param {Object|null} user - current user ({ name })
+ * @param {string} section - section name
+ * @param {Object|null} sectionAccess - map of section → access rule
+ * @param {string} [role='viewer'] - user's project role, used for 'editors' access
+ */
+export function canViewSection(user, section, sectionAccess, role = 'viewer') {
   const access = sectionAccess?.[section]
   if (!access || access === 'all') return true
+  if (access === 'editors') return (ROLE_LEVEL[role] ?? 0) >= ROLE_LEVEL.editor
   if (Array.isArray(access)) return access.includes(user?.name)
-  return true
+  return false
 }
 
 /** Check if user can see a task based on task visibility */

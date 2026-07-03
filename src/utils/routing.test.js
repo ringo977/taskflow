@@ -60,9 +60,10 @@ describe('buildPath', () => {
     expect(buildPath('projects', 'p1', null, null)).toBe('/projects/p1')
   })
 
-  it('appends taskId directly after pid when view is missing', () => {
-    // Note: without a view the taskId lands in the view slot of the path
-    expect(buildPath('projects', 'p1', null, 't5')).toBe('/projects/p1/t5')
+  it('uses "-" placeholder for view so taskId stays in slot 4', () => {
+    expect(buildPath('projects', 'p1', null, 't5')).toBe('/projects/p1/-/t5')
+    // parseRoute keeps taskId in the right slot; useUIState normalises '-'
+    expect(parseRoute('/projects/p1/-/t5').taskId).toBe('t5')
   })
 })
 
@@ -70,6 +71,7 @@ describe('parseRoute ↔ buildPath roundtrip', () => {
   const cases = [
     { nav: 'projects', pid: 'p1', view: 'board', taskId: null },
     { nav: 'projects', pid: 'p2', view: 'lista', taskId: 't3' },
+    { nav: 'projects', pid: 'p3', view: '-', taskId: 't9' }, // view-less deep link
     { nav: 'portfolios', pid: 'po1', view: 'overview', taskId: null },
   ]
   for (const c of cases) {

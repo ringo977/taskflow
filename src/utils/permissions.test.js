@@ -148,10 +148,16 @@ describe('canViewSection', () => {
     expect(canViewSection(null, 'Secret', { 'Secret': ['Alice'] })).toBe(false)
   })
 
-  it('returns true for unrecognised non-array access values (fail-open default)', () => {
-    // access that is neither falsy, nor 'all', nor an array hits the final fallback
-    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' })).toBe(true)
-    expect(canViewSection(BOB, 'Secret', { 'Secret': 42 })).toBe(true)
+  it('handles "editors" access via project role (same semantics as filters.js)', () => {
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' }, 'editor')).toBe(true)
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' }, 'owner')).toBe(true)
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' }, 'viewer')).toBe(false)
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' })).toBe(false) // default role: viewer
+  })
+
+  it('fails closed on unrecognised access values', () => {
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 42 })).toBe(false)
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'nonsense' }, 'owner')).toBe(false)
   })
 })
 
