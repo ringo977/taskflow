@@ -5,6 +5,7 @@ import { getProjectRole, canEditTasks } from '@/utils/permissions'
 import { useOrgUsers } from '@/context/OrgUsersCtx'
 import TaskCard from '@/components/TaskCard'
 import ConfirmModal from '@/components/ConfirmModal'
+import EmptyHint from '@/components/EmptyHint'
 import { useProjectLookups } from '@/hooks/useProjectLookups'
 import { groupTasks } from '@/utils/groupBy'
 
@@ -161,9 +162,7 @@ export default function BoardView({ tasks, secs, project, currentUser, myProject
               </button>
             )}
             {grp.tasks.length === 0 && (
-              <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>
-                {t.emptySection ?? 'No tasks'}
-              </div>
+              <EmptyHint label={t.emptySection ?? 'No tasks'} />
             )}
           </div>
         )

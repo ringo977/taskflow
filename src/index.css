@@ -153,6 +153,10 @@ button:focus-visible {
 .row-interactive:hover {
   background: color-mix(in srgb, var(--bg2) 60%, transparent);
 }
+.row-interactive:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--c-brand) 20%, transparent);
+}
 
 /* ── Miscellaneous ──────────────────────────────────────────── */
 mark { background: color-mix(in srgb, var(--c-warning) 25%, transparent); color: inherit; border-radius: 2px; padding: 0 2px; }

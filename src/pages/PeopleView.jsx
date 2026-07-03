@@ -237,8 +237,11 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
    * Grid columns — tighter name/email, comfortable stats + projects.
    * In admin mode: prepend checkbox, append actions.
    */
-  const baseCols = '22px 100px 100px 150px 68px 44px 44px 44px 1fr'
-  const adminCols = '28px 22px 100px 100px 150px 68px 44px 44px 44px 1fr 130px'
+  // Flexible tracks: `auto` for the stat columns so they always fit their
+  // (localised) header labels; minmax+fr for text so it truncates instead of
+  // overlapping. Fixed px tracks caused header overlap (OPEN/OVERDUE/COMPLETED).
+  const baseCols = '22px minmax(80px, 1fr) minmax(80px, 1fr) minmax(160px, 2fr) 76px auto auto auto minmax(140px, 1.5fr)'
+  const adminCols = '28px 22px minmax(80px, 1fr) minmax(80px, 1fr) minmax(160px, 2fr) 90px auto auto auto minmax(140px, 1.5fr) auto'
 
   const COL_STYLE = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
 
@@ -398,7 +401,7 @@ export default function PeopleView({ tasks, projects, currentUser, activeOrgId }
           ))}
         </div>
       ) : (
-        <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ borderRadius: 'var(--r2)', border: '1px solid var(--bd3)', overflow: 'hidden', overflowX: 'auto', boxShadow: 'var(--shadow-sm)' }}>
           {/* List header */}
           <div style={{ display: 'grid', gridTemplateColumns: editing ? adminCols : baseCols, gap: 6, alignItems: 'center', padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd3)' }}>
             {editing && <div />}

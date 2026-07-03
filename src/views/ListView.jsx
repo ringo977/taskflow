@@ -9,6 +9,7 @@ import Avatar from '@/components/Avatar'
 import AvatarGroup from '@/components/AvatarGroup'
 import Badge from '@/components/Badge'
 import Checkbox from '@/components/Checkbox'
+import EmptyHint from '@/components/EmptyHint'
 import Pagination from '@/components/Pagination'
 import { usePagination, DEFAULT_PAGE_SIZE } from '@/hooks/usePagination'
 import { useProjectLookups } from '@/hooks/useProjectLookups'
@@ -174,7 +175,7 @@ export default function ListView({ tasks, secs, project, currentUser, myProjectR
               )
             })}
             {!isC && grp.tasks.length === 0 && (
-              <div style={{ padding: '12px 10px', color: 'var(--tx3)', fontSize: 12, fontStyle: 'italic' }}>{t.emptySection ?? 'No tasks'}</div>
+              <EmptyHint label={t.emptySection ?? 'No tasks'} />
             )}
           </div>
         )
