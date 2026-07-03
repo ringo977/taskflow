@@ -3,6 +3,11 @@ import { logger } from '@/utils/logger'
 
 const log = logger('RuleEngine')
 
+// Canonical trigger/action definitions and label maps are shared with the
+// rules UI (components/rules) via ruleEngineConfig — re-exported here so
+// engine consumers can import them alongside the hook.
+export { TRIGGERS, ACTIONS, triggerLabelMap, actionLabelMap, conditionFieldLabel } from './ruleEngineConfig'
+
 /**
  * useRuleEngine
  *
