@@ -1,6 +1,6 @@
 {
   "name": "taskflow",
-  "version": "0.5.0",
+  "version": "0.5.4",
   "private": true,
   "description": "TaskFlow — MiMic Lab project management app",
   "type": "module",

@@ -51,7 +51,7 @@ taskflow/
 ├── tailwind.config.js             # Tailwind config (mostly CSS vars)
 ├── eslint.config.js               # ESLint 9 flat config
 ├── .prettierrc                    # Prettier config
-├── package.json                   # v0.5.0
+├── package.json                   # v0.5.4
 ├── .env.example                   # Environment variables template
 │
 ├── .github/workflows/
