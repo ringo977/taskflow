@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { parseRoute, buildPath } from './routing'
+import { describe, it, expect, vi } from 'vitest'
+import { parseRoute, buildPath, deferAuthWork } from './routing'
 
 describe('parseRoute', () => {
   it('parses root as home', () => {
@@ -55,6 +55,15 @@ describe('buildPath', () => {
   it('builds nav path with task ID', () => {
     expect(buildPath('mytasks', null, null, 't8')).toBe('/mytasks/-/-/t8')
   })
+
+  it('builds project path without a view', () => {
+    expect(buildPath('projects', 'p1', null, null)).toBe('/projects/p1')
+  })
+
+  it('appends taskId directly after pid when view is missing', () => {
+    // Note: without a view the taskId lands in the view slot of the path
+    expect(buildPath('projects', 'p1', null, 't5')).toBe('/projects/p1/t5')
+  })
 })
 
 describe('parseRoute ↔ buildPath roundtrip', () => {
@@ -69,4 +78,14 @@ describe('parseRoute ↔ buildPath roundtrip', () => {
       expect(parseRoute(path)).toEqual(c)
     })
   }
+})
+
+describe('deferAuthWork', () => {
+  it('defers execution to a microtask (not synchronous)', async () => {
+    const fn = vi.fn()
+    deferAuthWork(fn)
+    expect(fn).not.toHaveBeenCalled()
+    await Promise.resolve() // flush microtask queue
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
 })

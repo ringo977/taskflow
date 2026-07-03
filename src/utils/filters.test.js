@@ -325,3 +325,35 @@ describe('applyVisibilityFilter', () => {
     expect(applyVisibilityFilter([], mkProject(), 'Alice')).toEqual([])
   })
 })
+
+// ── Branch edge cases ───────────────────────────────────────────
+
+describe('applyFilters — tasks without tags (legacy shape)', () => {
+  const legacy = [{ id: '1', title: 'Alpha', desc: '', pri: 'low', who: 'alice', done: false }] // no tags key
+
+  it('q search treats missing tags as no tag match', () => {
+    expect(applyFilters(legacy, { q: 'zzz' })).toEqual([])
+  })
+
+  it('q search still matches on title when tags are missing', () => {
+    expect(applyFilters(legacy, { q: 'alpha' })).toHaveLength(1)
+  })
+})
+
+describe('applyVisibilityFilter — missing members / unknown role', () => {
+  const secretTask = { id: '1', title: 'T', who: 'Alice', sec: 'Secret', visibility: 'all', done: false }
+
+  it('treats a project without a members array as empty (defaults to viewer)', () => {
+    const project = { id: 'p1', sectionAccess: { Secret: 'editors' } } // no members key
+    expect(applyVisibilityFilter([secretTask], project, 'Alice')).toEqual([])
+  })
+
+  it('treats an unknown member role as viewer level', () => {
+    const project = {
+      id: 'p1',
+      members: [{ name: 'Alice', role: 'superuser' }],
+      sectionAccess: { Secret: 'editors' },
+    }
+    expect(applyVisibilityFilter([secretTask], project, 'Alice')).toEqual([])
+  })
+})

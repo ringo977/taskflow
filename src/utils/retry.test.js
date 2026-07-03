@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { withRetry, isTransient, _sleep } from './retry'
+import { withRetry, isTransient, _sleep, sleep } from './retry'
+
+// Capture the real sleep implementation before beforeEach replaces it
+const realSleepFn = _sleep.fn
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
@@ -143,5 +146,34 @@ describe('withRetry', () => {
     const result = await withRetry(fn, { maxAttempts: 2, baseDelay: 10 })
     expect(result).toBe('ok')
     expect(fn).toHaveBeenCalledTimes(2)
+  })
+})
+
+// ── Branch edge cases ───────────────────────────────────────────
+
+describe('isTransient — errors without a message', () => {
+  it('detects transient PG codes on messageless error objects', () => {
+    expect(isTransient({ code: 'PGRST301' })).toBe(true)
+    expect(isTransient({ code: '57P03' })).toBe(true)
+  })
+
+  it('returns false for messageless non-transient errors', () => {
+    expect(isTransient({ code: '23505' })).toBe(false)
+    expect(isTransient({})).toBe(false)
+  })
+})
+
+describe('sleep', () => {
+  it('delegates to the swappable _sleep.fn', async () => {
+    const prev = _sleep.fn
+    const spy = vi.fn().mockResolvedValue('woke')
+    _sleep.fn = spy
+    await expect(sleep(5)).resolves.toBe('woke')
+    expect(spy).toHaveBeenCalledWith(5)
+    _sleep.fn = prev
+  })
+
+  it('default implementation resolves after the timeout', async () => {
+    await expect(realSleepFn(1)).resolves.toBeUndefined()
   })
 })

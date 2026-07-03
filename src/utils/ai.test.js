@@ -366,3 +366,37 @@ describe('callAI (with proxy configured)', () => {
     expect(body.system).toContain('italiano')
   })
 })
+
+// ── callAI without an authenticated session ─────────────────────
+
+describe('callAI (proxy configured, no session)', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_AI_PROXY_URL', 'https://proxy.test/ai')
+    vi.resetModules()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
+  })
+
+  it('throws AUTH 401 when there is no session, without calling fetch', async () => {
+    const { supabase } = await import('@/lib/supabase')
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
+    const { callAI } = await import('./ai.js')
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    await expect(callAI('s', 'u')).rejects.toMatchObject({
+      name: 'AIError', code: 'AUTH', status: 401,
+    })
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('throws AUTH when the session has no access token', async () => {
+    const { supabase } = await import('@/lib/supabase')
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: { access_token: '' } } })
+    const { callAI } = await import('./ai.js')
+    vi.stubGlobal('fetch', vi.fn())
+    await expect(callAI('s', 'u')).rejects.toMatchObject({ code: 'AUTH', status: 401 })
+  })
+})

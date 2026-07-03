@@ -147,6 +147,12 @@ describe('canViewSection', () => {
   it('handles null user gracefully', () => {
     expect(canViewSection(null, 'Secret', { 'Secret': ['Alice'] })).toBe(false)
   })
+
+  it('returns true for unrecognised non-array access values (fail-open default)', () => {
+    // access that is neither falsy, nor 'all', nor an array hits the final fallback
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 'editors' })).toBe(true)
+    expect(canViewSection(BOB, 'Secret', { 'Secret': 42 })).toBe(true)
+  })
 })
 
 // ── canViewTask ─────────────────────────────────────────────
@@ -307,6 +313,18 @@ describe('canEditTaskInWp', () => {
     const wp = { access: 'unknown_value', ownerUserId: null }
     expect(canEditTaskInWp('editor', wp, USER_ID)).toBe(true)
     expect(canEditTaskInWp('viewer', wp, USER_ID)).toBe(false)
+  })
+
+  it('unknown project role cannot edit under access=editors', () => {
+    const wp = { access: 'editors', ownerUserId: OTHER_ID }
+    expect(canEditTaskInWp(undefined, wp, USER_ID)).toBe(false)
+    expect(canEditTaskInWp('bogus', wp, USER_ID)).toBe(false)
+  })
+
+  it('unknown project role cannot edit under owner_only partner fallback', () => {
+    const wp = { access: 'owner_only', ownerUserId: null }
+    expect(canEditTaskInWp(undefined, wp, USER_ID)).toBe(false)
+    expect(canEditTaskInWp(null, wp, USER_ID)).toBe(false)
   })
 })
 

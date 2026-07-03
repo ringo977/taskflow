@@ -407,4 +407,142 @@ describe('computeUpcomingMilestones', () => {
     const result = computeUpcomingMilestones(many, [], projects, 5)
     expect(result).toHaveLength(5)
   })
+
+  it('includes milestones with null dueDate and sorts them first', () => {
+    const noDates = [
+      { id: 'nd1', code: 'ND1', name: 'No date A', dueDate: null, status: 'pending', isActive: true, projectId: 'p1' },
+      { id: 'nd2', code: 'ND2', name: 'No date B', dueDate: undefined, status: 'pending', isActive: true, projectId: 'p1' },
+      { id: 'wd', code: 'WD', name: 'With date', dueDate: futureDate, status: 'pending', isActive: true, projectId: 'p1' },
+    ]
+    const result = computeUpcomingMilestones(noDates, [], projects)
+    // (dueDate ?? '9') >= today keeps null-dueDate milestones in the list
+    expect(result.map(m => m.id)).toContain('nd1')
+    expect(result.map(m => m.id)).toContain('nd2')
+    // (dueDate ?? '') sorts nullish dates before real ISO dates
+    expect(result[result.length - 1].id).toBe('wd')
+  })
+
+  it('falls back to empty name and default color for unknown projectId', () => {
+    const orphan = [
+      { id: 'mx', code: 'MX', name: 'Orphan', dueDate: futureDate, status: 'pending', isActive: true, projectId: 'p-missing' },
+    ]
+    const result = computeUpcomingMilestones(orphan, [], projects)
+    expect(result[0].projectName).toBe('')
+    expect(result[0].projectColor).toBe('#888')
+  })
+})
+
+// ── Branch edge cases ───────────────────────────────────────────
+
+describe('computeProjectHealth — health thresholds', () => {
+  const mkTasks = (pid, total, overdue) =>
+    Array.from({ length: total }, (_, i) => ({
+      id: `${pid}-t${i}`, pid, done: false,
+      due: i < overdue ? yesterday : nextWeek,
+    }))
+
+  it('flags warning when overdue ratio is between 10% and 25%', () => {
+    // 1 overdue of 8 = 12.5%
+    const result = computeProjectHealth(mkTasks('p1', 8, 1), [projects[0]])
+    expect(result[0].health).toBe('warning')
+  })
+
+  it('flags critical when overdue ratio exceeds 25%', () => {
+    // 3 overdue of 8 = 37.5%
+    const result = computeProjectHealth(mkTasks('p1', 8, 3), [projects[0]])
+    expect(result[0].health).toBe('critical')
+  })
+
+  it('stays good when overdue ratio is at most 10%', () => {
+    // 1 overdue of 10 = 10% (not > 0.10)
+    const result = computeProjectHealth(mkTasks('p1', 10, 1), [projects[0]])
+    expect(result[0].health).toBe('good')
+  })
+})
+
+describe('computeProjectStats — empty project', () => {
+  it('returns pct 0 for a project with no tasks', () => {
+    const result = computeProjectStats(tasks, [{ id: 'p-empty', name: 'Empty' }])
+    expect(result[0]).toMatchObject({ total: 0, done: 0, pct: 0 })
+  })
+})
+
+describe('computeOverdueByProject — name truncation', () => {
+  it('truncates project names longer than 14 chars', () => {
+    const longProj = [{ id: 'p1', name: 'A very long project name', color: '#ccc' }]
+    const result = computeOverdueByProject(tasks, longProj)
+    expect(result[0].name).toBe('A very long pr…')
+    expect(result[0].name.length).toBe(15)
+  })
+})
+
+describe('computeWorkload — edge cases', () => {
+  it('treats users missing from the map as having no tasks', () => {
+    // Carol is a user but the map has no entry for her at all
+    const result = computeWorkload({}, users)
+    expect(result).toEqual([])
+  })
+
+  it('flags overloaded when open tasks exceed threshold', () => {
+    const open = Array.from({ length: 4 }, (_, i) => ({ id: `t${i}`, done: false }))
+    const map = { Alice: open }
+    const result = computeWorkload(map, [users[0]], 3)
+    expect(result[0].level).toBe('overloaded')
+  })
+
+  it('flags light when open tasks are at most half the threshold', () => {
+    const map = { Alice: [{ id: 't1', done: false }] }
+    const result = computeWorkload(map, [users[0]], 8)
+    expect(result[0].level).toBe('light')
+  })
+})
+
+describe('computeTasksPerPerson — missing map entry', () => {
+  it('treats users missing from the map as having no tasks', () => {
+    const result = computeTasksPerPerson({}, users)
+    expect(result).toEqual([])
+  })
+})
+
+describe('computeStatusDistribution — missing section', () => {
+  it('buckets tasks without a section under Other', () => {
+    const noSec = [{ id: 't1' }, { id: 't2', sec: null }, { id: 't3', sec: 'Todo' }]
+    const result = computeStatusDistribution(noSec)
+    expect(result.find(r => r.name === 'Other').value).toBe(2)
+    expect(result.find(r => r.name === 'Todo').value).toBe(1)
+  })
+})
+
+describe('computeSectionCompletion — missing section', () => {
+  it('buckets tasks without a section under Other', () => {
+    const noSec = [
+      { id: 't1', pid: 'p1', done: true },
+      { id: 't2', pid: 'p1', sec: undefined, done: false },
+    ]
+    const result = computeSectionCompletion(noSec, [projects[0]])
+    expect(result[0].sections['Other']).toEqual({ total: 2, done: 1 })
+  })
+})
+
+describe('name truncation for partners / WPs / milestones', () => {
+  it('truncates partner names longer than 16 chars', () => {
+    const partners = [{ id: 'pt1', name: 'Extremely Long Partner Name', type: 'lab', isActive: true }]
+    const ptTasks = [{ id: 't1', partnerId: 'pt1', done: false, due: null }]
+    const result = computeTasksPerPartner(ptTasks, partners)
+    expect(result[0].name).toBe('Extremely Long P…')
+  })
+
+  it('truncates workpackage names longer than 16 chars', () => {
+    const wps = [{ id: 'wp1', code: 'WP1', name: 'Extremely Long Workpackage', status: 'active', isActive: true }]
+    const wpTasks = [{ id: 't1', workpackageId: 'wp1', done: false, due: null }]
+    const result = computeTasksPerWorkpackage(wpTasks, wps)
+    expect(result[0].name).toBe('Extremely Long W…')
+  })
+
+  it('truncates milestone names longer than 16 chars', () => {
+    const ms = [{ id: 'ms1', code: 'MS1', name: 'Extremely Long Milestone Name', status: 'pending', isActive: true }]
+    const msTasks2 = [{ id: 't1', milestoneId: 'ms1', done: false, due: null }]
+    const result = computeTasksPerMilestone(msTasks2, ms)
+    expect(result[0].name).toBe('Extremely Long M…')
+  })
 })
